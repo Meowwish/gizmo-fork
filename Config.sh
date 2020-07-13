@@ -329,7 +329,7 @@ IO_COMPRESS_HDF5     		    # write HDF5 in compressed form (will slow down snaps
 ####################################################################################################
 # --------------------
 # ----- General De-Bugging and Special Behaviors
-#DEVELOPER_MODE                 # allows you to modify various numerical parameters (courant factor, etc) at run-time
+DEVELOPER_MODE                 # allows you to modify various numerical parameters (courant factor, etc) at run-time
 #LONG_INTEGER_TIME              # total number of integer time step = 1<<39
 #FORCE_EQUAL_TIMESTEPS          # force the code to use a single universal timestep (can change in time, but all particles advance together). chosen as minimum of any particle that step.
 #STOP_WHEN_BELOW_MINTIMESTEP    # forces code to quit when stepsize wants to go below MinSizeTimestep specified in the parameterfile
