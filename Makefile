@@ -66,7 +66,7 @@ CONFIGVARS := $(shell cat GIZMO_config.h)
 HG_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null)
 HG_REPO := $(shell git config --get remote.origin.url)
 HG_BRANCH := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
-BUILDINFO = "Build on $(HOSTNAME) by $(USER) from $(HG_BRANCH):$(HG_COMMIT) at $(HG_REPO)"
+BUILDINFO = "Build on $(HOST) by $(USER) from $(HG_BRANCH):$(HG_COMMIT) at $(HG_REPO)"
 OPT += -DBUILDINFO='$(BUILDINFO)'
 
 
@@ -1086,6 +1086,28 @@ endif
 
 
 #----------------------------------------------------------------------------------------------
+ifeq ($(SYSTYPE),"Ubuntu")
+CC       = mpicc ## gcc compilers, for intel replace this with mpiicc
+CXX      = mpicpc ## gcc compilers, for intel replace this with mpiicpc
+FC       = $(CC)
+OPTIMIZE =
+#OPTIMIZE = -g -O1 -ffast-math -funroll-loops -finline-functions -funswitch-loops -fpredictive-commoning -fgcse-after-reload -fipa-cp-clone  ## optimizations for gcc compilers (1/2)
+#OPTIMIZE += -ftree-loop-distribute-patterns -fvect-cost-model -ftree-partial-pre   ## optimizations for gcc compilers (2/2)
+ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
+OPTIMIZE += -fopenmp # openmp required compiler flags
+FC       = $(CC)
+endif
+GMP_INCL =
+GMP_LIBS =
+MKL_INCL =
+MKL_LIBS =
+GSL_INCL = -I$(GSL_HOME)/include
+GSL_LIBS = -L$(GSL_HOME)/lib
+HDF5INCL = -I$(HDF5_HOME)/include -DH5_USE_16_API
+HDF5LIB  = -L$(HDF5_HOME)/lib -lhdf5 -lz
+MPICHLIB = #
+OPT     += -DUSE_MPI_IN_PLACE
+endif
 #----------------------------------------------------------------------------------------------
 #----------------------------------------------------------------------------------------------
 
