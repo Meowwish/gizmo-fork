@@ -66,7 +66,8 @@ CONFIGVARS := $(shell cat GIZMO_config.h)
 HG_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null)
 HG_REPO := $(shell git config --get remote.origin.url)
 HG_BRANCH := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
-BUILDINFO = "Build on $(HOST) by $(USER) from $(HG_BRANCH):$(HG_COMMIT) at $(HG_REPO)"
+HOST := $(shell hostname)
+BUILDINFO = "Built on $(HOST) by $(USER) from $(HG_BRANCH):$(HG_COMMIT) at $(HG_REPO)"
 OPT += -DBUILDINFO='$(BUILDINFO)'
 
 
