@@ -1,3 +1,7 @@
+GIZMO
+GIZMO_config.h
+compile_time_info.c
+
 # Prerequisites
 *.d
 
