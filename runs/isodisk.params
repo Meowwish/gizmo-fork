@@ -13,11 +13,6 @@
 %        GALSF_SFR_VIRIAL_SF_CRITERION=0
 %        GALSF_SUBGRID_WINDS
 %
-% you should see the users guide - there are many combinations of 
-%   parameters (of varying degrees of complexity) you can enable. 
-%   the above corresponds to running with the full set of FIRE 
-%   physics turned on
-%
 % for the version of this problem with MHD, additionally enable:
 %        MAGNETIC
 %        MHD_B_SET_IN_PARAMS
@@ -26,7 +21,7 @@
 % 
 
 %----  Relevant files
-InitCondFile   isodisk_ics
+InitCondFile   agora_ic
 OutputDir      output
 
 %---- File formats 
@@ -117,7 +112,7 @@ SofteningBndry  0.005    % black holes (if active), or collisionless (type=5)
 %----- parameters for adaptive gravitational softening 
 % (currently unused in runs)
 %AGS_DesNumNgb           32  % neighbor number for calculating adaptive gravsoft
-AGS_MaxNumNgbDeviation  2   % same, for adaptive gravsoft: can be much larger
+%AGS_MaxNumNgbDeviation  2   % same, for adaptive gravsoft: can be much larger
 
 
 
@@ -128,7 +123,7 @@ AGS_MaxNumNgbDeviation  2   % same, for adaptive gravsoft: can be much larger
 %-------------------------------------------------------------------------
 %-------------------------------------------------------------------------
 
-InitMetallicity 0.0
+InitMetallicity 1.0e-5
 InitStellarAge  10.0    % Gyr
 
 %------------------------------------------------------------

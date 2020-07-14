@@ -436,36 +436,6 @@ OPT     += -DUSE_MPI_IN_PLACE
 endif
 
 
-#----------------------------------------------------------------------------------------------
-ifeq ($(SYSTYPE),"Zwicky")
-CC       =  mpicc
-CXX      =  mpicpc
-FC       =  $(CC) ##mpiifort -nofor_main
-OPTIMIZE = -O3 -funroll-loops
-OPTIMIZE += -g -Wall # compiler warnings
-ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
-OPTIMIZE += -fopenmp # openmp required compiler flags
-FC       = $(CC)
-endif
-GMP_INCL = #
-GMP_LIBS = #
-MKL_INCL = -I$(MKL_HOME)/include
-MKL_LIBS = -L$(MKL_HOME)/lib/em64t -lm -lmkl_core -lmkl_sequential -lmkl_scalapack_lp64 -lmkl_intel_lp64 -lmkl_blacs_intelmpi_lp64
-GSL_INCL = -I$(GSL_HOME)/include
-GSL_LIBS = -L$(GSL_HOME)/lib
-FFTW_INCL= -I$(FFTW2_HOME)/include
-FFTW_LIBS= -L$(FFTW2_HOME)/lib
-HDF5INCL = -I$(HDF5_HOME)/include -DH5_USE_16_API
-HDF5LIB  = -L$(HDF5_HOME)/lib -lhdf5 -lz
-MPICHLIB = #
-OPT     += # -DUSE_MPI_IN_PLACE
-## modules to load: 
-## module load intel/2011.4.191 impi/4.0.2.003 gsl/1.15-gcc HDF5 
-##  -- the machine is quite picky, impi seems to be the only working mpi option right now
-##  --  currently fftw2 isnt pre-installed, built library in my directory, with config flags:
-##       ./configure --prefix=/home/phopkins/fftw --enable-mpi --enable-type-prefix --enable-float --with-gcc
-##      linked via the above FFTW2_HOME=/home/phopkins/fftw (where the libraries are installed)
-endif
 
 
 #------------------------------------------------------------------------------
@@ -1000,103 +970,16 @@ OPT     += -DNOCALLSOFSYSTEM -DNO_ISEND_IRECV_IN_DOMAIN -DMPICH_IGNORE_CXX_SEEK
 endif
 
 #----------------------------------------------------------------------------------------------
-ifeq ($(SYSTYPE),"odyssey")
-CC       =  mpicc     # sets the C-compiler
-OPT      +=  -DMPICH_IGNORE_CXX_SEEK 
-FC       =  $(CC)
-OPTIMIZE = -g -O2 -Wall -Wno-unused-but-set-variable
-GSL_INCL =
-GSL_LIBS =
-FFTW_INCL=
-FFTW_LIBS=
-MPICHLIB =
-HDF5INCL =  -DH5_USE_16_API
-HDF5LIB  =  -lhdf5 -lz
-endif
-
-#----------------------------------------------------------------------------------------------
-ifeq ($(SYSTYPE),"antares")
-CC       =  mpicc     # sets the C-compiler
-OPT      +=  -DMPICH_IGNORE_CXX_SEEK
-FC       =  $(CC)
-OPTIMIZE = -g -O2 -Wall -Wno-unused-but-set-variable
-GSL_INCL = -I/home/ptorrey/local/gsl-2.1/include
-GSL_LIBS = -L/home/ptorrey/local/gsl-2.1/lib -lgsl -lm
-FFTW_INCL= -I/home/ptorrey/local/fftw-2.1.5/include
-FFTW_LIBS= -L/home/ptorrey/local/fftw-2.1.5/libGSL_INCL
-MPICHLIB =
-HDF5INCL =  -DH5_USE_16_API
-HDF5LIB  =  -lhdf5 -lz
-endif
-
-#----------------------------------------------------------------------------------------------
-ifeq ($(SYSTYPE),"CITA")
-CC       =  mpicc
-CXX      =  mpicxx
-OPTIMIZE =  -O3 -Wall
-GSL_INCL =  -I/usr/include/gsl
-GSL_LIBS =  -L/usr/lib/libgsl
-FFTW_INCL=  -I/opt/fftw-2.1.5/include
-FFTW_LIBS=  -L/opt/fftw-2.1.5/lib
-MPICHLIB =  -L/usr/lib/libmpi
-HDF5INCL =  -I/usr/include
-HDF5LIB  =  -L/usr/lib/libhdf5 -static -lhdf5 -lz
-endif 
-
-
-#----------------------------------------------------------------------------------------------
-ifeq ($(SYSTYPE),"Sauron-gcc")
-CC       =   mpicc.gcc   # sets the C-compiler
-OPTIMIZE =   -O3 -funroll-loops -march=k8 -msse2 -static
-GSL_INCL =   -I/usr/local/gsl.gcc/include
-GSL_LIBS =   -L/usr/local/gsl.gcc/lib -static -lgsl -lgslcblas
-FFTW_INCL=   -I/usr/local/fftw.gcc/include
-FFTW_LIBS=   -L/usr/local/fftw.gcc/lib -static -lrfftw_mpi -lfftw_mpi -lrfftw -lfftw
-MPICHLIB =
-endif
-
-
-#----------------------------------------------------------------------------------------------
-ifeq ($(SYSTYPE),"Sauron")
-CC       =  mpicc  -m64 # sets the C-compiler
-CXX      =  mpiCC  -m64
-OPTIMIZE =   -g
-GSL_INCL =
-GSL_LIBS =
-FFTW_INCL=
-FFTW_LIBS=
-MPICHLIB =
-endif
-
-#----------------------------------------------------------------------------------------------
-ifeq ($(SYSTYPE),"MPA")
-CC       =  mpicc   # sets the C-compiler
-CXX      =  mpiCC
-OPTIMIZE =   -g -Wall -fopenmp
-# GSL_INCL =  -I/usr/common/pdsoft/include
-# GSL_LIBS =  -L/usr/common/pdsoft/lib
-GSL_INCL =  -I/afs/mpa/home/volker/Libs/include
-GSL_LIBS =  -L/afs/mpa/home/volker/Libs/lib
-FFTW_INCL=  -I/afs/mpa/home/volker/Libs/include
-FFTW_LIBS=  -L/afs/mpa/home/volker/Libs/lib -Xlinker -R -Xlinker /afs/mpa/home/volker/Libs/lib
-MPICHLIB =
-HDF5INCL =  -I/afs/mpa/home/volker/Libs/include
-HDF5LIB  =  -L/afs/mpa/home/volker/Libs/lib -lhdf5 -lz 
-OPT     +=  -DOLD_HDF5
-endif
-
-
-#----------------------------------------------------------------------------------------------
 ifeq ($(SYSTYPE),"Ubuntu")
-CC       = mpicc ## gcc compilers, for intel replace this with mpiicc
-CXX      = mpicpc ## gcc compilers, for intel replace this with mpiicpc
-FC       = $(CC)
-OPTIMIZE =
-#OPTIMIZE = -g -O1 -ffast-math -funroll-loops -finline-functions -funswitch-loops -fpredictive-commoning -fgcse-after-reload -fipa-cp-clone  ## optimizations for gcc compilers (1/2)
-#OPTIMIZE += -ftree-loop-distribute-patterns -fvect-cost-model -ftree-partial-pre   ## optimizations for gcc compilers (2/2)
+CC       = mpicc
+CXX      = mpicxx
+FC       = mpif90
+# WARNING: do *NOT* run with -ffast-math !!
+OPTIMIZE = -g -O1 -funroll-loops -finline-functions -funswitch-loops -fpredictive-commoning -fgcse-after-reload -fipa-cp-clone  ## optimizations for gcc compilers (1/2)
+OPTIMIZE += -ftree-loop-distribute-patterns -fvect-cost-model -ftree-partial-pre   ## optimizations for gcc compilers (2/2)
 ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
 OPTIMIZE += -fopenmp # openmp required compiler flags
-FC       = $(CC)
+FC       = mpif90
 endif
 GMP_INCL =
 GMP_LIBS =
@@ -1106,10 +989,74 @@ GSL_INCL = -I$(GSL_HOME)/include
 GSL_LIBS = -L$(GSL_HOME)/lib
 HDF5INCL = -I$(HDF5_HOME)/include -DH5_USE_16_API
 HDF5LIB  = -L$(HDF5_HOME)/lib -lhdf5 -lz
-MPICHLIB = #
-OPT     += -DUSE_MPI_IN_PLACE
+MPICHLIB = 
+OPT     += -DUSE_MPI_IN_PLACE # very important for OpenMPI!
 endif
 #----------------------------------------------------------------------------------------------
+
+
+ifeq ($(SYSTYPE),"Gadi")
+CC       =  mpicc
+CXX      =  mpicxx
+FC       =  mpif90 -nofor_main
+OPTIMIZE = -g -O3 -xCORE-AVX2 -ipo -funroll-loops -fp-model precise
+# unless you like code to run slow, do not use AVX512 !
+#OPTIMIZE = -O3 -xCORE-AVX2 -ipo -funroll-loops -no-prec-div -fp-model fast=2
+ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
+OPTIMIZE += -qopenmp
+endif
+GMP_INCL = #
+GMP_LIBS = #
+MKL_INCL = -I$(MKL_HOME)/include
+MKL_LIBS = -L$(MKL_HOME)/lib -mkl=sequential
+GSL_INCL = -I$(GSL_HOME)/include
+GSL_LIBS = -L$(GSL_HOME)/lib
+HDF5INCL = -I$(HDF5_HOME)/include -DH5_USE_16_API
+HDF5LIB  = -L$(HDF5_HOME)/lib -lhdf5 -lz
+MPICHLIB = #
+OPT     += -DUSE_MPI_IN_PLACE #-DNO_ISEND_IRECV_IN_DOMAIN
+##
+# [BDW 07/20: Copied from Frontera build settings.]
+#
+# UPDATE (9/19): Intel/19.0.5 is now working, and Intel/18 is actually sometimes running slower now because of some of the changes made to the impi installation.
+#          Depending on when your code was compiled and exactly which flags you used, you may notice a performance drop with intel/18, and should switch to 19.
+#          For intel/19: module load intel/19 impi hdf5 fftw3 gsl
+#
+# Previous: presently must use intel/18.x versions. 19.x versions compile and work, but lots of problems (+slower), esp. for high Ntasks or OpenMP
+#  e.g.: module load intel/18.0.5 impi hdf5 fftw3 gsl
+#  until recently, GSL module did -not- support intel/18.x, so needed to build it yourself (see update below). example instructions below:
+#    -- 1. get newest GSL: ftp://ftp.gnu.org/gnu/gsl/gsl-latest.tar.gz
+#       2. unpack, 3. then in folder run: "./configure --prefix=$HOME/gsl-2.5 CC=icc" followed by 4. "make" and 5. "make all"
+#           (here I'm setting "$HOME/gsl-2.5" as the local install directory, you set yours appropriately)
+#       6. in your .bashrc file, add "export HOME_GSL_DIR=$HOME/gsl-2.5" and
+#           "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME_GSL_DIR:$HOME_GSL_DIR/.libs:$HOME_GSL_DIR/cblas/.libs"
+#           (obviously if you use a different parent install directory, change the directory name here accordingly).
+#       7. when you submit jobs, make sure you include a "source $HOME/.bashrc" in your run script or the export flags above, to link the libraries. I was using
+#			GSL_INCL = -I$(HOME_GSL_DIR)
+#			GSL_LIBS = -L$(HOME_GSL_DIR)/.libs -L$(HOME_GSL_DIR)/cblas/.libs
+# [update: GSL module is now installed for intel/18.0.5, so you can simply load the module. but I'll keep the install instructions above, they can be useful]
+#
+# As usual include "umask 022" and "ulimit -s unlimited" in your .bashrc file to save headaches later
+# fftw2/3 work equally well. usual intuition re: multipledomains, pmgrid, treedomainfreq, etc, apply.
+# The different code optimizations above make very tiny differences. for stability I am for now using -O2 -xCORE-AVX2, nothing 'fancy' but this doesn't cost us
+# Run scripts are simple SBATCH, like on Stampede and many other machines. Examples of several appear in this file. Example run script:
+#                    #!/bin/bash
+#                    #SBATCH -J (NAME) -p normal -N (NUMBER_OF_NODES) --ntasks-per-node (56/OPENMP_NUMBER) -t (RUNTIME_REQUEST) -A (ACCOUNT_NAME_TO_CHARGE)
+#                    export OMP_NUM_THREADS=(OPENMP_NUMBER)
+#                    source $HOME/.bashrc
+#                    ibrun ./GIZMO ./params.txt (GIZMO_STARTUP_FLAG) 1>gizmo.out 2>gizmo.err
+#     where quantities in (X) are the things you want to set.
+# With these options, hybrid MPI+OpenMP works well. Because of the node configuration, optimal hybrid performance will typically use either
+#   OPENMP=4 (ntasks-per-node=14) or OPENMP=7 (ntasks-per-node=8). Small jobs (<200 cores) might be better with smaller/no OPENMP, very large jobs higher,
+#   (OPENMP can be any integer, ntasks-per-node must be even or severe performance hits apply).
+#   Intel/19 now functional seems to favor slightly lower OPENMP number, shifting to perhaps OPENMP=2 (ntasks-per-node=28) for small jobs, =4 for medium, =7 for very large
+#
+# [old: There are still odd memory issues. The machine should have 3.3gb/core available after OS, etc, but in practice we need to allocate less than this. MPI errors
+#   have also been appearing in large runs (for almost all users) related to memory. Be careful for now, and communicate to TACC support staff re: memory issues.]
+#   I am using ~3gb/core for low task numbers, lower still for higher task numbers. 
+##
+endif
+
 #----------------------------------------------------------------------------------------------
 
 
