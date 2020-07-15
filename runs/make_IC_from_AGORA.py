@@ -5,8 +5,24 @@ import pandas as pd # to read csv files
 def make_agora_IC(filename="agora_ic.hdf5"):
 
     gamma_eos = 5./3.
-    T_gas = 1.0e4     # K
-    
+    T_gas = 1.0e4       # K
+    T_halo = 1.0e6      # K
+    boltzmann_cgs = 1.380658e-16 # erg K^{-1}
+    m_H = 1.6733e-24    # g
+    mean_molecular_weight = m_H
+    c_v = (boltzmann_cgs / mean_molecular_weight) * (1.0 / (gamma_eos - 1.0))
+
+    # conversion factor from specific energy in code units to specific energy in cgs
+    unittime_cgs = 3.08568e16    # s (1 Gyr in s)
+    unitlength_cgs = 3.085678e21 # cm (1 kpc in cm)
+    unitenergypermass_cgs = unitlength_cgs**(2) * unittime_cgs**(-2) # erg g^{-1}
+
+    # gas temperature if R < 20 kpc and |z| < 3 kpc
+    u_diskgas = c_v * T_gas / unitenergypermass_cgs    # (specific internal energy)
+    # gas temperature (otherwise)
+    u_halogas = c_v * T_halo / unitenergypermass_cgs   # (specific internal energy)
+
+
     # UNITS in csv files
     # ---------------
     # Velocity: km/s
@@ -51,7 +67,11 @@ def make_agora_IC(filename="agora_ic.hdf5"):
     m_g=gas['mass']*mass_fac
     # set the initial internal energy per unit mass. recall gizmo uses this as the initial 'temperature' variable
     #  this can be overridden with the InitGasTemp variable (which takes an actual temperature)
-    u_g=gas['u_gas']   # does this include magnetic energy??
+    R_g = np.sqrt(x_g**2 + y_g**2)
+    is_disk_gas = np.logical_and( R_g <= 20.0, np.abs(z_g) <= 3.0 )
+    u_g = np.zeros(len(gas))
+    u_g[is_disk_gas] = u_diskgas
+    u_g[~is_disk_gas] = u_halogas
     # set the gas IDs: here a simple integer list
     Ngas = len(gas)
     print(f"Number of gas particles: {Ngas:.3g}")

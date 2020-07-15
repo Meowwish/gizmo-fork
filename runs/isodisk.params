@@ -123,7 +123,7 @@ SofteningBndry  0.005    % black holes (if active), or collisionless (type=5)
 %-------------------------------------------------------------------------
 %-------------------------------------------------------------------------
 
-InitMetallicity 1.0e-5
+InitMetallicity 1.0     % in units of solar metallicity
 InitStellarAge  10.0    % Gyr
 
 %------------------------------------------------------------

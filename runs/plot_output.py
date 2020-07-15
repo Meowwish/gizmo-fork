@@ -12,4 +12,5 @@ if __name__ == '__main__':
     for snap in snaps:
         ds = yt.load(str(snap), bounding_box=bounds)
         yt.ProjectionPlot(ds, 'z', 'density').set_width((20,'kpc')).save()
+        yt.SlicePlot(ds, 'z', 'temperature').set_width((20,'kpc')).save()
     
