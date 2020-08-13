@@ -5,8 +5,7 @@ import os
 
 
 def load_from_snapshot(value, ptype, snapshot_name,
-        particle_mask=numpy.zeros(0), axis_mask=numpy.zeros(0),
-        units_to_physical=True):
+        particle_mask=numpy.zeros(0), axis_mask=numpy.zeros(0)):
     '''
 
     The routine 'load_from_snapshot' is designed to load quantities directly from GIZMO 
@@ -48,11 +47,6 @@ def load_from_snapshot(value, ptype, snapshot_name,
       axis_mask: if set to a mask (boolean array), return only the chosen -axis-. this
         is useful for some quantities like metallicity fields, with [N,X] dimensions 
         where X is large (lets you choose to read just one of the "X")
-        
-      units_to_physical: default 'True': code will auto-magically try to detect if the 
-        simulation is cosmological by comparing time and redshift information in the 
-        snapshot, and if so, convert units to physical. if you want default snapshot units
-        set this to 'False'
 
     '''
 
@@ -108,83 +102,49 @@ def load_from_snapshot(value, ptype, snapshot_name,
         print('No particles of designated type exist in this snapshot, returning 0')
         file.close()
         return 0
-    # parse data needed for converting units [if necessary]
-    if(units_to_physical):
-        time = header_toparse["Time"]
-        z = header_toparse["Redshift"]
-        hubble = header_toparse["HubbleParam"]
-        cosmological = False
-        ascale = 1.0;
-        # attempt to guess if this is a cosmological simulation from the agreement or lack thereof between time and redshift. note at t=1,z=0, even if non-cosmological, this won't do any harm
-        if(numpy.abs(time*(1.+z)-1.) < 1.e-6): 
-            cosmological=True; ascale=time;
+
     # close the initial header we are parsing
     file.close()
     
     # now loop over all snapshot segments to identify and extract the relevant particle data
-    check_counter = 0
+    q = []
     for i_file in range(numfiles):
         # augment snapshot sub-set number
         if (numfiles>1): fname = fname_base+'.'+str(i_file)+fname_ext  
         # check for existence of file
         if(os.stat(fname).st_size>0):
-            # exists, now try to read it
-            try: 
-                file = h5py.File(fname,'r') # Open hdf5 snapshot file
-            except:
-                print('Unexpected error: could not read hdf5 file ',fname,' . Please check the format, name, and path information is correct, and that this file is not corrupted')
-                return 0
-            # read in, now attempt to parse. first check for needed information on particle number
-            npart = file["Header"].attrs["NumPart_ThisFile"]
-            if(npart[ptype] > 1):
-                # return particle key data, if requested
-                if((value=='keys')|(value=='Keys')|(value=='KEYS')): 
-                    q = file['PartType'+str(ptype)].keys()
-                    print('Returning list of valid keys for this particle type: ',q)
-                    file.close()
-                    return q
-                # check if requested data actually exists as a valid keyword in the file
-                if not (value in file['PartType'+str(ptype)].keys()):
-                    print('The value ',value,' given does not appear to exist in the file ',fname," . Please check that you have specified a valid keyword. You can run this routine with the value 'keys' to return a list of valid value keys. Returning 0")
-                    file.close()
-                    return 0
-                # now actually read the data
-                axis_mask = numpy.array(axis_mask)
-                if(axis_mask.size > 0):
-                    q_t = numpy.array(file['PartType'+str(ptype)+'/'+value+'/']).take(axis_mask,axis=1)
-                else:
-                    q_t = numpy.array(file['PartType'+str(ptype)+'/'+value+'/'])                    
-                # check data has non-zero size
-                if(q_t.size > 0): 
-                    # if this is the first time we are actually reading it, parse it and determine the shape of the vector, to build the data container
-                    if(check_counter == 0): 
-                        qshape=numpy.array(q_t.shape); qshape[0]=0; q=numpy.zeros(qshape); check_counter+=1;
-                    # add the data to our appropriately-shaped container, now
-                    try:
-                        q = numpy.concatenate([q,q_t],axis=0)
-                    except:
-                        print('Could not concatenate data for ',value,' in file ',fname,' . The format appears to be inconsistent across your snapshots or with the usual GIZMO conventions. Please check this is a valid GIZMO snapshot file.')
-                        file.close()
+            with h5py.File(fname,'r') as file:
+                # read in, now attempt to parse. first check for needed information on particle number
+                npart = file["Header"].attrs["NumPart_ThisFile"]
+                if(npart[ptype] >= 1):
+                    # return particle key data, if requested
+                    if((value=='keys')|(value=='Keys')|(value=='KEYS')): 
+                        q = file['PartType'+str(ptype)].keys()
+                        print('Returning list of valid keys for this particle type: ',q)
+                        return q
+                    # check if requested data actually exists as a valid keyword in the file
+                    if not (value in file['PartType'+str(ptype)].keys()):
+                        print('The value ',value,' given does not appear to exist in the file ',fname," . Please check that you have specified a valid keyword. You can run this routine with the value 'keys' to return a list of valid value keys. Returning 0")
                         return 0
-            file.close()
+                    # now actually read the data
+                    axis_mask = numpy.array(axis_mask)
+                    if(axis_mask.size > 0):
+                        q_t = numpy.array(file['PartType'+str(ptype)+'/'+value+'/']).take(axis_mask,axis=1)
+                    else:
+                        q_t = numpy.array(file['PartType'+str(ptype)+'/'+value+'/'])                    
+                    # check data has non-zero size
+                    if(q_t.size > 0): 
+                        if(q == []): 
+                            q = q_t
+                        else:
+                            q = numpy.concatenate([q, q_t], axis=0)
         else:
             print('Expected file ',fname,' appears to be missing. Check if your snapshot has the complete data set here')
             
-    # convert units if requested by the user. note this only does a few obvious units: there are many possible values here which cannot be anticipated!
-    if(units_to_physical):
-        hinv=1./hubble; rconv=ascale*hinv;
-        if((value=='Coordinates')|(value=='SmoothingLength')): q*=rconv; # comoving length
-        if(value=='Velocities'): q *= numpy.sqrt(ascale); # special comoving velocity units
-        if((value=='Density')|(value=='Pressure')): q *= hinv/(rconv*rconv*rconv); # density = mass/comoving length^3
-        if((value=='StellarFormationTime')&(cosmological==False)): q*=hinv; # time has h^-1 in non-cosmological runs
-        if((value=='Masses')|('BH_Mass' in value)|(value=='CosmicRayEnergy')|(value=='PhotonEnergy')): q*=hinv; # mass x [no-h] units
-
     # return final value, if we have not already
     particle_mask=numpy.array(particle_mask)
     if(particle_mask.size > 0): q=q.take(particle_mask,axis=0)
     return q
-
-
 
 
 
@@ -210,4 +170,4 @@ def check_if_filename_exists(snapshot_name):
         fname_base = str(mypath.stem)
         fname_ext = str(mypath.suffix)
 
-    return fname, fname_base, fname_ext;
+    return fname, fname_base, fname_ext

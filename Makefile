@@ -972,10 +972,11 @@ endif
 #----------------------------------------------------------------------------------------------
 ifeq ($(SYSTYPE),"Ubuntu")
 CC       = mpicc
+#CC      = mpicxx	# compile C as C++
 CXX      = mpicxx
 FC       = mpif90
 # WARNING: do *NOT* run with -ffast-math !!
-OPTIMIZE = -g -O1 -funroll-loops -finline-functions -funswitch-loops -fpredictive-commoning -fgcse-after-reload -fipa-cp-clone  ## optimizations for gcc compilers (1/2)
+OPTIMIZE = -g -Wc++-compat -O1 -funroll-loops -finline-functions -funswitch-loops -fpredictive-commoning -fgcse-after-reload -fipa-cp-clone  ## optimizations for gcc compilers (1/2)
 OPTIMIZE += -ftree-loop-distribute-patterns -fvect-cost-model -ftree-partial-pre   ## optimizations for gcc compilers (2/2)
 ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
 OPTIMIZE += -fopenmp # openmp required compiler flags

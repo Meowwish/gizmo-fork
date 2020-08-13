@@ -23,6 +23,13 @@ def load_hydro_data(filename):
         pdata[field] = load_from_snapshot(field, 0, filename)
     return pdata
 
+def load_stars(filename):
+    star_coords = load_from_snapshot("Coordinates", 4, filename)
+    if star_coords is 0:
+        return None
+    else:
+        return star_coords
+
 def compute_temperature(pdata):
     # *only* if COOL_LINE_METALS is enabled
     #N_species = 10
@@ -63,7 +70,7 @@ def apply_radius_cut(pdata, T):
 def save_phase_plot(input_dens, temp, filename):
     ## make phase plot! (temperature vs n_H)
     dens = input_dens * unitdensity_per_H
-    print(f"density = {dens}")
+
     lognHmin = -6.0
     lognHmax = 3.0
     logTmin = 1.0
@@ -76,17 +83,23 @@ def save_phase_plot(input_dens, temp, filename):
     plt.ylabel(r'$\log_{10}$ temperature (K)')
     plt.tight_layout()
     plt.savefig(filename)
-    plt.clf()
+    plt.close()
 
-def save_slice_plot(mesh, field, filename, colorbar_label=""):
-    rmax = 20
+def plot_stars_on_axis(ax, star_coords, rmax=10.):
+    if star_coords is not None:
+        x = star_coords[:,0]
+        y = star_coords[:,1]
+        r = np.sqrt(x**2 + y**2)
+        ax.scatter(x[r < rmax], y[r < rmax], s=0.1, color='black', alpha=0.5)
+
+def save_slice_plot(mesh, field, filename, colorbar_label="", star_coords=None, rmax=10.):
     res = 1000
     x = y = np.linspace(-rmax,rmax,res)
     X, Y = np.meshgrid(x, y)
 
     #sigma_gas_msun_pc2 = 1e4 * M.SurfaceDensity(M.m,center=np.array([0,0,0]),size=40.,res=res)
     #density_slice_nHcgs =300 * M.Slice(M.Density(),center=np.array([0,0,0]),size=40.,res=res)
-    slice = mesh.Slice(field,center=np.array([0,0,0]),size=40.,res=res)
+    slice = mesh.Slice(field,center=np.array([0,0,0]),size=2*rmax,res=res)
 
     fig,ax = plt.subplots(figsize=(6,6))
     p = ax.imshow(slice, cmap='viridis',
@@ -96,6 +109,8 @@ def save_slice_plot(mesh, field, filename, colorbar_label=""):
                     aspect='equal',
                     norm=colors.LogNorm())
 
+    plot_stars_on_axis(ax, star_coords, rmax=rmax)
+
     ax.set_aspect('equal')
     #fig.colorbar(p,label=r"$\Sigma_{gas}$ $(\rm M_\odot\,pc^{-2})$")
     #fig.colorbar(p, label=r"$n_{H}$ (cm$^{-3}$)")
@@ -103,16 +118,16 @@ def save_slice_plot(mesh, field, filename, colorbar_label=""):
     ax.set_xlabel("X (kpc)")
     ax.set_ylabel("Y (kpc)")
     plt.savefig(filename)
+    plt.close()
 
-def save_density_projection_plot(mesh, filename,
+def save_density_projection_plot(mesh, filename, star_coords=None, rmax=10.,
                                 colorbar_label=r"$\Sigma_{gas}$ $(\rm M_\odot\,pc^{-2})$"):
-    rmax = 20
     res = 1000
     x = y = np.linspace(-rmax,rmax,res)
     X, Y = np.meshgrid(x, y)
 
     sigma_gas_msun_pc2 = 1e4 * mesh.SurfaceDensity(mesh.m,
-                                    center=np.array([0,0,0]),size=40.,res=res)
+                                    center=np.array([0,0,0]),size=2*rmax,res=res)
 
     fig,ax = plt.subplots(figsize=(6,6))
     p = ax.imshow(sigma_gas_msun_pc2, cmap='viridis',
@@ -122,11 +137,14 @@ def save_density_projection_plot(mesh, filename,
                     aspect='equal',
                     norm=colors.LogNorm())
 
+    plot_stars_on_axis(ax, star_coords, rmax=rmax)
+
     ax.set_aspect('equal')
     fig.colorbar(p, label=colorbar_label)
     ax.set_xlabel("X (kpc)")
     ax.set_ylabel("Y (kpc)")
     plt.savefig(filename)
+    plt.close()
 
 def compute_mesh(pdata):
     return Meshoid(pdata["Coordinates"], pdata["Masses"], pdata["SmoothingLength"])

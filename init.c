@@ -316,7 +316,8 @@ void init(void)
 #if defined(FLAG_NOT_IN_PUBLIC_CODE_X) || defined(GALSF_FB_MECHANICAL) || defined(FLAG_NOT_IN_PUBLIC_CODE) || defined(GALSF_FB_THERMAL)
         if(RestartFlag == 0)
         {
-	        P[i].StellarAge = -2.0 * All.InitStellarAgeinGyr / (UNIT_TIME_IN_GYR) * get_random_number(P[i].ID + 3);
+            //P[i].StellarAge = -2.0 * All.InitStellarAgeinGyr / (UNIT_TIME_IN_GYR) * get_random_number(P[i].ID + 3);
+	        P[i].StellarAge = -All.InitStellarAgeinGyr / (UNIT_TIME_IN_GYR);
         }
 #endif
         

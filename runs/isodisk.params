@@ -50,9 +50,9 @@ ResubmitCommand         none   % change this to a shell script if needed
 
 
 %----- Memory allocation 
-MaxMemSize          1500    % sets maximum MPI process memory use in MByte 
-PartAllocFactor     2.0     % memory load allowed for better cpu balance 
-BufferSize          50     % in MByte 
+MaxMemSize          3000    % sets maximum MPI process memory use in MByte 
+PartAllocFactor     5.0     % memory load allowed for better cpu balance 
+BufferSize          1000     % in MByte 
 
 %---- Characteristics of run 
 TimeBegin   0.0    % Beginning of the simulation 
@@ -72,14 +72,15 @@ MaxSizeTimestep         0.001   % for this problem, time unit is Gyr
 
 %---- Tree algorithm, force accuracy, domain update frequency
 % Accuracy of time integration (adapted from Manodeep's recommended parameters)
-ErrTolIntAccuracy       0.00125     % <0.02
-CourantFac              0.1 	    % <0.30
-MaxRMSDisplacementFac   0.125	    % <0.25 (only relevant for cosmological runs)
+%ErrTolIntAccuracy       0.00125     % <0.02
+%CourantFac              0.1 	    % <0.30
+%MaxRMSDisplacementFac   0.125	    % <0.25 (only relevant for cosmological runs)
 % Tree algorithm, force accuracy, domain update frequency
-ErrTolTheta             0.5         % 0.7=standard
-ErrTolForceAcc          0.002       % 0.0025=standard
+%ErrTolTheta             0.5         % 0.7=standard
+%ErrTolForceAcc          0.002       % 0.0025=standard
 
-TreeDomainUpdateFrequency   0.05	% 0.0005-0.05, dept on core+particle number  
+%TreeDomainUpdateFrequency   0.05	% 0.0005-0.05, dept on core+particle number  
+TreeDomainUpdateFrequency   0.1 	% 0.0005-0.05, dept on core+particle number  
 
 %---- System of units 
 UnitLength_in_cm            3.085678e21     % 1.0 kpc/h
@@ -124,7 +125,7 @@ SofteningBndry  0.005    % black holes (if active), or collisionless (type=5)
 %-------------------------------------------------------------------------
 
 InitMetallicity 1.0     % in units of solar metallicity
-InitStellarAge  10.0    % Gyr
+InitStellarAge  1000.0     % Gyr
 
 %------------------------------------------------------------
 %------------------ Additional Fluid Physics ----------------
@@ -150,8 +151,8 @@ TurbDiffusionCoefficient 1.0    % Normalizes diffusion rates relative to Smagori
 
 
 %---- Star Formation parameters (GALSF on)
-CritPhysDensity     10.    %  critical physical density for star formation (cm^(-3))
-SfEffPerFreeFall    0.01     %  SFR/(Mgas/tfreefall) for gas which meets SF criteria
+CritPhysDensity     10.     %  critical physical density for star formation (cm^(-3))
+SfEffPerFreeFall    1.0     %  SFR/(Mgas/tfreefall) for gas which meets SF criteria
 
 
 %-------------- Grackle UVB file (GRACKLE on)

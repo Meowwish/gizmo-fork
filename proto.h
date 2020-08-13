@@ -479,6 +479,7 @@ double calculate_individual_stellar_luminosity(double mdot, double mass, long i)
 double return_probability_of_this_forming_bh_from_seed_model(int i);
 
 // this structure needs to be defined here, because routines for feedback event rates, etc, are shared among files //
+// however, this causes problems when compiling GIZMO with as C++ code (instead of C)!
 struct addFB_evaluate_data_in_
 {
     MyDouble Pos[3], Vel[3], Msne, unit_mom_SNe;
