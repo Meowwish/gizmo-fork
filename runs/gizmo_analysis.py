@@ -81,7 +81,6 @@ def save_phase_plot(input_dens, temp, filename):
     plt.colorbar(label=r'proportional to mass') # unclear what units of this are
     plt.xlabel(r'$\log_{10}$ density ($n_{H}$ [cm$^{-3}$])')
     plt.ylabel(r'$\log_{10}$ temperature (K)')
-    plt.tight_layout()
     plt.savefig(filename)
     plt.close()
 
@@ -107,7 +106,7 @@ def save_slice_plot(mesh, field, filename, colorbar_label="", star_coords=None, 
                     interpolation='nearest',
                     origin='lower',
                     aspect='equal',
-                    norm=colors.LogNorm())
+                    norm=colors.LogNorm(), vmin=10., vmax=1.0e7)
 
     plot_stars_on_axis(ax, star_coords, rmax=rmax)
 
@@ -135,7 +134,7 @@ def save_density_projection_plot(mesh, filename, star_coords=None, rmax=10.,
                     interpolation='nearest',
                     origin='lower',
                     aspect='equal',
-                    norm=colors.LogNorm())
+                    norm=colors.LogNorm(), vmin=1.0, vmax=1.0e3)
 
     plot_stars_on_axis(ax, star_coords, rmax=rmax)
 
