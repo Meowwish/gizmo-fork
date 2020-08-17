@@ -1,0 +1,3 @@
+[submodule "meshoid"]
+	path = meshoid
+	url = https://github.com/mikegrudic/meshoid
