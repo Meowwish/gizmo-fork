@@ -1,4 +1,4 @@
-from meshoid import Meshoid
+from Meshoid import Meshoid
 from load_from_snapshot import load_from_snapshot
 import numpy as np
 import matplotlib.pyplot as plt
@@ -85,12 +85,12 @@ def save_phase_plot(input_dens, temp, filename):
     plt.savefig(filename)
     plt.close()
 
-def plot_stars_on_axis(ax, star_coords, rmax=10.):
+def plot_stars_on_axis(ax, star_coords, rmax=10., s=1.0):
     if star_coords is not None:
         x = star_coords[:,0]
         y = star_coords[:,1]
         r = np.sqrt(x**2 + y**2)
-        ax.scatter(x[r < rmax], y[r < rmax], s=0.1, color='black', alpha=0.5)
+        ax.scatter(x[r < rmax], y[r < rmax], s=s, color='black')
 
 def save_slice_plot(mesh, field, filename, colorbar_label="", star_coords=None, rmax=10.):
     res = 1000

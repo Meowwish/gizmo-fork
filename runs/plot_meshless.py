@@ -16,9 +16,9 @@ if __name__ == '__main__':
         pdata = load_hydro_data(snap)
         temp = compute_temperature(pdata)
         mesh = compute_mesh(pdata)
-        #stars = load_stars(snap)
-        #if stars is not None:
-        #    print(f"\tNumber of stars = {len(stars)}")
+        stars = load_stars(snap)
+        if stars is not None:
+            print(f"\tNumber of stars = {len(stars)}")
         
         phaseplot_file = snap.parent.with_name(snap.name).with_suffix('.phaseplot.pdf')
         if_not_exists(phaseplot_file,
@@ -28,9 +28,10 @@ if __name__ == '__main__':
         sliceplot_file = snap.parent.with_name(snap.name).with_suffix('.slice_temperature.pdf')
         if_not_exists(sliceplot_file,
                       lambda: save_slice_plot(mesh, temp, sliceplot_file,
-                      colorbar_label=r'Temperature (K)', rmax=rmax))
+                            colorbar_label=r'Temperature (K)', rmax=rmax, star_coords=stars))
 
         projplot_file = snap.parent.with_name(snap.name).with_suffix('.projection_density.pdf')
         if_not_exists(projplot_file,
-                      lambda: save_density_projection_plot(mesh, projplot_file, rmax=rmax))
+                      lambda: save_density_projection_plot(mesh, projplot_file,
+                                                           rmax=rmax, star_coords=stars))
                       
