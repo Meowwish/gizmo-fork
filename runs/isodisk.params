@@ -43,7 +43,7 @@ TimeBetStatistics       0.001   % Gyr
 
 
 %---- CPU-time limits 
-TimeLimitCPU            50000  % seconds 
+TimeLimitCPU            86400  % seconds [= 24 hours]
 CpuTimeBetRestartFile   3600   % seconds
 ResubmitOn              0
 ResubmitCommand         none   % change this to a shell script if needed
@@ -67,8 +67,8 @@ OmegaBaryon             0       % =0 for non-cosmological
 HubbleParam             1       % little 'h'; =1 for non-cosmological runs
 
 %---- Accuracy of time integration 
-MinSizeTimestep         1.0e-9  % for this problem, time unit is Gyr
-MaxSizeTimestep         0.001   % for this problem, time unit is Gyr
+MinSizeTimestep         1.0e-10  % for this problem, time unit is Gyr
+MaxSizeTimestep         0.001	 % for this problem, time unit is Gyr
 
 %---- Tree algorithm, force accuracy, domain update frequency
 % Accuracy of time integration (adapted from Manodeep's recommended parameters)
@@ -152,7 +152,7 @@ TurbDiffusionCoefficient 1.0    % Normalizes diffusion rates relative to Smagori
 
 %---- Star Formation parameters (GALSF on)
 CritPhysDensity     10.     %  critical physical density for star formation (cm^(-3))
-SfEffPerFreeFall    1.0     %  SFR/(Mgas/tfreefall) for gas which meets SF criteria
+SfEffPerFreeFall    0.01     %  SFR/(Mgas/tfreefall) for gas which meets SF criteria
 
 
 %-------------- Grackle UVB file (GRACKLE on)
