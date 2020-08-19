@@ -9,7 +9,7 @@ def if_not_exists(filename, func):
 if __name__ == '__main__':
 
     output_dir = Path("./output")
-    snaps = list(output_dir.glob("snapshot_*.hdf5"))
+    snaps = list(output_dir.glob("snapshot_200.hdf5"))
 
     for snap in snaps:
         print(f"plotting {snap}...")
@@ -24,14 +24,25 @@ if __name__ == '__main__':
         if_not_exists(phaseplot_file,
                       lambda: save_phase_plot(mesh.Density(), temp, phaseplot_file))
 
-        rmax = 10.0 # kpc
-        sliceplot_file = snap.parent.with_name(snap.name).with_suffix('.slice_temperature.pdf')
+        rmax = 20.0 # kpc
+
+        sliceplot_file = snap.parent.with_name(snap.name).with_suffix('.slice_temperature+stars.pdf')
         if_not_exists(sliceplot_file,
                       lambda: save_slice_plot(mesh, temp, sliceplot_file,
                             colorbar_label=r'Temperature (K)', rmax=rmax, star_coords=stars))
 
-        projplot_file = snap.parent.with_name(snap.name).with_suffix('.projection_density.pdf')
+        projplot_file = snap.parent.with_name(snap.name).with_suffix('.projection_density+stars.pdf')
         if_not_exists(projplot_file,
                       lambda: save_density_projection_plot(mesh, projplot_file,
                                                            rmax=rmax, star_coords=stars))
+
+        sliceplot_file = snap.parent.with_name(snap.name).with_suffix('.slice_temperature.pdf')
+        if_not_exists(sliceplot_file,
+                      lambda: save_slice_plot(mesh, temp, sliceplot_file,
+                            colorbar_label=r'Temperature (K)', rmax=rmax))
+
+        projplot_file = snap.parent.with_name(snap.name).with_suffix('.projection_density.pdf')
+        if_not_exists(projplot_file,
+                      lambda: save_density_projection_plot(mesh, projplot_file,
+                                                           rmax=rmax))
                       
