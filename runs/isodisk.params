@@ -1,24 +1,3 @@
-% Example compile-time options:
-%  (HYDRO_MESHLESS_FINITE_MASS and most other 
-%   choices below are optional, replace with your
-%   choice of hydro/mhd options). Here are some example of possible flags:
-%
-%        HYDRO_MESHLESS_FINITE_MASS
-%        COOLING
-%        MULTIPLEDOMAINS=64
-%        ADAPTIVE_GRAVSOFT_FORGAS
-%        METALS
-%        GALSF
-%        GALSF_SFR_MOLECULAR_CRITERION
-%        GALSF_SFR_VIRIAL_SF_CRITERION=0
-%        GALSF_SUBGRID_WINDS
-%
-% for the version of this problem with MHD, additionally enable:
-%        MAGNETIC
-%        MHD_B_SET_IN_PARAMS
-% and set Bini as below. You may want to experiment with 
-%   setting MHD_CONSTRAINED_GRADIENT=1 as well.
-% 
 
 %----  Relevant files
 InitCondFile   agora_ic
