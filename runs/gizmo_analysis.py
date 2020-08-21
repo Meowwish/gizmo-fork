@@ -17,6 +17,9 @@ unitenergypermass_cgs = unitlength_cgs**(2) * unittime_cgs**(-2) # erg g^{-1}
 unitdensity_cgs = unitmass_cgs * unitlength_cgs**(-3) # g cm^{-3}
 unitdensity_per_H = unitdensity_cgs / m_H
 
+# plot resolution
+fig_dpi = 300
+
 def load_hydro_data(filename):
     pdata = {}
     for field in "Masses", "Coordinates", "SmoothingLength", "Velocities", "InternalEnergy", "ElectronAbundance":
@@ -85,7 +88,7 @@ def save_phase_plot(input_dens, temp, filename):
     plt.colorbar(label=r'proportional to mass') # unclear what units of this are
     plt.xlabel(r'$\log_{10}$ density ($n_{H}$ [cm$^{-3}$])')
     plt.ylabel(r'$\log_{10}$ temperature (K)')
-    plt.savefig(filename)
+    plt.savefig(filename, dpi=fig_dpi)
     plt.close()
 
 def plot_stars_on_axis(ax, star_coords, rmax=10., s=1.0):
@@ -96,7 +99,7 @@ def plot_stars_on_axis(ax, star_coords, rmax=10., s=1.0):
         ax.scatter(x[r < rmax], y[r < rmax], s=s, color='black')
 
 def save_slice_plot(mesh, field, filename, colorbar_label="", star_coords=None, rmax=10.):
-    res = 1000
+    res = 2000
     x = y = np.linspace(-rmax,rmax,res)
     X, Y = np.meshgrid(x, y)
 
@@ -120,12 +123,12 @@ def save_slice_plot(mesh, field, filename, colorbar_label="", star_coords=None, 
     fig.colorbar(p, label=colorbar_label)
     ax.set_xlabel("X (kpc)")
     ax.set_ylabel("Y (kpc)")
-    plt.savefig(filename)
+    plt.savefig(filename, dpi=fig_dpi)
     plt.close()
 
 def save_density_projection_plot(mesh, filename, star_coords=None, rmax=10.,
                                 colorbar_label=r"$\Sigma_{gas}$ $(\rm M_\odot\,pc^{-2})$"):
-    res = 1000
+    res = 2000
     x = y = np.linspace(-rmax,rmax,res)
     X, Y = np.meshgrid(x, y)
 
@@ -146,7 +149,7 @@ def save_density_projection_plot(mesh, filename, star_coords=None, rmax=10.,
     fig.colorbar(p, label=colorbar_label)
     ax.set_xlabel("X (kpc)")
     ax.set_ylabel("Y (kpc)")
-    plt.savefig(filename)
+    plt.savefig(filename, dpi=fig_dpi)
     plt.close()
 
 def compute_mesh(pdata):

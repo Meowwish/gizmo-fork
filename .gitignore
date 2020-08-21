@@ -3,6 +3,7 @@ GIZMO_config.h
 compile_time_info.c
 *.hdf5
 *.pdf
+*.png
 
 # Prerequisites
 *.d

@@ -19,8 +19,7 @@ cd /scratch/jh2/bw0729/gizmo-fork/runs
 ## restart GIZMO
 mpirun ./GIZMO isodisk.params 1 > gizmo_isolated_disk.log 2>&1
 
-
-
-
-
+## restart GIZMO from specific snapshot
+#SNAPSHOT=102
+#mpirun ./GIZMO isodisk.params 2 $SNAPSHOT > gizmo_isolated_disk.log 2>&1
 
