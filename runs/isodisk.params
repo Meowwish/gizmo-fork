@@ -46,7 +46,7 @@ OmegaBaryon             0       % =0 for non-cosmological
 HubbleParam             1       % little 'h'; =1 for non-cosmological runs
 
 %---- Accuracy of time integration 
-MinSizeTimestep         1.0e-10  % for this problem, time unit is Gyr
+MinSizeTimestep         1.0e-12  % for this problem, time unit is Gyr
 MaxSizeTimestep         0.001	 % for this problem, time unit is Gyr
 
 %---- Tree algorithm, force accuracy, domain update frequency
