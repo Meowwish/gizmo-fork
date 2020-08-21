@@ -43,14 +43,18 @@ def compute_temperature(pdata):
     H_term = x_H
     He_term = y_Helium/4.0
     z_term = z_metals/2.0   # this term is ignored
-    e_term = x_H + y_Helium*(2)/4.0
-    mu_fullyionized = 1.0 / (H_term + He_term + e_term)
+    e_term_fullyionized = x_H + y_Helium*(2)/4.0
+    mu_fullyionized = 1.0 / (H_term + He_term + e_term_fullyionized)
 
     #print(f"fully-ionized mean molecular weight (dimensionless): {mu_fullyionized}")
     #print(f"maximium electron abundance: {np.max(pdata['ElectronAbundance'])}")
 
     InternalEnergy = pdata["InternalEnergy"] * unitenergypermass_cgs
-    e_term = pdata["ElectronAbundance"]
+    if "ElectronAbundance" in pdata.keys():
+        e_term = pdata["ElectronAbundance"]
+    else:
+        e_term = e_term_fullyionized
+    
     mu = 1.0 / (H_term + He_term + e_term)
 
     mean_molecular_weight = mu * m_H
