@@ -118,7 +118,7 @@ def save_slice_plot(mesh, field, filename, colorbar_label="", star_coords=None, 
                     interpolation='nearest',
                     origin='lower',
                     aspect='equal',
-                    norm=colors.LogNorm(), vmin=10., vmax=1.0e7)
+                    norm=colors.LogNorm(vmin=10., vmax=1.0e7))
 
     plot_stars_on_axis(ax, star_coords, rmax=rmax)
 
@@ -148,7 +148,7 @@ def save_density_projection_plot(mesh, filename, star_coords=None, rmax=10.,
                     interpolation='nearest',
                     origin='lower',
                     aspect='equal',
-                    norm=colors.LogNorm(), vmin=1.0, vmax=1.0e3)
+                    norm=colors.LogNorm(vmin=1.0, vmax=1.0e3))
 
     plot_stars_on_axis(ax, star_coords, rmax=rmax)
 

@@ -17,13 +17,10 @@ if __name__ == '__main__':
     snaps = [Path(args.filename)]    
     for snap in snaps:
         
-        print(f"plotting {snap}...")
         pdata = load_hydro_data(snap)
         temp = compute_temperature(pdata)
         mesh = compute_mesh(pdata)
         stars = load_stars(snap)
-        if stars is not None:
-            print(f"\tNumber of stars = {len(stars)}")
         
         phaseplot_file = snap.parent.with_name(snap.name).with_suffix('.phaseplot.png')
         if_not_exists(phaseplot_file,
