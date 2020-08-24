@@ -9,7 +9,8 @@ def make_agora_IC(filename="agora_ic.hdf5"):
     T_halo = 1.0e6      # K
     boltzmann_cgs = 1.380658e-16 # erg K^{-1}
     m_H = 1.6733e-24    # g
-    mean_molecular_weight = 0.6 * m_H  # fully ionized solar metallicity gas
+    mu = 0.62111795     # dimensionless mean molecular weight
+    mean_molecular_weight = mu * m_H  # fully ionized solar metallicity gas
     c_v = (boltzmann_cgs / mean_molecular_weight) * (1.0 / (gamma_eos - 1.0))
 
     # conversion factor from specific energy in code units to specific energy in cgs

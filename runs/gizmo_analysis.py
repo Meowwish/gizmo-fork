@@ -24,6 +24,8 @@ def load_hydro_data(filename):
     pdata = {}
     for field in "Masses", "Coordinates", "SmoothingLength", "Velocities", "InternalEnergy", "ElectronAbundance":
         pdata[field] = load_from_snapshot(field, 0, filename)
+
+    pdata["Metallicity"] = load_from_snapshot("Metallicity", 0, filename)
     return pdata
 
 def load_stars(filename):
@@ -34,15 +36,18 @@ def load_stars(filename):
         return star_coords
 
 def compute_temperature(pdata):
-    # *only* if COOL_LINE_METALS is enabled
-    #N_species = 10
-    #MetallicityMask = np.ones(1+N_species)
-    #pdata["Metallicity"] = load_from_snapshot("Metallicity", 0, "output/", snap_num, axis_mask=MetallicityMask)
-    #y_Helium = pdata["Metallicity"][:,1]
+    # ONLY if COOL_LINE_METALS is enabled
+    metal_mass_frac = pdata["Metallicity"][:,0] # total metallicity (mass fraction)
+    He_mass_frac = pdata["Metallicity"][:,1]
+    y_Helium = He_mass_frac
+    z_metals = metal_mass_frac
 
-    x_H = 0.75
-    y_Helium = 0.23
-    z_metals = 0.02
+    # otherwise, assume solar metallicity
+    #y_Helium = 0.23
+    #z_metals = 0.02
+
+    x_H = 1.0 - y_Helium - z_metals
+
     H_term = x_H
     He_term = y_Helium/4.0
     z_term = z_metals/2.0   # this term is ignored
@@ -53,7 +58,7 @@ def compute_temperature(pdata):
     #print(f"maximium electron abundance: {np.max(pdata['ElectronAbundance'])}")
 
     InternalEnergy = pdata["InternalEnergy"] * unitenergypermass_cgs
-    if "ElectronAbundance" in pdata.keys():
+    if pdata['ElectronAbundance'] is not 0:
         e_term = pdata["ElectronAbundance"]
     else:
         e_term = e_term_fullyionized
@@ -114,6 +119,7 @@ def save_slice_plot(mesh, field, filename, colorbar_label="", star_coords=None, 
                     origin='lower',
                     aspect='equal',
                     norm=colors.LogNorm(), vmin=10., vmax=1.0e7)
+    ax.contourf
 
     plot_stars_on_axis(ax, star_coords, rmax=rmax)
 
