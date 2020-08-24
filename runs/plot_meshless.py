@@ -1,6 +1,8 @@
 import numpy as np
+import argparse
 from pathlib import Path
 from gizmo_analysis import *
+
 
 def if_not_exists(filename, func):
     if not Path(filename).exists():
@@ -8,10 +10,13 @@ def if_not_exists(filename, func):
 
 if __name__ == '__main__':
 
-    output_dir = Path("./output")
-    snaps = list(output_dir.glob("snapshot_*.hdf5"))
-
+    parser = argparse.ArgumentParser(description='plot a GIZMO output')
+    parser.add_argument('filename', help='hdf5 snapshot filename')
+    args = parser.parse_args()
+    
+    snaps = [Path(args.filename)]    
     for snap in snaps:
+        
         print(f"plotting {snap}...")
         pdata = load_hydro_data(snap)
         temp = compute_temperature(pdata)
@@ -36,13 +41,13 @@ if __name__ == '__main__':
                       lambda: save_density_projection_plot(mesh, projplot_file,
                                                            rmax=rmax, star_coords=stars))
 
-#        sliceplot_file = snap.parent.with_name(snap.name).with_suffix('.slice_temperature.png')
-#        if_not_exists(sliceplot_file,
-#                      lambda: save_slice_plot(mesh, temp, sliceplot_file,
-#                            colorbar_label=r'Temperature (K)', rmax=rmax))
+        sliceplot_file = snap.parent.with_name(snap.name).with_suffix('.slice_temperature.png')
+        if_not_exists(sliceplot_file,
+                      lambda: save_slice_plot(mesh, temp, sliceplot_file,
+                            colorbar_label=r'Temperature (K)', rmax=rmax))
 
-#        projplot_file = snap.parent.with_name(snap.name).with_suffix('.projection_density.png')
-#        if_not_exists(projplot_file,
-#                      lambda: save_density_projection_plot(mesh, projplot_file,
-#                                                           rmax=rmax))
+        projplot_file = snap.parent.with_name(snap.name).with_suffix('.projection_density.png')
+        if_not_exists(projplot_file,
+                      lambda: save_density_projection_plot(mesh, projplot_file,
+                                                           rmax=rmax))
                       
