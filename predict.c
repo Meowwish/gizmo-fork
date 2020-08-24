@@ -116,7 +116,7 @@ void drift_particle(int i, integertime time1)
         dt_drift = (time1 - time0) * All.Timebase_interval;
     
     
-#if !defined(FREEZE_HYDRO)
+//#if !defined(FREEZE_HYDRO)
 #if defined(HYDRO_MESHLESS_FINITE_VOLUME)
     if(P[i].Type==0) {advect_mesh_point(i,dt_drift);} else {for(j=0;j<3;j++) {P[i].Pos[j] += P[i].Vel[j] * dt_drift;}}
 #elif (SINGLE_STAR_TIMESTEPPING > 0)
@@ -142,7 +142,7 @@ void drift_particle(int i, integertime time1)
 #else
     for(j=0;j<3;j++) {P[i].Pos[j] += P[i].Vel[j] * dt_drift;}
 #endif
-#endif // FREEZE_HYDRO clause
+//#endif // FREEZE_HYDRO clause
 #if (NUMDIMS==1)
     P[i].Pos[1]=P[i].Pos[2]=0; // force zero-ing
 #endif

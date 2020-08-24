@@ -214,7 +214,7 @@ void set_non_standard_physics_for_current_time(void)
     IonizeParams();
 #endif
     
-#if defined(COOL_METAL_LINES_BY_SPECIES) && !defined(FLAG_NOT_IN_PUBLIC_CODE) 
+#if defined(COOL_METAL_LINES_BY_SPECIES) && defined(COOLING) && !defined(FLAG_NOT_IN_PUBLIC_CODE) 
     /* load the metal-line cooling tables appropriate for the UV background */
     if(All.ComovingIntegrationOn) LoadMultiSpeciesTables();
 #endif
