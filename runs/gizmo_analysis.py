@@ -119,7 +119,6 @@ def save_slice_plot(mesh, field, filename, colorbar_label="", star_coords=None, 
                     origin='lower',
                     aspect='equal',
                     norm=colors.LogNorm(), vmin=10., vmax=1.0e7)
-    ax.contourf
 
     plot_stars_on_axis(ax, star_coords, rmax=rmax)
 
@@ -140,6 +139,8 @@ def save_density_projection_plot(mesh, filename, star_coords=None, rmax=10.,
 
     sigma_gas_msun_pc2 = 1e4 * mesh.SurfaceDensity(mesh.m,
                                     center=np.array([0,0,0]),size=2*rmax,res=res)
+
+    sigma_gas_msun_pc2 = np.swapaxes(sigma_gas_msun_pc2, 0, 1)
 
     fig,ax = plt.subplots(figsize=(6,6))
     p = ax.imshow(sigma_gas_msun_pc2, cmap='viridis',
