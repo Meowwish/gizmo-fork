@@ -1,6 +1,7 @@
 import numpy as np
 import h5py as h5py
 import pandas as pd # to read csv files
+from pathlib import Path
 
 def make_agora_IC(filename="agora_ic.hdf5"):
 
@@ -31,16 +32,17 @@ def make_agora_IC(filename="agora_ic.hdf5"):
     # Length: kpc
 
     # dark matter
-    dm = pd.read_csv("agora_lowres/halo.dat", delimiter=' ', skipinitialspace=True,
+    agora_dir = Path("./agora_medres")
+    dm = pd.read_csv(agora_dir / "halo.dat", delimiter=' ', skipinitialspace=True,
                         names=['x','y','z','vx','vy','vz','mass'])
     # bulge stars
-    bulge = pd.read_csv("agora_lowres/bulge.dat", delimiter=' ', skipinitialspace=True,
+    bulge = pd.read_csv(agora_dir / "bulge.dat", delimiter=' ', skipinitialspace=True,
                         names=['x','y','z','vx','vy','vz','mass'])
     # disk stars
-    disk = pd.read_csv("agora_lowres/disk.dat", delimiter=' ', skipinitialspace=True,
+    disk = pd.read_csv(agora_dir / "disk.dat", delimiter=' ', skipinitialspace=True,
                         names=['x','y','z','vx','vy','vz','mass'])
     # gas particles
-    gas = pd.read_csv("agora_lowres/gas.dat", delimiter=' ', skipinitialspace=True,
+    gas = pd.read_csv(agora_dir / "gas.dat", delimiter=' ', skipinitialspace=True,
                         names=['x','y','z','vx','vy','vz','mass','u_gas'])
 
     #%---- System of units used in GIZMO parameterfile
@@ -66,6 +68,8 @@ def make_agora_IC(filename="agora_ic.hdf5"):
     bz_g=0.
     # masses
     m_g=gas['mass']*mass_fac
+    print(f"Gas particle mass: {1e10*m_g[0]:.3g}")
+
     # set the initial internal energy per unit mass. recall gizmo uses this as the initial 'temperature' variable
     #  this can be overridden with the InitGasTemp variable (which takes an actual temperature)
     R_g = np.sqrt(x_g**2 + y_g**2)

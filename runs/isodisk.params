@@ -30,8 +30,8 @@ ResubmitCommand         none   % change this to a shell script if needed
 
 %----- Memory allocation 
 MaxMemSize          3000    % sets maximum MPI process memory use in MByte 
-PartAllocFactor     5.0     % memory load allowed for better cpu balance 
-BufferSize          1000     % in MByte 
+PartAllocFactor     3.0     % memory load allowed for better cpu balance 
+BufferSize          500     % in MByte 
 
 %---- Characteristics of run 
 TimeBegin   0.0    % Beginning of the simulation 
@@ -111,10 +111,6 @@ InitStellarAge  1000.0     % Gyr
 %------------------------------------------------------------
 
 %---- Magneto-Hydrodynamics Parameters (MAGNETIC on)
-%--- Initial B-Field Strengths (if MHD_B_SET_IN_PARAMS on, otherwise read from IC file)
-BiniX   1.0e-8    % initial B_x, in code units
-BiniY   1.0e-8    % initial B_y, in code units
-BiniZ   1.0e-6    % initial B_z, in code units
 
 %--- Dedner Divergence-cleaning Parameters (for MHD)
 DivBcleaningParabolicSigma      0.2  % <1, ~0.2-0.5 needed for stability
