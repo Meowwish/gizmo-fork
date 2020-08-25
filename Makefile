@@ -986,6 +986,9 @@ GMP_INCL =
 GMP_LIBS =
 MKL_INCL =
 MKL_LIBS =
+GRACKLE_HOME = $(HOME)/grackle_install
+GRACKLEINCL = -I$(GRACKLE_HOME)/include
+GRACKLELIBS = -L$(GRACKLE_HOME)/lib -Wl,-rpath=$(GRACKLE_HOME)/lib
 GSL_INCL = -I$(GSL_HOME)/include
 GSL_LIBS = -L$(GSL_HOME)/lib
 HDF5INCL = -I$(HDF5_HOME)/include -DH5_USE_16_API
@@ -1010,6 +1013,9 @@ GMP_INCL = #
 GMP_LIBS = #
 MKL_INCL = -I$(MKL_HOME)/include
 MKL_LIBS = -L$(MKL_HOME)/lib -mkl=sequential
+GRACKLE_HOME = $(HOME)/grackle_install
+GRACKLEINCL = -I$(GRACKLE_HOME)/include
+GRACKLELIBS = -L$(GRACKLE_HOME)/lib -Wl,-rpath=$(GRACKLE_HOME)/lib
 GSL_INCL = -I$(GSL_HOME)/include
 GSL_LIBS = -L$(GSL_HOME)/lib
 HDF5INCL = -I$(HDF5_HOME)/include -DH5_USE_16_API
@@ -1216,8 +1222,8 @@ endif
 # if grackle libraries are installed they must be a shared library as defined here
 ifeq (COOL_GRACKLE,$(findstring COOL_GRACKLE,$(CONFIGVARS)))
 OPTIONS += -DCONFIG_BFLOAT_8
-GRACKLEINCL =
-GRACKLELIBS = -lgrackle
+GRACKLEINCL +=
+GRACKLELIBS += -lgrackle
 else
 GRACKLEINCL =
 GRACKLELIBS =
