@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#PBS -N gizmo_MHD_AGORA_IC_lowres
+#PBS -N gizmo_MHD_AGORA_IC_medres
 #PBS -P jh2
 #PBS -q normal
 #PBS -l ncpus=48
