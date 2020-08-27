@@ -1,6 +1,6 @@
 
 %----  Relevant files
-InitCondFile   agora_ic
+InitCondFile   agora_ic_lowres_relaxed
 OutputDir      output
 
 %---- File formats 
@@ -132,7 +132,7 @@ SfEffPerFreeFall    0.01     %  SFR/(Mgas/tfreefall) for gas which meets SF crit
 
 %-------------- Grackle UVB file (GRACKLE on)
 % (currently unused in runs)
-%GrackleDataFile		     CloudyData_UVB=HM2012.h5
+GrackleDataFile		     CloudyData_UVB=HM2012.h5
 
 
 %-------------------------------------------------------------------------
