@@ -1,6 +1,6 @@
 
 %----  Relevant files
-InitCondFile   agora_ic_relaxed
+InitCondFile   agora_ic_medres_unrelaxed
 OutputDir      output
 
 %---- File formats 

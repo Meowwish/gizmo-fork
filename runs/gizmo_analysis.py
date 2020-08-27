@@ -37,23 +37,23 @@ def load_stars(filename):
 
 def compute_temperature(pdata):
     # ONLY if COOL_LINE_METALS is enabled
-    metal_mass_frac = pdata["Metallicity"][:,0] # total metallicity (mass fraction)
-    He_mass_frac = pdata["Metallicity"][:,1]
-    y_Helium = He_mass_frac
-    z_metals = metal_mass_frac
+    #metal_mass_frac = pdata["Metallicity"][:,0] # total metallicity (mass fraction)
+    #He_mass_frac = pdata["Metallicity"][:,1]
+    #y_Helium = He_mass_frac
+    #z_metals = metal_mass_frac
 
     # otherwise, assume solar metallicity
-    #y_Helium = 0.23
-    #z_metals = 0.02
+    y_Helium = 0.23
+    z_metals = 0.02
 
     x_H = 1.0 - y_Helium - z_metals
 
     H_term = x_H
     He_term = y_Helium/4.0
     z_term = z_metals/2.0   # this term is ignored
+
     e_term_fullyionized = x_H + y_Helium*(2)/4.0
     mu_fullyionized = 1.0 / (H_term + He_term + e_term_fullyionized)
-
     #print(f"fully-ionized mean molecular weight (dimensionless): {mu_fullyionized}")
     #print(f"maximium electron abundance: {np.max(pdata['ElectronAbundance'])}")
 
