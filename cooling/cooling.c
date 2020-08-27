@@ -1306,15 +1306,15 @@ void InitCool(void)
     
 #ifdef COOL_GRACKLE
     InitGrackle();
-#endif
-    
+#else
     InitCoolMemory();
     MakeCoolingTable();
     ReadIonizeParams("TREECOOL");
     IonizeParams();
 #ifdef COOL_METAL_LINES_BY_SPECIES
     LoadMultiSpeciesTables();
-#endif
+#endif // COOL_METAL_LINES_BY_SPECIES
+#endif // COOL_GRACKLE
 }
 
 
