@@ -986,7 +986,7 @@ GMP_INCL =
 GMP_LIBS =
 MKL_INCL =
 MKL_LIBS =
-GRACKLE_HOME = $(HOME)/grackle_install
+GRACKLE_HOME = $(shell pwd)/grackle_install
 GRACKLEINCL = -I$(GRACKLE_HOME)/include
 GRACKLELIBS = -L$(GRACKLE_HOME)/lib -Wl,-rpath=$(GRACKLE_HOME)/lib
 GSL_INCL = -I$(GSL_HOME)/include
@@ -1013,7 +1013,7 @@ GMP_INCL = #
 GMP_LIBS = #
 MKL_INCL = -I$(MKL_HOME)/include
 MKL_LIBS = -L$(MKL_HOME)/lib -mkl=sequential
-GRACKLE_HOME = $(HOME)/grackle_install
+GRACKLE_HOME = $(shell pwd)/grackle_install
 GRACKLEINCL = -I$(GRACKLE_HOME)/include
 GRACKLELIBS = -L$(GRACKLE_HOME)/lib -Wl,-rpath=$(GRACKLE_HOME)/lib
 GSL_INCL = -I$(GSL_HOME)/include
