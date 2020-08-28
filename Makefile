@@ -971,13 +971,14 @@ endif
 
 #----------------------------------------------------------------------------------------------
 ifeq ($(SYSTYPE),"Ubuntu")
+export OMPI_CC = clang
+export OMPI_CXX = clang++
+export OMPI_FC = clang
 CC       = mpicc
-#CC      = mpicxx	# compile C as C++
 CXX      = mpicxx
 FC       = mpif90
 # WARNING: do *NOT* run with -ffast-math !!
-OPTIMIZE = -g -Wc++-compat -O1 -funroll-loops -finline-functions -funswitch-loops -fpredictive-commoning -fgcse-after-reload -fipa-cp-clone  ## optimizations for gcc compilers (1/2)
-OPTIMIZE += -ftree-loop-distribute-patterns -fvect-cost-model -ftree-partial-pre   ## optimizations for gcc compilers (2/2)
+OPTIMIZE += -O2 -march=native -ffp-contract=off -flto=thin -fstandalone-debug # clang options
 ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
 OPTIMIZE += -fopenmp # openmp required compiler flags
 FC       = mpif90
@@ -1003,7 +1004,7 @@ ifeq ($(SYSTYPE),"Gadi")
 CC       =  mpicc
 CXX      =  mpicxx
 FC       =  mpif90 -nofor_main
-OPTIMIZE = -g -O3 -xCORE-AVX2 -ipo -funroll-loops -fp-model precise
+OPTIMIZE = -g -O3 -xCORE-AVX2 -ipo -funroll-loops -fp-model precise -prec-div -prec-sqrt -no-ftz -unroll-aggressive -ip -no-ipo
 # unless you like code to run slow, do not use AVX512 !
 #OPTIMIZE = -O3 -xCORE-AVX2 -ipo -funroll-loops -no-prec-div -fp-model fast=2
 ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
@@ -1241,7 +1242,7 @@ LIBS += -lpthread
 endif
 
 $(EXEC): $(OBJS) $(FOBJS)  
-	$(FC) $(OPTIMIZE) $(OBJS) $(FOBJS) $(LIBS) $(RLIBS) -o $(EXEC)
+	$(CXX) $(OPTIMIZE) $(OBJS) $(FOBJS) $(LIBS) $(RLIBS) -o $(EXEC)
 
 $(OBJS): $(INCL)  $(CONFIG)  compile_time_info.c
 
