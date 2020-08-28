@@ -108,7 +108,7 @@ def plot_stars_on_axis(ax, star_coords, rmax=10., s=1.0):
         ax.scatter(x[r < rmax], y[r < rmax], s=s, color='black')
 
 def save_slice_plot(mesh, field, filename, colorbar_label="", star_coords=None, rmax=10.):
-    res = 2000
+    res = 1000
     x = y = np.linspace(-rmax,rmax,res)
     X, Y = np.meshgrid(x, y)
 
@@ -137,7 +137,7 @@ def save_slice_plot(mesh, field, filename, colorbar_label="", star_coords=None, 
 
 def save_density_projection_plot(mesh, filename, star_coords=None, rmax=10.,
                                 colorbar_label=r"$\Sigma_{gas}$ $(\rm M_\odot\,pc^{-2})$"):
-    res = 2000
+    res = 1000
     x = y = np.linspace(-rmax,rmax,res)
     X, Y = np.meshgrid(x, y)
 
