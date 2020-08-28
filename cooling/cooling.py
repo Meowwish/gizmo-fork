@@ -12,8 +12,8 @@ if __name__ == '__main__':
     gamma_eos = 5./3.
     boltzmann_cgs = 1.380658e-16 # erg K^{-1}
     m_H = 1.6733e-24    # g
-    mu = 0.62111795     # dimensionless mean molecular weight
-    mean_molecular_weight = mu * m_H  # fully ionized solar metallicity gas (not quite right!)
+    mu = 0.85     # dimensionless mean molecular weight
+    mean_molecular_weight = mu * m_H  # ~neutral solar metallicity gas
     c_v = (boltzmann_cgs / mean_molecular_weight) * (1.0 / (gamma_eos - 1.0))
 
     def coolrate_compton(T, n_H, X_e=1e-3):
@@ -94,6 +94,14 @@ if __name__ == '__main__':
     nH_range = 10.**(lognH_range)
     nH_grid, T_grid = np.meshgrid(nH_range, T_range)
 
+    P_min = np.min(nH_range) * boltzmann_cgs * np.min(T_range)
+    P_max = np.max(nH_range) * boltzmann_cgs * np.max(T_range)
+    logPmin = np.log10(P_min)
+    logPmax = np.log10(P_max)
+    logP_range = np.linspace(logPmin, logPmax, 100)
+    P_range = 10.**(logP_range)
+    nH_grid, P_grid = np.meshgrid(nH_range, P_range)
+
     coolrates  = coolrate_cold(T_grid, nH_grid)
     coolrates += coolrate_cosmicrays(nH_grid)
     coolrates += coolrate_photoelectric(T_grid, nH_grid)
@@ -129,6 +137,46 @@ if __name__ == '__main__':
         plt.close()
 
     plot_coolrates(nH_grid, T_grid, coolrates, filename="coolrates_neutralgas_noUVB.png")
-
     coolrates += coolrate_photoionization(T_grid, nH_grid)
     plot_coolrates(nH_grid, T_grid, coolrates, filename="coolrates_neutralgas.png")
+
+    ## compute cooling rates as a function of thermal pressure, density
+
+    Tgrid_from_P = P_grid / (nH_grid * boltzmann_cgs)
+
+    coolratesP  = coolrate_cold(Tgrid_from_P, nH_grid)
+    coolratesP += coolrate_cosmicrays(nH_grid)
+    coolratesP += coolrate_photoelectric(Tgrid_from_P, nH_grid)
+    coolratesP += coolrate_photoionization(Tgrid_from_P, nH_grid)
+    coolratesP += coolrate_dust(Tgrid_from_P)
+    coolratesP += coolrate_compton(Tgrid_from_P, nH_grid)
+
+    def plot_coolrates_pressure(nH_grid, P_grid, coolrates, filename="coolrate_P.png"):
+        coolrates_per_vol = nH_grid**2 * coolrates
+        rho = m_H * nH_grid
+        T_grid = P_grid / (nH_grid * boltzmann_cgs)
+        E_thermal = rho * c_v * T_grid
+        cooltime = np.abs( E_thermal / coolrates_per_vol / 3.15e7 )
+
+        ## plot cooltime
+        fig, ax = plt.subplots(figsize=(6,4))
+        x = lognH_range
+        y = logP_range
+        p = ax.imshow(cooltime,
+                        cmap='viridis',
+                        extent=[x.min(), x.max(), y.min(), y.max()],
+                        interpolation='nearest',
+                        origin='lower',
+                        aspect='auto',
+                        norm=colors.LogNorm(vmin=1e2, vmax=1e9))
+
+        fig.colorbar(p)
+        ax.set_title("cooling time [yr]")
+        ax.set_xlabel(r"\log n_H (H cm$^{-3}$)")
+        ax.set_ylabel(r"\log P (erg cm^{-3})")
+        fig.tight_layout()
+        fig_dpi = 300
+        plt.savefig(filename, dpi=fig_dpi)
+        plt.close()
+
+    plot_coolrates_pressure(nH_grid, P_grid, coolratesP)

@@ -702,9 +702,9 @@ void output_log_messages(void)
       for(i = All.HighestOccupiedTimeBin; i >= 0 && tot_count[i] > 0; i--) {if(sum) {frac_CPU_TimeBin[i] /= sum;}}
 
 
-        printf("Occupied timebins: non-cells     cells       dt                 cumulative A D    avg-time  cpu-frac\n");
+        printf("Occupied timebins: non-gas     gaspart       dt                 cumulative A D    avg-time  cpu-frac\n");
 #ifndef IO_REDUCED_MODE
-        fprintf(FdTimebin,"Occupied timebins: non-cells     cells       dt                 cumulative A D    avg-time  cpu-frac\n");
+        fprintf(FdTimebin,"Occupied timebins: non-gas     gaspart       dt                 cumulative A D    avg-time  cpu-frac\n");
 #endif
         for(i = TIMEBINS - 1, tot = tot_sph = 0; i >= 0; i--)
             if(tot_count_sph[i] > 0 || tot_count[i] > 0)
