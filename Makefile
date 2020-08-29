@@ -977,8 +977,9 @@ export OMPI_FC = clang
 CC       = mpicc
 CXX      = mpicxx
 FC       = mpif90
+LDFLAGS	 = -lgfortran
 # WARNING: do *NOT* run with -ffast-math !!
-OPTIMIZE += -O2 -march=native -ffp-contract=off -flto=thin -fstandalone-debug # clang options
+OPTIMIZE += -O2 -march=native -ffp-contract=off -fstandalone-debug # clang options
 ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
 OPTIMIZE += -fopenmp # openmp required compiler flags
 FC       = mpif90
@@ -1242,7 +1243,7 @@ LIBS += -lpthread
 endif
 
 $(EXEC): $(OBJS) $(FOBJS)  
-	$(CXX) $(OPTIMIZE) $(OBJS) $(FOBJS) $(LIBS) $(RLIBS) -o $(EXEC)
+	$(CXX) $(LDFLAGS) $(OPTIMIZE) $(OBJS) $(FOBJS) $(LIBS) $(RLIBS) -o $(EXEC)
 
 $(OBJS): $(INCL)  $(CONFIG)  compile_time_info.c
 
