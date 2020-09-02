@@ -113,7 +113,7 @@ void init(void)
     set_cosmo_factors_for_current_time();
     
     
-#if defined(COOLING) && !defined(FLAG_NOT_IN_PUBLIC_CODE) 
+#if defined(COOLING) && !defined(FLAG_NOT_IN_PUBLIC_CODE) && !defined(COOL_GRACKLE)
     IonizeParams();
 #endif
     
