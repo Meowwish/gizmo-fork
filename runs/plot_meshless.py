@@ -36,7 +36,9 @@ if __name__ == '__main__':
         projplot_file = snap.parent.with_name(snap.name).with_suffix('.projection_density+stars.png')
         if_not_exists(projplot_file,
                       lambda: save_density_projection_plot(mesh, projplot_file,
-                                                           rmax=rmax, star_coords=stars))
+                                                           rmax=rmax,
+                                                           star_coords=stars,
+                                                           bfield=pdata['MagneticField']))
 
         sliceplot_file = snap.parent.with_name(snap.name).with_suffix('.slice_temperature.png')
         if_not_exists(sliceplot_file,
@@ -46,5 +48,6 @@ if __name__ == '__main__':
         projplot_file = snap.parent.with_name(snap.name).with_suffix('.projection_density.png')
         if_not_exists(projplot_file,
                       lambda: save_density_projection_plot(mesh, projplot_file,
-                                                           rmax=rmax))
+                                                           rmax=rmax,
+                                                           bfield=pdata['MagneticField']))
                       

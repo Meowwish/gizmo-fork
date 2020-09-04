@@ -3,7 +3,7 @@ import h5py as h5py
 import pandas as pd # to read csv files
 from pathlib import Path
 
-def make_agora_IC(filename="agora_ic.hdf5"):
+def make_agora_IC(filename="agora_ic_lowres.hdf5"):
 
     gamma_eos = 5./3.
     T_gas = 1.0e4       # K
@@ -32,7 +32,7 @@ def make_agora_IC(filename="agora_ic.hdf5"):
     # Length: kpc
 
     # dark matter
-    agora_dir = Path("./agora_medres")
+    agora_dir = Path("./agora_lowres")
     dm = pd.read_csv(agora_dir / "halo.dat", delimiter=' ', skipinitialspace=True,
                         names=['x','y','z','vx','vy','vz','mass'])
     # bulge stars
@@ -58,14 +58,21 @@ def make_agora_IC(filename="agora_ic.hdf5"):
     x_g=gas['x']
     y_g=gas['y']
     z_g=gas['z']
+    R = np.sqrt( x_g**2 + y_g**2 ) # kpc
+    z = z_g                     # kpc
     # set the initial velocity
     vx_g=gas['vx']
     vy_g=gas['vy']
     vz_g=gas['vz']
     # set the initial magnetic field
-    bx_g=0.
-    by_g=0.
-    bz_g=0.
+    R_scale = 3.43218           # kpc
+    z_scale = 0.343218          # kpc
+    B0 = 10.e-6                 # gauss
+    B_phi = B0 * np.exp(-R/R_scale) * np.exp(-abs(z)/z_scale)
+    theta = np.arctan2(y_g, x_g)
+    bx_g = B_phi * (-1.0 * np.sin(theta))
+    by_g = B_phi * (np.cos(theta))
+    bz_g = 0.
     # masses
     m_g=gas['mass']*mass_fac
     print(f"Gas particle mass: {1e10*m_g[0]:.3g}")

@@ -22,7 +22,7 @@ fig_dpi = 300
 
 def load_hydro_data(filename):
     pdata = {}
-    for field in "Masses", "Coordinates", "SmoothingLength", "Velocities", "InternalEnergy", "ElectronAbundance":
+    for field in "Masses", "Coordinates", "SmoothingLength", "Velocities", "InternalEnergy", "ElectronAbundance", "MagneticField":
         pdata[field] = load_from_snapshot(field, 0, filename)
 
     pdata["Metallicity"] = load_from_snapshot("Metallicity", 0, filename)
@@ -75,9 +75,13 @@ def apply_radius_cut(pdata, T):
     pos -= center
     radius_max = 40.0 # kpc
     radius_cut = np.sum(pos*pos,axis=1) < (radius_max**2)
-    pos, mass, hsml, v = pos[radius_cut], pdata['Masses'][radius_cut], pdata['SmoothingLength'][radius_cut], pdata['Velocities'][radius_cut]
-    temp = T[radius_cut]
-    return pos, mass, hsml, v, temp
+    pos     = pos[radius_cut]
+    mass    = pdata['Masses'][radius_cut]
+    hsml    = pdata['SmoothingLength'][radius_cut]
+    v       = pdata['Velocities'][radius_cut]
+    bfield  = pdata['MagneticField'][radius_cut]
+    temp    = T[radius_cut]
+    return pos, mass, hsml, v, bfield, temp
 
 def save_phase_plot(input_dens, temp, filename):
     ## make phase plot! (temperature vs n_H)
@@ -135,7 +139,9 @@ def save_slice_plot(mesh, field, filename, colorbar_label="", star_coords=None, 
     plt.savefig(filename, dpi=fig_dpi)
     plt.close()
 
-def save_density_projection_plot(mesh, filename, star_coords=None, rmax=10.,
+def save_density_projection_plot(mesh, filename, star_coords=None,
+                                bfield=None,
+                                rmax=10.,
                                 colorbar_label=r"$\Sigma_{gas}$ $(\rm M_\odot\,pc^{-2})$"):
     res = 1000
     x = y = np.linspace(-rmax,rmax,res)
@@ -153,6 +159,22 @@ def save_density_projection_plot(mesh, filename, star_coords=None, rmax=10.,
                     origin='lower',
                     aspect='equal',
                     norm=colors.LogNorm(vmin=1.0, vmax=1.0e3))
+
+    bfield_res = 30
+    bfield_slice = mesh.Slice(bfield,
+                              center=np.array([0,0,0]),
+                              size=2*rmax,
+                              res=bfield_res)
+    
+    x = y = np.linspace(-rmax, rmax, bfield_res)
+    bfield_x = bfield_slice[:,:,0]
+    bfield_y = bfield_slice[:,:,1]
+    bfield_z = bfield_slice[:,:,2]
+    bfield_norm = np.sqrt( bfield_x**2 + bfield_y**2 + bfield_z**2 )
+    bfield_x /= bfield_norm
+    bfield_y /= bfield_norm
+    # plot B-fields
+    ax.quiver(x, y, bfield_x, bfield_y, angles='xy', pivot='middle')
 
     plot_stars_on_axis(ax, star_coords, rmax=rmax)
 
