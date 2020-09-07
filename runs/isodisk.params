@@ -1,6 +1,6 @@
 
 %----  Relevant files
-InitCondFile   agora_ic_lowres
+InitCondFile   agora_ic_medres
 OutputDir      output
 
 %---- File formats 
