@@ -525,6 +525,10 @@ void determine_where_addthermalFB_events_occur(void);
 void thermal_fb_calc(void);
 #endif
 
+#ifdef GALSF_PHOTOIONIZATION
+void compute_photoionization(void);
+#endif
+
 #ifdef COOL_METAL_LINES_BY_SPECIES
 /*double GetMetalLambda(double, double);*/
 double getSpCoolTableVal(long i,long j,long k,long tblK);

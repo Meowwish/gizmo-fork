@@ -2416,6 +2416,12 @@ extern struct sph_particle_data
 #if (SINGLE_STAR_SINK_FORMATION & 4)
     MyFloat Density_Relative_Maximum_in_Kernel; /*!< hold density_max-density_i, for particle i, so we know if its a local maximum */
 #endif
+ 
+#ifdef GALSF_PHOTOIONIZATION
+    int HIIregion;
+    int photo_star;
+    int photo_subtime;
+#endif
     
     /* matrix of the primitive variable gradients: rho, P, vx, vy, vz, B, phi */
     struct

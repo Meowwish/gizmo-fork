@@ -979,7 +979,7 @@ CXX      = mpicxx
 FC       = mpif90
 LDFLAGS	 = -lgfortran
 # WARNING: do *NOT* run with -ffast-math !!
-OPTIMIZE += -O2 -march=native -ffp-contract=off -fstandalone-debug # clang options
+OPTIMIZE += -O2 -march=native -ffp-contract=off -fstandalone-debug #-fsanitize=address # clang options
 ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
 OPTIMIZE += -fopenmp # openmp required compiler flags
 FC       = mpif90

@@ -72,6 +72,17 @@ void cooling_parent_routine(void)
 #ifdef GALSF_FB_TURNOFF_COOLING
             if(SphP[i].DelayTimeCoolingSNe > 0) {continue;} /* no cooling for particles marked in delayed cooling */
 #endif
+#ifdef GALSF_PHOTOIONIZATION
+            /* skip cooling if this particle is actively being photoionized */
+            if(SphP[i].HIIregion == 1) {
+                SphP[i].photo_subtime -= 1;
+                if (SphP[i].photo_subtime <= 0)
+                {
+                    SphP[i].HIIregion = 0;
+                }
+                continue;
+            }
+#endif
             do_the_cooling_for_particle(i);
         } /* while bracket */
     } /* omp bracket */

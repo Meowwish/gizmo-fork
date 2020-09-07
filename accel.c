@@ -137,7 +137,9 @@ void compute_stellar_feedback(void)
     CPU_Step[CPU_SNIIHEATING] += measure_time(); /* collect timings and reset clock for next timing */
 #endif
     
-
+#ifdef GALSF_PHOTOIONIZATION
+    compute_photoionization(); /* photoionization feedback */
+#endif
     
     
     CPU_Step[CPU_MISC] += measure_time();

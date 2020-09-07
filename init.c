@@ -288,6 +288,9 @@ void init(void)
         if(RestartFlag == 0)
         {
             P[i].StellarAge = 0;
+#ifdef GALSF_PHOTOIONIZATION
+            SphP[i].HIIregion = 0;
+#endif
 #ifdef GALSF_SFR_IMF_VARIATION
             P[i].IMF_Mturnover = 2.0; /* gives a solar-type IMF for our calculations in current code */
 #endif
@@ -295,6 +298,11 @@ void init(void)
             P[i].IMF_NumMassiveStars = 0;
 #endif
         }
+#endif
+
+#ifdef GALSF_PHOTOIONIZATION
+        SphP[i].photo_star = -1;
+        SphP[i].photo_subtime = 0;
 #endif
         
         if(RestartFlag != 1)
