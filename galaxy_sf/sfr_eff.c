@@ -213,11 +213,13 @@ double get_starformation_rate(int i)
     if(flag==0) {SphP[i].AlphaVirial_SF_TimeSmoothed=0;} /* for time-smoothed virial param, reset to nil if fall below threshold */
 #endif
     tsfr = sqrt(All.PhysDensThresh / (SphP[i].Density * All.cf_a3inv)) * All.MaxSfrTimescale; /* set default SFR timescale to scale appropriately with the gas dynamical time */
-     /* if gas is exceedingly dense, then increase star formation efficiency to unity. */
-    if(SphP[i].Density*All.cf_a3inv > (1.0e4*All.PhysDensThresh)) {
-        /* with SFR_eff < 1.0, MaxSfrTimescale > MaxFreefallTimescale */
-        tsfr *= (All.MaxFreefallTimescale / All.MaxSfrTimescale); // should be <= 1
+
+     /* if gas is exceedingly dense (more than 100x the star formation threshold),
+        then increase star formation efficiency to unity. */
+    if(SphP[i].Density*All.cf_a3inv > (100.0*All.PhysDensThresh)) {
+        tsfr *= All.SfEffPerFreeFall; // should be <= 1, undoing the division when computing MaxSfrTimescale
     }
+
     rateOfSF = P[i].Mass / tsfr; /* 'normal' sfr from density law above */
     if(tsfr<=0 || rateOfSF <= 0) {return 0;} /* nonsense here, return 0 */
 

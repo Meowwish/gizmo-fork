@@ -1870,7 +1870,7 @@ extern struct global_data_all_processes
   double OverDensThresh;
   double PhysDensThresh;
   double MaxSfrTimescale;
-  double MaxFreefallTimescale;
+  double SfEffPerFreeFall;
 
 #ifdef GALSF_EFFECTIVE_EQS
   double EgySpecSN;

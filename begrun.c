@@ -469,8 +469,9 @@ void set_units(void)
   /* for historical reasons, we need to convert to "All.MaxSfrTimescale", defined as the SF timescale in code units at the critical physical
      density given above. use the dimensionless SfEffPerFreeFall (which has been read in) to calculate this. This must be done -BEFORE- calling set_units_sfr) */
 #ifndef GALSF_EFFECTIVE_EQS
-    All.MaxFreefallTimescale = sqrt(3.*M_PI / (32. * All.G * (All.CritPhysDensity * meanweight / UNIT_DENSITY_IN_NHCGS)));
-    All.MaxSfrTimescale = (1/All.MaxSfrTimescale) * All.MaxFreefallTimescale;
+    double freefallTimescale = sqrt(3.*M_PI / (32. * All.G * (All.CritPhysDensity * meanweight / UNIT_DENSITY_IN_NHCGS)));
+    All.SfEffPerFreeFall = All.MaxSfrTimescale; // see comment above
+    All.MaxSfrTimescale = (1/All.SfEffPerFreeFall) * freefallTimescale;
 #endif
     set_units_sfr();
 #endif
