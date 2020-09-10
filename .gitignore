@@ -1,8 +1,11 @@
+grackle_install/
 __pycache__
 GIZMO
 GIZMO_config.h
 compile_time_info.c
+
 *.hdf5
+*.h5
 *.pdf
 *.png
 
