@@ -91,10 +91,10 @@ def save_phase_plot(input_dens, temp, filename):
     lognHmax = 11.5
     logTmin = np.log10(3.0)
     logTmax = 8.5
-    print(f"Minimum density gas: {np.min(dens):.3g}")
-    print(f"Maximum density gas: {np.max(dens):.3g}")
-    print(f"Minimum temperature gas: {np.min(temp):.3g}")
-    print(f"Maximum temperature gas: {np.max(temp):.3g}")
+#    print(f"Minimum density gas: {np.min(dens):.3g}")
+#    print(f"Maximum density gas: {np.max(dens):.3g}")
+#    print(f"Minimum temperature gas: {np.min(temp):.3g}")
+#    print(f"Maximum temperature gas: {np.max(temp):.3g}")
     
     h = plt.hist2d(np.log10(dens), np.log10(temp),
                     bins=100, norm=colors.LogNorm(),

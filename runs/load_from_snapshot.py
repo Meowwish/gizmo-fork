@@ -99,7 +99,7 @@ def load_from_snapshot(value, ptype, snapshot_name,
     numfiles = header_toparse["NumFilesPerSnapshot"]
     npartTotal = header_toparse["NumPart_Total"]
     if(npartTotal[ptype]<1): 
-        print('No particles of designated type exist in this snapshot, returning 0')
+        #print('No particles of designated type exist in this snapshot, returning 0')
         file.close()
         return 0
 
