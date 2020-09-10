@@ -3,7 +3,7 @@ import h5py as h5py
 import pandas as pd # to read csv files
 from pathlib import Path
 
-def make_agora_IC(filename="agora_ic_lowres.hdf5"):
+def make_agora_IC(filename="agora_ic_highres.hdf5"):
 
     gamma_eos = 5./3.
     T_gas = 1.0e4       # K
@@ -32,7 +32,7 @@ def make_agora_IC(filename="agora_ic_lowres.hdf5"):
     # Length: kpc
 
     # dark matter
-    agora_dir = Path("./agora_lowres")
+    agora_dir = Path("./agora_highres")
     dm = pd.read_csv(agora_dir / "halo.dat", delimiter=' ', skipinitialspace=True,
                         names=['x','y','z','vx','vy','vz','mass'])
     # bulge stars
