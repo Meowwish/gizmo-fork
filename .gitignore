@@ -3,7 +3,9 @@ __pycache__
 GIZMO
 GIZMO_config.h
 compile_time_info.c
-
+GRACKLE_INFO
+*.params-usedvalues
+*.patch
 *.hdf5
 *.h5
 *.pdf

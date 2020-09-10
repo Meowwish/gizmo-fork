@@ -33,6 +33,7 @@ def make_agora_IC(filename="agora_ic_highres.hdf5"):
 
     # dark matter
     agora_dir = Path("./agora_highres")
+    
     dm = pd.read_csv(agora_dir / "halo.dat", delimiter=' ', skipinitialspace=True,
                         names=['x','y','z','vx','vy','vz','mass'])
     # bulge stars
