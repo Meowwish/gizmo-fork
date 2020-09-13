@@ -22,16 +22,16 @@ TimeBetStatistics       0.001   % Gyr
 
 
 %---- CPU-time limits 
-TimeLimitCPU            86400  % seconds [= 24 hours]
+TimeLimitCPU            172800 % seconds [= 48 hours]
 CpuTimeBetRestartFile   3600   % seconds
 ResubmitOn              0
 ResubmitCommand         none   % change this to a shell script if needed
 
 
 %----- Memory allocation 
-MaxMemSize          3000    % sets maximum MPI process memory use in MByte 
+MaxMemSize          3700    % sets maximum MPI process memory use in MByte 
 PartAllocFactor     3.0     % memory load allowed for better cpu balance 
-BufferSize          500     % in MByte 
+BufferSize          300     % in MByte 
 
 %---- Characteristics of run 
 TimeBegin   0.0    % Beginning of the simulation 
