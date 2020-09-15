@@ -1,10 +1,10 @@
 #!/bin/bash
 
-#PBS -N gizmo_MHD_AGORA_IC_medres
+#PBS -N gizmo_MHD_AGORA_highres_4nodes
 #PBS -P jh2
 #PBS -q normal
 #PBS -l ncpus=192
-#PBS -l mem=768GB
+#PBS -l mem=760GB
 #PBS -m aeb
 #PBS -M ben.wibking@anu.edu.au
 #PBS -l wd
@@ -24,14 +24,14 @@ cd /g/data/jh2/bw0729/gizmo-fork/runs
 
 ## --- restart GIZMO from restartfiles ---
 ## WARNING: if the parameterfile or compile options change *AT ALL*,
-##          this will likely fail!  [This even fails for trivial
+##          this will likely fail!  [This can even fail for trivial
 ##          changes, such as extending the MaxTime of the simulation.]
 
 mpirun ./GIZMO isodisk.params 1 > gizmo_isolated_disk.log 2>&1
 
 
 ## --- restart GIZMO from specific snapshot ---
-## WARNING: sometimes temperature blows up when restarting?!?
+## WARNING: sometimes temperature blows up when restarting(!!)
 
 #SNAPSHOT=100
 #mpirun ./GIZMO isodisk.params 2 $SNAPSHOT > gizmo_isolated_disk.log 2>&1
