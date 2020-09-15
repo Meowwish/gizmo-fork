@@ -11,6 +11,9 @@
 #PBS -l walltime=48:00:00
 #PBS -l storage=scratch/jh2+gdata/jh2
 
+# submit this job with a command such as:
+# qsub -W depend=afterok:11269086 restart-gizmo.pbs
+
 
 # --- tuning options for jemalloc [unused] ---
 
@@ -28,11 +31,3 @@ cd /g/data/jh2/bw0729/gizmo-fork/runs
 ##          changes, such as extending the MaxTime of the simulation.]
 
 mpirun ./GIZMO isodisk.params 1 > gizmo_isolated_disk.log 2>&1
-
-
-## --- restart GIZMO from specific snapshot ---
-## WARNING: sometimes temperature blows up when restarting(!!)
-
-#SNAPSHOT=100
-#mpirun ./GIZMO isodisk.params 2 $SNAPSHOT > gizmo_isolated_disk.log 2>&1
-
