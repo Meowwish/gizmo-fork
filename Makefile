@@ -1005,9 +1005,9 @@ ifeq ($(SYSTYPE),"Gadi")
 CC       =  mpicc
 CXX      =  mpicxx
 FC       =  mpif90 -nofor_main
-OPTIMIZE = -g -O3 -xCORE-AVX2 -ipo -funroll-loops -fp-model precise -prec-div -prec-sqrt -no-ftz -unroll-aggressive -ip -no-ipo
-# unless you like code to run slow, do not use AVX512 !
-#OPTIMIZE = -O3 -xCORE-AVX2 -ipo -funroll-loops -no-prec-div -fp-model fast=2
+#OPTIMIZE = -g -O2 -xCORE-AVX2 -ipo -funroll-loops -fp-model precise -prec-div -prec-sqrt -no-ftz -unroll-aggressive -ip -no-ipo # conservative numerical precision options, probably not necessary
+# unless you like code to run slow, do not use AVX512 (thermal throttling will happen)!
+OPTIMIZE = -O2 -xCORE-AVX2 -ipo -funroll-loops -no-prec-div -fp-model fast=2  # speed
 ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
 OPTIMIZE += -qopenmp
 endif
