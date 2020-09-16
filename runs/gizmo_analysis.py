@@ -98,13 +98,14 @@ def save_phase_plot(input_dens, temp, filename):
     h = plt.hist2d(np.log10(dens), np.log10(temp),
                     bins=100, norm=colors.LogNorm(),
                     range = [[lognHmin,lognHmax], [logTmin,logTmax]])
+
     plt.colorbar(label=r'proportional to mass') # unclear what units of this are
     plt.xlabel(r'$\log_{10}$ density ($n_{H}$ [cm$^{-3}$])')
     plt.ylabel(r'$\log_{10}$ temperature (K)')
     plt.savefig(filename, dpi=fig_dpi)
     plt.close()
 
-def plot_stars_on_axis(ax, star_coords, rmax=10., s=1.0):
+def plot_stars_on_axis(ax, star_coords, rmax=10., s=0.05):
     if star_coords is not None:
         x = star_coords[:,0]
         y = star_coords[:,1]
