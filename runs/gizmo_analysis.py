@@ -87,25 +87,22 @@ def save_phase_plot(input_dens, temp, filename):
     ## make phase plot! (temperature vs n_H)
     dens = input_dens * unitdensity_per_H
 
-    lognHmin = -6.5
-    lognHmax = 11.5
+    lognHmin = -7.5
+    lognHmax = 6.5
     logTmin = np.log10(3.0)
     logTmax = 8.5
-#    print(f"Minimum density gas: {np.min(dens):.3g}")
-#    print(f"Maximum density gas: {np.max(dens):.3g}")
-#    print(f"Minimum temperature gas: {np.min(temp):.3g}")
-#    print(f"Maximum temperature gas: {np.max(temp):.3g}")
     
     h = plt.hist2d(np.log10(dens), np.log10(temp),
                     bins=100, norm=colors.LogNorm(),
                     range = [[lognHmin,lognHmax], [logTmin,logTmax]])
+
     plt.colorbar(label=r'proportional to mass') # unclear what units of this are
     plt.xlabel(r'$\log_{10}$ density ($n_{H}$ [cm$^{-3}$])')
     plt.ylabel(r'$\log_{10}$ temperature (K)')
     plt.savefig(filename, dpi=fig_dpi)
     plt.close()
 
-def plot_stars_on_axis(ax, star_coords, rmax=10., s=1.0):
+def plot_stars_on_axis(ax, star_coords, rmax=10., s=0.05):
     if star_coords is not None:
         x = star_coords[:,0]
         y = star_coords[:,1]

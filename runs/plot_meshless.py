@@ -26,7 +26,7 @@ if __name__ == '__main__':
         if_not_exists(phaseplot_file,
                       lambda: save_phase_plot(mesh.Density(), temp, phaseplot_file))
 
-        rmax = 20.0 # kpc
+        rmax = 15.0 # kpc
 
         sliceplot_file = snap.parent.with_name(snap.name).with_suffix('.slice_temperature+stars.png')
         if_not_exists(sliceplot_file,
