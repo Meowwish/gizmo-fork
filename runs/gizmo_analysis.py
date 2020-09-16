@@ -69,32 +69,31 @@ def compute_temperature(pdata):
     T = (mean_molecular_weight / boltzmann_cgs) * (gamma-1) * InternalEnergy
     return T
 
-def apply_radius_cut(pdata, T):
+def apply_radius_cut(pdata, T, rmax=40.):
     pos = pdata["Coordinates"]
     center = np.median(pos,axis=0)
     pos -= center
-    radius_max = 40.0 # kpc
+    radius_max = rmax
     radius_cut = np.sum(pos*pos,axis=1) < (radius_max**2)
-    pos     = pos[radius_cut]
-    mass    = pdata['Masses'][radius_cut]
-    hsml    = pdata['SmoothingLength'][radius_cut]
-    v       = pdata['Velocities'][radius_cut]
-    bfield  = pdata['MagneticField'][radius_cut]
-    temp    = T[radius_cut]
-    return pos, mass, hsml, v, bfield, temp
+
+    ndata = {}
+    ndata['Coordinates']     = pos[radius_cut]
+    ndata['Masses']          = pdata['Masses'][radius_cut]
+    ndata['SmoothingLength'] = pdata['SmoothingLength'][radius_cut]
+    ndata['Velocities']      = pdata['Velocities'][radius_cut]
+    ndata['MagneticField']   = pdata['MagneticField'][radius_cut]
+    temp = T[radius_cut]
+    
+    return ndata, temp
 
 def save_phase_plot(input_dens, temp, filename):
     ## make phase plot! (temperature vs n_H)
     dens = input_dens * unitdensity_per_H
 
-    lognHmin = -6.5
-    lognHmax = 11.5
+    lognHmin = -7.5
+    lognHmax = 5.5
     logTmin = np.log10(3.0)
     logTmax = 8.5
-#    print(f"Minimum density gas: {np.min(dens):.3g}")
-#    print(f"Maximum density gas: {np.max(dens):.3g}")
-#    print(f"Minimum temperature gas: {np.min(temp):.3g}")
-#    print(f"Maximum temperature gas: {np.max(temp):.3g}")
     
     h = plt.hist2d(np.log10(dens), np.log10(temp),
                     bins=100, norm=colors.LogNorm(),
@@ -112,14 +111,14 @@ def plot_stars_on_axis(ax, star_coords, rmax=10., s=1.0):
         r = np.sqrt(x**2 + y**2)
         ax.scatter(x[r < rmax], y[r < rmax], s=s, color='black')
 
-def save_slice_plot(mesh, field, filename, colorbar_label="", star_coords=None, rmax=10.):
+def save_slice_plot(mesh, field, filename, colorbar_label="", star_coords=None, rmax=10., plane='z', vmin=10., vmax=1.0e7):
     res = 1000
     x = y = np.linspace(-rmax,rmax,res)
     X, Y = np.meshgrid(x, y)
 
     #sigma_gas_msun_pc2 = 1e4 * M.SurfaceDensity(M.m,center=np.array([0,0,0]),size=40.,res=res)
     #density_slice_nHcgs =300 * M.Slice(M.Density(),center=np.array([0,0,0]),size=40.,res=res)
-    slice = mesh.Slice(field,center=np.array([0,0,0]),size=2*rmax,res=res)
+    slice = mesh.Slice(field,center=np.array([0,0,0]),size=2*rmax,res=res,plane=plane)
 
     fig,ax = plt.subplots(figsize=(6,6))
     p = ax.imshow(slice, cmap='viridis',
@@ -127,7 +126,7 @@ def save_slice_plot(mesh, field, filename, colorbar_label="", star_coords=None, 
                     interpolation='nearest',
                     origin='lower',
                     aspect='equal',
-                    norm=colors.LogNorm(vmin=10., vmax=1.0e7))
+                    norm=colors.LogNorm(vmin=vmin, vmax=vmax))
 
     plot_stars_on_axis(ax, star_coords, rmax=rmax)
 
