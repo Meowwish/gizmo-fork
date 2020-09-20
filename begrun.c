@@ -583,8 +583,7 @@ void open_outputfiles(void)
 #endif // bh-output-more-info if
 #endif // black-holes if
 
-  if(ThisTask != 0)		/* only the root processors writes to the log files */
-    return;
+  if(ThisTask == 0) {		/* only the root processors writes to the log files */
     
     sprintf(buf, "%s%s", All.OutputDir, "cpu.txt");
     if(!(FdCPU = fopen(buf, mode)))
@@ -750,7 +749,7 @@ void open_outputfiles(void)
 	}
     }
 #endif
-
+  } // endif ThisTask==0
 }
 
 
