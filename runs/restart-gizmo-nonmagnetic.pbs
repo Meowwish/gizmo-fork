@@ -1,0 +1,34 @@
+#!/bin/bash
+
+#PBS -N gizmo_hydro_AGORA_highres
+#PBS -P jh2
+#PBS -q normal
+#PBS -l ncpus=192
+#PBS -l mem=760GB
+#PBS -m aeb
+#PBS -M ben.wibking@anu.edu.au
+#PBS -l wd
+#PBS -l walltime=48:00:00
+#PBS -l storage=scratch/jh2+gdata/jh2
+
+# submit this job with a command such as:
+# qsub -W depend=afterok:11269086 restart-gizmo.pbs
+
+set -x
+
+# --- tuning options for jemalloc [unused] ---
+
+#export MALLOC_CONF="background_thread:true,metadata_thp:auto,dirty_decay_ms:30000,muzzy_decay_ms:30000,stats_print:true,abort_conf:true"
+
+
+# --- ensure we start in the correct directory ----
+
+cd /g/data/jh2/bw0729/gizmo-fork/runs
+
+
+## --- restart GIZMO from restartfiles ---
+## WARNING: if the parameterfile or compile options change *AT ALL*,
+##          this will likely fail!  [This can even fail for trivial
+##          changes, such as extending the MaxTime of the simulation.]
+
+mpirun ./GIZMO isodisk_nonmagnetic.params 1 > gizmo_isolated_disk_nonmagnetic.log 2>&1
