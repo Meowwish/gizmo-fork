@@ -3,7 +3,7 @@ import h5py as h5py
 import pandas as pd # to read csv files
 from pathlib import Path
 
-def make_agora_IC(filename="agora_ic_highres.hdf5"):
+def make_agora_IC(filename, magnetic_fields=True):
 
     gamma_eos = 5./3.
     T_gas = 1.0e4       # K
@@ -31,9 +31,9 @@ def make_agora_IC(filename="agora_ic_highres.hdf5"):
     # Mass: 10^9 Msun
     # Length: kpc
 
-    # dark matter
-    agora_dir = Path("./agora_highres")
+    agora_dir = Path("../../agora_highres")
     
+    # dark matter
     dm = pd.read_csv(agora_dir / "halo.dat", delimiter=' ', skipinitialspace=True,
                         names=['x','y','z','vx','vy','vz','mass'])
     # bulge stars
@@ -55,96 +55,125 @@ def make_agora_IC(filename="agora_ic_highres.hdf5"):
     # WARNING: need to convert mass units from (10^9 Msun) -> (10^10 Msun)
     mass_fac = 1.0/10.0     # ( 10^9 / 10^10 )
 
-    # Gas particles (particle type 0)
+
+    ## Gas particles (particle type 0)
+
+    # position
     x_g=gas['x']
     y_g=gas['y']
     z_g=gas['z']
     R = np.sqrt( x_g**2 + y_g**2 ) # kpc
     z = z_g                     # kpc
-    # set the initial velocity
+
+    # velocity
     vx_g=gas['vx']
     vy_g=gas['vy']
     vz_g=gas['vz']
-    # set the initial magnetic field
-    R_scale = 3.43218           # kpc
-    z_scale = 0.343218          # kpc
-    B0 = 10.e-6                 # gauss
-    B_phi = B0 * np.exp(-R/R_scale) * np.exp(-abs(z)/z_scale)
-    theta = np.arctan2(y_g, x_g)
-    bx_g = B_phi * (-1.0 * np.sin(theta))
-    by_g = B_phi * (np.cos(theta))
+
+    # magnetic fields
+    # (by default, identically zero)
+    bx_g = 0.
+    by_g = 0.
     bz_g = 0.
+
+    if (magnetic_fields == True):
+        print("Generating magnetic fields...")
+        R_scale = 3.43218           # kpc
+        z_scale = 0.343218          # kpc
+        B0 = 10.e-6                 # gauss
+        B_phi = B0 * np.exp(-R/R_scale) * np.exp(-abs(z)/z_scale)
+        theta = np.arctan2(y_g, x_g)   
+        # re-define magnetic fields
+        bx_g = B_phi * (-1.0 * np.sin(theta))
+        by_g = B_phi * (np.cos(theta))
+        bz_g = 0.
+
     # masses
     m_g=gas['mass']*mass_fac
     print(f"Gas particle mass: {1e10*m_g[0]:.3g}")
 
-    # set the initial internal energy per unit mass. recall gizmo uses this as the initial 'temperature' variable
-    #  this can be overridden with the InitGasTemp variable (which takes an actual temperature)
+    # specific internal gas energy [i.e., NOT including magnetic energy]
     R_g = np.sqrt(x_g**2 + y_g**2)
     is_disk_gas = np.logical_and( R_g <= 20.0, np.abs(z_g) <= 3.0 )
     u_g = np.zeros(len(gas))
     u_g[is_disk_gas] = u_diskgas
     u_g[~is_disk_gas] = u_halogas
-    # set the gas IDs: here a simple integer list
+
+    # particle ID
     Ngas = len(gas)
     print(f"Number of gas particles: {Ngas:.3g}")
     id_g=np.arange(1, Ngas+1)
 
-    # DM particles (particle type 1)
+
+    ## DM particles (particle type 1)
+
+    # position
     x_dm = dm['x']
     y_dm = dm['y']
     z_dm = dm['z']
+
     # velocities
     vx_dm = dm['vx']
     vy_dm = dm['vy']
     vz_dm = dm['vz']
+
     # masses
     m_dm = dm['mass']*mass_fac
     Ndm = len(dm)
     print(f"Number of dark matter particles: {Ndm:.3g}")
+
     # particle IDs
     id_dm = np.arange(1, Ndm+1)
 
-    # Disk particles (old stars) (particle type 2)
+    
+    ## Disk particles (old stars) (particle type 2)
+
+    # position
     x_d = disk['x']
     y_d = disk['y']
     z_d = disk['z']
+
     # velocities
     vx_d = disk['vx']
     vy_d = disk['vy']
     vz_d = disk['vz']
+
     # masses
     m_d = disk['mass']*mass_fac
     Ndisk = len(disk)
     print(f"Number of disk particles: {Ndisk:.3g}")
+
     # particle IDs
     id_d = np.arange(1, Ndisk+1)
+
     
-    # Bulge particles (old stars) (particle type 3)
+    ## Bulge particles (old stars) (particle type 3)
+
+    # position
     x_b = bulge['x']
     y_b = bulge['y']
     z_b = bulge['z']
+
     # velocities
     vx_b = bulge['vx']
     vy_b = bulge['vy']
     vz_b = bulge['vz']
+
     # masses
     m_b = bulge['mass']*mass_fac
     Nbulge = len(bulge)
     print(f"Number of bulge particles: {Nbulge:.3g}")
+
     # particle IDs
     id_b = np.arange(1, Nbulge+1)
 
 
-    # open HDF5 file for writing
+    ## open HDF5 file for writing
     file = h5py.File(filename,'w') 
 
-    # set particle number of each type into the 'npart' vector
-    #  NOTE: this MUST MATCH the actual particle numbers assigned to each type, i.e.
-    #   npart = np.array([number_of_PartType0_particles,number_of_PartType1_particles,number_of_PartType2_particles,
-    #                     number_of_PartType3_particles,number_of_PartType4_particles,number_of_PartType5_particles])
-    #   or else the code simply cannot read the IC file correctly!
-    #
+    # NOTE: The following code is copied from the GIZMO public repository, mostly including Phil's comments:
+
+    # set particle number header field [very important!]
     npart = np.array([Ngas,Ndm,Ndisk,Nbulge,0,0])
 
     # now we make the Header - the formatting here is peculiar, for historical (GADGET-compatibility) reasons
@@ -265,10 +294,19 @@ def make_agora_IC(filename="agora_ic_highres.hdf5"):
     # no PartType4 for this IC
     # no PartType5 for this IC
 
-    # close the HDF5 file, which saves these outputs
     file.close()
-    # all done!
 
 
 if __name__ == "__main__":
-    make_agora_IC()
+
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('filename', help='output hdf5 filename')
+    feature_parser = parser.add_mutually_exclusive_group(required=False)
+    feature_parser.add_argument('--magnetic-fields', dest='magnetic_fields', action='store_true')
+    feature_parser.add_argument('--no-magnetic-fields', dest='magnetic_fields', action='store_false')
+    parser.set_defaults(magnetic_fields=True)
+    args = parser.parse_args()
+
+    print(f"Magnetic fields: {args.magnetic_fields}")
+    make_agora_IC(args.filename, magnetic_fields=args.magnetic_fields)
