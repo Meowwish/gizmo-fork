@@ -26,9 +26,17 @@ set -x
 cd /g/data/jh2/bw0729/gizmo-fork/runs
 
 
+# --- disable hardware accelerated MPI collectives ---
+# "Mixed MPI datatypes, in general, can prevent protocol consensus
+#  inside HCOLL, resulting in hangs" [https://docs.mellanox.com/display/HPCXv27/HCOLL]
+# (We are getting hangs during MPI_Allreduce in domain.c, unclear whether this is the cause.)
+
+MPI_OPTIONS="-mca coll ^hcoll"
+
+
 ## --- restart GIZMO from restartfiles ---
 ## WARNING: if the parameterfile or compile options change *AT ALL*,
 ##          this will likely fail!  [This can even fail for trivial
 ##          changes, such as extending the MaxTime of the simulation.]
 
-mpirun ./GIZMO isodisk_nonmagnetic.params 1 > gizmo_isolated_disk_nonmagnetic.log 2>&1
+mpirun $MPI_OPTIONS ./GIZMO isodisk_nonmagnetic.params 1 > gizmo_isolated_disk_nonmagnetic.log 2>&1
