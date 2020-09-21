@@ -146,6 +146,7 @@ void check_particle_for_temperature_minimum(int i);
 
 double get_pressure(int i);
 double return_user_desired_target_density(int i);
+double return_user_desired_target_velocity(int i, int j);
 double return_user_desired_target_pressure(int i);
 #ifdef EOS_TILLOTSON
 double calculate_eos_tillotson(int i);
