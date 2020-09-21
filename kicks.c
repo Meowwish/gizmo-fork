@@ -362,9 +362,8 @@ void do_the_kick(int i, integertime tstart, integertime tend, integertime tcurre
              * to the current values. They will then predicted further along in drift operations */
             if(mode==1)
             {
-#ifdef HYDRO_GENERATE_TARGET_MESH
+#if defined(HYDRO_GENERATE_TARGET_MESH) && defined(HYDRO_TARGET_MESH_VELOCITY_DAMPING)
 	      // it is often desirable to damp transient velocities when setting up a stable mesh
-	      // (if not, comment the below lines)
 	      for(j=0; j<3; j++) {
 		double v_desired = get_user_desired_velocity(i,j);
 		double dv = P[i].Vel[j] - v_desired;
