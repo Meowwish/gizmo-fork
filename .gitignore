@@ -4,6 +4,7 @@ GIZMO
 GIZMO_config.h
 compile_time_info.c
 GRACKLE_INFO
+*.log
 *.params-usedvalues
 *.patch
 *.hdf5
