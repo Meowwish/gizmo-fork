@@ -70,14 +70,11 @@ def compute_temperature(pdata):
     return T
 
 def apply_radius_cut(pdata, T, rmax=40.):
-    pos = pdata["Coordinates"]
-    center = np.median(pos,axis=0)
-    pos -= center
-    radius_max = rmax
-    radius_cut = np.sum(pos*pos,axis=1) < (radius_max**2)
+    coords = pdata["Coordinates"]
+    radius_cut = np.sum(coords*coords,axis=1) < (rmax**2)
 
     ndata = {}
-    ndata['Coordinates']     = pos[radius_cut]
+    ndata['Coordinates']     = coords[radius_cut]
     ndata['Masses']          = pdata['Masses'][radius_cut]
     ndata['SmoothingLength'] = pdata['SmoothingLength'][radius_cut]
     ndata['Velocities']      = pdata['Velocities'][radius_cut]
