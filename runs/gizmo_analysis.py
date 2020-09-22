@@ -30,7 +30,7 @@ def load_hydro_data(filename):
 
 def load_stars(filename):
     star_coords = load_from_snapshot("Coordinates", 4, filename)
-    if star_coords is 0:
+    if star_coords is None:
         return None
     else:
         return star_coords
@@ -58,13 +58,12 @@ def compute_temperature(pdata):
     #print(f"maximium electron abundance: {np.max(pdata['ElectronAbundance'])}")
 
     InternalEnergy = pdata["InternalEnergy"] * unitenergypermass_cgs
-    if pdata['ElectronAbundance'] is not 0:
-        e_term = pdata["ElectronAbundance"]
-    else:
-        e_term = e_term_fullyionized
-    
-    mu = 1.0 / (H_term + He_term + e_term)
+    if pdata['ElectronAbundance'] is None:
+        return None
 
+    e_term = pdata["ElectronAbundance"]
+
+    mu = 1.0 / (H_term + He_term + e_term)
     mean_molecular_weight = mu * m_H
     T = (mean_molecular_weight / boltzmann_cgs) * (gamma-1) * InternalEnergy
     return T
@@ -79,8 +78,11 @@ def apply_radius_cut(pdata, T, rmax=40.):
     ndata['SmoothingLength'] = pdata['SmoothingLength'][radius_cut]
     ndata['Velocities']      = pdata['Velocities'][radius_cut]
     ndata['MagneticField']   = pdata['MagneticField'][radius_cut]
-    temp = T[radius_cut]
-    
+    if T is not None:
+        temp = T[radius_cut]
+    else:
+        temp = None
+        
     return ndata, temp
 
 def save_phase_plot(input_dens, temp, filename):

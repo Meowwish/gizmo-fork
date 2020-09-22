@@ -34,10 +34,10 @@ if __name__ == '__main__':
         mesh = compute_mesh(pdata)
         #stars = load_stars(snap)
 
-        if not phaseplot_file.exists():
+        if not phaseplot_file.exists() and rawtemp is not None:
             save_phase_plot(mesh.Density(), temp, phaseplot_file)
 
-        if not sliceplot_file.exists():
+        if not sliceplot_file.exists() and rawtemp is not None:
             save_slice_plot(mesh, temp, sliceplot_file,
                             colorbar_label=r'Temperature (K)', rmax=rmax)
 
@@ -46,7 +46,7 @@ if __name__ == '__main__':
                             colorbar_label=r'Density (g cm$^-3$)', rmax=rmax, plane='y',
                             vmin=1e-5, vmax=1e5)
 
-        if not ztempplot_file.exists():
+        if not ztempplot_file.exists() and rawtemp is not None:
             save_slice_plot(mesh, temp, ztempplot_file,
                             colorbar_label=r'Temperature (K)', rmax=rmax, plane='y',
                             vmin=10., vmax=1.0e7)

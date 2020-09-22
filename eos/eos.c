@@ -15,31 +15,81 @@
  together with 'HYDRO_GENERATE_TARGET_MESH'. This will attempt to move the mesh and mass
  towards the 'target' pressure profile. Use this to build your ICs.
  The 'desired' pressure and density as a function of particle properties (most commonly, position) should be provided in the function below */
+
 double return_user_desired_target_density(int i)
 {
-    return 1; // uniform density everywhere -- will try to generate a glass //
-    /*
-     // this example would initialize a constant-density (density=rho_0) spherical cloud (radius=r_cloud) with a smooth density 'edge' (width=interp_width) surrounded by an ambient medium of density =rho_0/rho_contrast //
-     double dx=P[i].Pos[0]-boxHalf_X, dy=P[i].Pos[1]-boxHalf_Y, dz=P[i].Pos[2]-boxHalf_Z, r=sqrt(dx*dx+dy*dy+dz*dz);
-     double rho_0=1, r_cloud=0.5*boxHalf_X, interp_width=0.1*r_cloud, rho_contrast=10.;
-     return rho_0 * ((1.-1./rho_contrast)*0.5*erfc(2.*(r-r_cloud)/interp_width) + 1./rho_contrast);
-     */
+  /* use the AGORA disc gas profile */
+
+  // galactocentric cylindrical coordinates
+  double dx = P[i].Pos[0]-boxHalf_X;
+  double dy = P[i].Pos[1]-boxHalf_Y;
+  double dz = P[i].Pos[2]-boxHalf_Z;
+  double R = sqrt(dx*dx + dy*dy); // code units [length]
+  double z = dz; // code units [length]
+
+  // AGORA disc parameters
+  double R0 = 3.43218 / UNIT_LENGTH_IN_KPC; // code units [length]
+  double z0 = 0.343218 / UNIT_LENGTH_IN_KPC; // code units [length]
+  double M_gas = 8.59322e9 / UNIT_MASS_IN_SOLAR; // code units [mass]
+
+  double rho0 = M_gas / (4.0*M_PI*R0*R0*z0);
+  double rho_min = 1.0e-6 * PROTONMASS; // minimum gas density
+  double rho = fmax(rho0 * exp(-R/R0) * exp(-fabs(z)/z0), rho_min);
+  return rho; // code units [density]
+  
+  /*
+  // this example would initialize a constant-density (density=rho_0) spherical cloud (radius=r_cloud) with a smooth density 'edge' (width=interp_width) surrounded by an ambient medium of density =rho_0/rho_contrast //
+  double dx=P[i].Pos[0]-boxHalf_X, dy=P[i].Pos[1]-boxHalf_Y, dz=P[i].Pos[2]-boxHalf_Z, r=sqrt(dx*dx+dy*dy+dz*dz);
+  double rho_0=1, r_cloud=0.5*boxHalf_X, interp_width=0.1*r_cloud, rho_contrast=10.;
+  return rho_0 * ((1.-1./rho_contrast)*0.5*erfc(2.*(r-r_cloud)/interp_width) + 1./rho_contrast);
+  */
 }
+
+double return_user_desired_target_pressure(int i)
+{
+  /* use the AGORA disc gas profile */
+  const double R_max = 20. / UNIT_LENGTH_IN_KPC; // code units [length]
+  const double z_max = 3. / UNIT_LENGTH_IN_KPC;  // code units [length]
+  const double T_disc = 1.0e4; // Kelvins
+  const double T_halo = 1.0e6; // Kelvins
+  
+  // galactocentric cylindrical coordinates
+  const double dx = P[i].Pos[0]-boxHalf_X;
+  const double dy = P[i].Pos[1]-boxHalf_Y;
+  const double dz = P[i].Pos[2]-boxHalf_Z;
+  const double R = sqrt(dx*dx + dy*dy); // code units [length]
+  const double z = dz; // code units [length]
+
+  // compute number density in cgs
+  const double nH_cgs = UNIT_DENSITY_IN_NHCGS * return_user_desired_target_density(i); // H cm^{-3}
+
+  // use isodensity ellipsoid coordinates
+  const double x = R_max * sqrt( (R/R_max)*(R/R_max) + (z/z_max)*(z/z_max) );
+
+  // interpolate between T_disc and T_halo in isodensity ellipsoid coordinates
+  const double x0 = R_max;
+  const double width_x = 1.0 / UNIT_LENGTH_IN_KPC; // code units [length]
+  const double f1 = T_halo;
+  const double f0 = T_disc;
+  const double T = ( 1. - 0.5*erfc((x-x0)/width_x) ) * (f1 - f0) + f0;
+
+  double P_cgs = nH_cgs * BOLTZMANN * T; // erg cm^{-3}
+  double P = P_cgs / UNIT_PRESSURE_IN_CGS; // code units [pressure]
+  return P;
+
+  /*
+  // this example would initialize a radial pressure gradient corresponding to a self-gravitating, spherically-symmetric, infinite power-law
+  //   density profile rho ~ r^(-b) -- note to do this right, you need to actually set that power-law for density, too, in 'return_user_desired_target_density' above
+  double dx=P[i].Pos[0]-boxHalf_X, dy=P[i].Pos[1]-boxHalf_Y, dz=P[i].Pos[2]-boxHalf_Z, r=sqrt(dx*dx+dy*dy+dz*dz);
+  double b = 2.; return 2.*M_PI/fabs((3.-b)*(1.-b)) * pow(return_user_desired_target_density(i),2) * r*r;
+  */
+}
+
 double return_user_desired_target_velocity(int i, int j)
 {
   // i is the particle index P[i]
   // j is the velocity component
   return 0.;
-}
-double return_user_desired_target_pressure(int i)
-{
-    return 1; // uniform pressure everywhere -- will try to generate a constant-pressure medium //
-    /*
-     // this example would initialize a radial pressure gradient corresponding to a self-gravitating, spherically-symmetric, infinite power-law
-     //   density profile rho ~ r^(-b) -- note to do this right, you need to actually set that power-law for density, too, in 'return_user_desired_target_density' above
-     double dx=P[i].Pos[0]-boxHalf_X, dy=P[i].Pos[1]-boxHalf_Y, dz=P[i].Pos[2]-boxHalf_Z, r=sqrt(dx*dx+dy*dy+dz*dz);
-     double b = 2.; return 2.*M_PI/fabs((3.-b)*(1.-b)) * pow(return_user_desired_target_density(i),2) * r*r;
-     */
 }
 
 

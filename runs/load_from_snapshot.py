@@ -55,13 +55,13 @@ def load_from_snapshot(value, ptype, snapshot_name,
     # if no valid file found, give up
     if(fname==None): 
         print('Could not find a valid file with this path/name/extension - please check these settings')
-        return 0
+        return None
     # try to open the file
     try: 
         file = h5py.File(fname,'r') # Open hdf5 snapshot file
     except:
         print('Unexpected error: could not read hdf5 file ',fname,' . Please check the format, name, and path information is correct')
-        return 0
+        return None
         
     # try to parse the header
     try:
@@ -69,7 +69,7 @@ def load_from_snapshot(value, ptype, snapshot_name,
     except:
         print('Was able to open the file but not the header, please check this is a valid GIZMO hdf5 file')
         file.close()
-        return 0
+        return None
     # check if desired value is contained in header -- if so just return it and exit
     if(value=='header_keys')|(value=='Header_Keys')|(value=='HEADER_KEYS')|(value=='headerkeys')|(value=='HeaderKeys')|(value=='HEADERKEYS')|((value=='keys' and not (ptype==0 or ptype==1 or ptype==2 or ptype==3 or ptype==4 or ptype==5))):
         q = header_toparse.keys()
@@ -87,21 +87,21 @@ def load_from_snapshot(value, ptype, snapshot_name,
     if not (ptype==0 or ptype==1 or ptype==2 or ptype==3 or ptype==4 or ptype==5):
         print('Particle type needs to be an integer = 0,1,2,3,4,5. Returning 0')
         file.close()
-        return 0
+        return None
     # check that the header contains the expected data needed to parse the file
     if not ('NumFilesPerSnapshot' in header_toparse and 'NumPart_Total' in header_toparse
         and 'Time' in header_toparse and 'Redshift' in header_toparse 
         and 'HubbleParam' in header_toparse and 'NumPart_ThisFile' in header_toparse):
         print('Header appears to be missing critical information. Please check that this is a valid GIZMO hdf5 file')
         file.close()
-        return 0
+        return None
     # parse data needed for checking sub-files 
     numfiles = header_toparse["NumFilesPerSnapshot"]
     npartTotal = header_toparse["NumPart_Total"]
     if(npartTotal[ptype]<1): 
         #print('No particles of designated type exist in this snapshot, returning 0')
         file.close()
-        return 0
+        return None
 
     # close the initial header we are parsing
     file.close()
@@ -124,8 +124,7 @@ def load_from_snapshot(value, ptype, snapshot_name,
                         return q
                     # check if requested data actually exists as a valid keyword in the file
                     if not (value in file['PartType'+str(ptype)].keys()):
-                        print('The value ',value,' given does not appear to exist in the file ',fname," . Please check that you have specified a valid keyword. You can run this routine with the value 'keys' to return a list of valid value keys. Returning 0")
-                        return 0
+                        return None
                     # now actually read the data
                     axis_mask = numpy.array(axis_mask)
                     if(axis_mask.size > 0):
