@@ -25,6 +25,12 @@ double return_user_desired_target_density(int i)
      return rho_0 * ((1.-1./rho_contrast)*0.5*erfc(2.*(r-r_cloud)/interp_width) + 1./rho_contrast);
      */
 }
+double return_user_desired_target_velocity(int i, int j)
+{
+  // i is the particle index P[i]
+  // j is the velocity component
+  return 0.;
+}
 double return_user_desired_target_pressure(int i)
 {
     return 1; // uniform pressure everywhere -- will try to generate a constant-pressure medium //

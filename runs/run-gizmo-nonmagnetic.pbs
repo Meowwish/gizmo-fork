@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#PBS -N gizmo_MHD_AGORA_highres_4nodes
+#PBS -N gizmo_hydro_AGORA_highres
 #PBS -P jh2
 #PBS -q normal
 #PBS -l ncpus=192
@@ -10,6 +10,9 @@
 #PBS -l wd
 #PBS -l walltime=48:00:00
 #PBS -l storage=scratch/jh2+gdata/jh2
+
+# --- print commands ---
+set -x
 
 
 # --- tuning options for jemalloc [unused] ---
@@ -32,7 +35,7 @@ MPI_OPTIONS="-mca coll ^hcoll"
 
 # --- initialize GIZMO ---
 
-mpirun $MPI_OPTIONS ./GIZMO isodisk.params > gizmo_isolated_disk.log 2>&1
+mpirun $MPI_OPTIONS ./GIZMO isodisk_nonmagnetic.params > gizmo_isolated_disk_nonmagnetic.log 2>&1
 
 
 

@@ -1005,8 +1005,8 @@ ifeq ($(SYSTYPE),"Gadi")
 CC       =  mpicc
 CXX      =  mpicxx
 FC       =  mpif90 -nofor_main
-#OPTIMIZE = -g -O2 -xCORE-AVX2 -ipo -funroll-loops -fp-model precise -prec-div -prec-sqrt -no-ftz -unroll-aggressive -ip -no-ipo # conservative numerical precision options, probably not necessary
-# unless you like code to run slow, do not use AVX512 (thermal throttling will happen)!
+#OPTIMIZE = -g -O2 -xCORE-AVX2 -ipo -funroll-loops -fp-model precise -prec-div -prec-sqrt -no-ftz -unroll-aggressive -ip -no-ipo # conservative numerical precision, probably not necessary
+# unless you like code to run slow, do not use AVX512 (does not vectorize well anyway)
 OPTIMIZE = -O2 -xCORE-AVX2 -ipo -funroll-loops -no-prec-div -fp-model fast=2  # speed
 ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
 OPTIMIZE += -qopenmp
@@ -1023,7 +1023,7 @@ GSL_LIBS = -L$(GSL_HOME)/lib
 HDF5INCL = -I$(HDF5_HOME)/include -DH5_USE_16_API
 HDF5LIB  = -L$(HDF5_HOME)/lib -lhdf5 -lz
 MPICHLIB = #
-OPT     += -DUSE_MPI_IN_PLACE #-DNO_ISEND_IRECV_IN_DOMAIN
+OPT     += -DUSE_MPI_IN_PLACE -DNO_ISEND_IRECV_IN_DOMAIN
 ##
 # [BDW 07/20: Copied from Frontera build settings.]
 #
