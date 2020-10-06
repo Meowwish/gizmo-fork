@@ -974,12 +974,12 @@ ifeq ($(SYSTYPE),"Ubuntu")
 export OMPI_CC = clang
 export OMPI_CXX = clang++
 export OMPI_FC = clang
-CC       = mpicc
+CC       = mpicxx -x c++ # use C++ compiler
 CXX      = mpicxx
 FC       = mpif90
 LDFLAGS	 = -lgfortran
 # WARNING: do *NOT* run with -ffast-math !!
-OPTIMIZE += -O2 -march=native -ffp-contract=off -fstandalone-debug #-fsanitize=address # clang options
+OPTIMIZE += -O2 -march=native -ffp-contract=off #-fstandalone-debug #-fsanitize=address # clang options
 ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
 OPTIMIZE += -fopenmp # openmp required compiler flags
 FC       = mpif90
@@ -1235,6 +1235,8 @@ endif
 CFLAGS = $(OPTIONS) $(GSL_INCL) $(FFTW_INCL) $(HDF5INCL) $(GMP_INCL) \
          $(GRACKLEINCL) $(CHIMESINCL)
 
+CXXFLAGS = $(CFLAGS)
+
 LIBS = $(HDF5LIB) -g $(MPICHLIB) $(GSL_LIBS) -lgsl -lgslcblas \
 	   $(FFTW_LIBS) $(FFTW_LIBNAMES) -lm $(GRACKLELIBS) $(CHIMESLIBS)
 
@@ -1243,7 +1245,7 @@ LIBS += -lpthread
 endif
 
 $(EXEC): $(OBJS) $(FOBJS)  
-	$(CXX) $(LDFLAGS) $(OPTIMIZE) $(OBJS) $(FOBJS) $(LIBS) $(RLIBS) -o $(EXEC)
+	$(CXX) -v $(LDFLAGS) $(OPTIMIZE) $(OBJS) $(FOBJS) $(LIBS) $(RLIBS) -o $(EXEC)
 
 $(OBJS): $(INCL)  $(CONFIG)  compile_time_info.c
 

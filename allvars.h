@@ -226,11 +226,20 @@
 
 
 #if defined(COOL_GRACKLE) 
+
 #if !defined(COOLING)
 #define COOLING
-#endif
+#endif // !defined(COOLING)
+
+#ifdef __cplusplus
+extern "C" {
 #include <grackle.h>
-#endif
+}
+#else
+#include <grackle.h>
+#endif // __cplusplus
+
+#endif // COOL_GRACKLE
 
 
 

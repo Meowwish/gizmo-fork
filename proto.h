@@ -479,8 +479,7 @@ double calculate_relative_light_to_mass_ratio_from_imf(double stellar_age_in_gyr
 double calculate_individual_stellar_luminosity(double mdot, double mass, long i);
 double return_probability_of_this_forming_bh_from_seed_model(int i);
 
-// this structure needs to be defined here, because routines for feedback event rates, etc, are shared among files //
-// however, this causes problems when compiling GIZMO with as C++ code (instead of C)!
+// this structure needs to be defined here, because routines for feedback event rates, etc, are shared among files
 struct addFB_evaluate_data_in_
 {
     MyDouble Pos[3], Vel[3], Msne, unit_mom_SNe;
@@ -492,8 +491,11 @@ struct addFB_evaluate_data_in_
     MyDouble yields[NUM_METAL_SPECIES];
 #endif
     int NodeList[NODELISTLENGTH];
-}
-*addFB_evaluate_DataIn_, *addFB_evaluate_DataGet_;
+};
+
+// extern declaration here, *definition* is in main.c
+// [see: https://gcc.gnu.org/gcc-10/porting_to.html]
+extern struct addFB_evaluate_data_in_ *addFB_evaluate_DataIn_, *addFB_evaluate_DataGet_;
 
 void particle2in_addFB_fromstars(struct addFB_evaluate_data_in_ *in, int i, int fb_loop_iteration);
 double mechanical_fb_calculate_eventrates(int i, double dt);

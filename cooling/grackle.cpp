@@ -7,7 +7,6 @@
 #include "./cooling.h"
 
 #ifdef COOL_GRACKLE
-#include <grackle.h>
 #define ENDRUNVAL 91234
 
 //

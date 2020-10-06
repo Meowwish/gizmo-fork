@@ -1,9 +1,11 @@
 grackle_install/
 __pycache__
+
 GIZMO
 GIZMO_config.h
 compile_time_info.c
 GRACKLE_INFO
+
 *.log
 *.params-usedvalues
 *.patch
@@ -11,6 +13,8 @@ GRACKLE_INFO
 *.h5
 *.pdf
 *.png
+
+.vscode/
 
 # Prerequisites
 *.d
