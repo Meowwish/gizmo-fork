@@ -17,8 +17,10 @@ if __name__ == '__main__':
         zsliceplot_file = snap.parent.with_name(snap.name).with_suffix('.zslice_density.png')
         ztempplot_file = snap.parent.with_name(snap.name).with_suffix('.zslice_temperature.png')
         projplot_file = snap.parent.with_name(snap.name).with_suffix('.projection_density.png')
+        magpressure_sliceplot = snap.parent.with_name(snap.name).with_suffix('.magnetic_energy.png')
 
-        files = [phaseplot_file, sliceplot_file, zsliceplot_file, projplot_file, ztempplot_file]
+        files = [phaseplot_file, sliceplot_file, zsliceplot_file, projplot_file, ztempplot_file,
+                 magpressure_sliceplot]
         files_exist = [f.exists() for f in files]
 
         if all(files_exist):
@@ -45,6 +47,13 @@ if __name__ == '__main__':
             save_slice_plot(mesh, mesh.Density()*unitdensity_per_H, zsliceplot_file,
                             colorbar_label=r'Density (g cm$^-3$)', rmax=rmax, plane='y',
                             vmin=1e-5, vmax=1e5)
+
+        if not magpressure_sliceplot.exists():
+            bfield = pdata['MagneticField']
+            mag_pressure = bfield**2
+            save_slice_plot(mesh, mag_pressure, magpressure_sliceplot,
+                            colorbar_label='magnetic energy', rmax=rmax, plane='y',
+                            bfield=pdata['MagneticField'])
 
         if not ztempplot_file.exists() and rawtemp is not None:
             save_slice_plot(mesh, temp, ztempplot_file,

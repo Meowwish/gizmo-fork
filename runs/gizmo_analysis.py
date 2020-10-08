@@ -111,8 +111,10 @@ def plot_stars_on_axis(ax, star_coords, rmax=10., s=0.05):
         r = np.sqrt(x**2 + y**2)
         ax.scatter(x[r < rmax], y[r < rmax], s=s, color='black')
 
-def save_slice_plot(mesh, field, filename, colorbar_label="", star_coords=None, rmax=10., plane='z', vmin=10., vmax=1.0e7):
-    res = 1000
+def save_slice_plot(mesh, field, filename, colorbar_label="",
+                    bfield=None,
+                    star_coords=None, rmax=10., plane='z', vmin=10., vmax=1.0e7):
+    res = 800
     x = y = np.linspace(-rmax,rmax,res)
     X, Y = np.meshgrid(x, y)
 
@@ -127,6 +129,22 @@ def save_slice_plot(mesh, field, filename, colorbar_label="", star_coords=None, 
                     origin='lower',
                     aspect='equal',
                     norm=colors.LogNorm(vmin=vmin, vmax=vmax))
+
+    bfield_res = 20
+    bfield_slice = mesh.Slice(bfield,
+                              center=np.array([0,0,0]),
+                              size=2*rmax,
+                              res=bfield_res)
+    
+    x = y = np.linspace(-rmax, rmax, bfield_res)
+    bfield_x = bfield_slice[:,:,0]
+    bfield_y = bfield_slice[:,:,1]
+    bfield_z = bfield_slice[:,:,2]
+    bfield_norm = np.sqrt( bfield_x**2 + bfield_y**2 + bfield_z**2 )
+    bfield_x /= bfield_norm
+    bfield_y /= bfield_norm
+    # plot B-fields
+    ax.quiver(x, y, bfield_x, bfield_y, angles='xy', pivot='middle')
 
     plot_stars_on_axis(ax, star_coords, rmax=rmax)
 
@@ -160,7 +178,7 @@ def save_density_projection_plot(mesh, filename, star_coords=None,
                     aspect='equal',
                     norm=colors.LogNorm(vmin=1.0, vmax=1.0e3))
 
-    bfield_res = 30
+    bfield_res = 20
     bfield_slice = mesh.Slice(bfield,
                               center=np.array([0,0,0]),
                               size=2*rmax,
