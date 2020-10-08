@@ -11,6 +11,10 @@
 #include "allvars.h"
 #include "proto.h"
 
+// must be defined here to avoid multiple definition issues
+// [see: https://gcc.gnu.org/gcc-10/porting_to.html]
+// (an extern *declaration* is in proto.h)
+struct addFB_evaluate_data_in_ *addFB_evaluate_DataIn_, *addFB_evaluate_DataGet_;
 
 
 /*! \file main.c

@@ -51,38 +51,34 @@ void allocate_memory(void)
   PrevInTimeBin = (int *) mymalloc("PrevInTimeBin", bytes = All.MaxPart * sizeof(int));
   bytes_tot += bytes;
 
-
-  if(All.MaxPart > 0)
+  if (All.MaxPart > 0)
+  {
+    if (!(P = (struct particle_data *)mymalloc("P", bytes = All.MaxPart * sizeof(struct particle_data))))
     {
-      if(!(P = (struct particle_data *) mymalloc("P", bytes = All.MaxPart * sizeof(struct particle_data))))
-	{
-	  printf("failed to allocate memory for `P' (%g MB).\n", bytes / (1024.0 * 1024.0));
-	  endrun(1);
-	}
-      bytes_tot += bytes;
-
-      if(ThisTask == 0)
-	printf("Allocated %g MByte for particle storage.\n", bytes_tot / (1024.0 * 1024.0));
+      printf("failed to allocate memory for `P' (%g MB).\n", bytes / (1024.0 * 1024.0));
+      endrun(1);
     }
+    bytes_tot += bytes;
 
-  if(All.MaxPartSph > 0)
+    if (ThisTask == 0)
+      printf("Allocated %g MByte for particle storage.\n", bytes / (1024.0 * 1024.0));
+  }
+
+  if (All.MaxPartSph > 0)
+  {
+    if (!(SphP = (struct sph_particle_data *)mymalloc("SphP", bytes =
+                                                                  All.MaxPartSph * sizeof(struct sph_particle_data))))
     {
-      bytes_tot = 0;
-
-      if(!(SphP = (struct sph_particle_data *) mymalloc("SphP", bytes =
-						All.MaxPartSph * sizeof(struct sph_particle_data))))
-    {
-	  printf("failed to allocate memory for `SphP' (%g MB).\n", bytes / (1024.0 * 1024.0));
-	  endrun(1);
-	}
-      bytes_tot += bytes;
-
-      if(ThisTask == 0)
-	printf("Allocated %g MByte for storage of hydro data.\n", bytes_tot / (1024.0 * 1024.0));
-
+      printf("failed to allocate memory for `SphP' (%g MB).\n", bytes / (1024.0 * 1024.0));
+      endrun(1);
     }
+    bytes_tot += bytes;
 
+    if (ThisTask == 0)
+      printf("Allocated %g MByte for storage of hydro data.\n", bytes / (1024.0 * 1024.0));
+  }
 
-
-
+  if(ThisTask == 0) {
+    printf("Allocated %g MByte total storage in allocate_memory().\n", bytes_tot / (1024.0 * 1024.0));
+  }
 }

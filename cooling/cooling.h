@@ -37,5 +37,5 @@ double DoInstabilityCooling(double m_old, double u, double rho, double dt, doubl
 #ifdef COOL_GRACKLE
 void InitGrackle(void);
 double CallGrackle(double u_old, double rho, double dt, double ne_guess, int target, int mode);
-#endif
+#endif // COOL_GRACKLE
 

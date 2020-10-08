@@ -974,12 +974,12 @@ ifeq ($(SYSTYPE),"Ubuntu")
 export OMPI_CC = clang
 export OMPI_CXX = clang++
 export OMPI_FC = clang
-CC       = mpicc
-CXX      = mpicxx
+CC       = mpicxx -x c++ -std=c++17 # use C++ compiler
+CXX      = mpicxx -std=c++17
 FC       = mpif90
 LDFLAGS	 = -lgfortran
 # WARNING: do *NOT* run with -ffast-math !!
-OPTIMIZE += -O2 -march=native -ffp-contract=off -fstandalone-debug #-fsanitize=address # clang options
+OPTIMIZE += -O2 -march=native -ffp-contract=off #-fstandalone-debug #-fsanitize=address # clang options
 ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
 OPTIMIZE += -fopenmp # openmp required compiler flags
 FC       = mpif90
@@ -991,6 +991,9 @@ MKL_LIBS =
 GRACKLE_HOME = $(shell pwd)/grackle_install
 GRACKLEINCL = -I$(GRACKLE_HOME)/include
 GRACKLELIBS = -L$(GRACKLE_HOME)/lib -Wl,-rpath=$(GRACKLE_HOME)/lib
+SLUG_HOME= $(shell pwd)/slug2
+SLUG_INCLUDE = -I$(SLUG_HOME)/src -I$(SLUG_HOME)/pcg-cpp/include
+SLUG_LIBS = -L$(SLUG_HOME)/src -Wl,-rpath=$(SLUG_HOME)/src
 GSL_INCL = -I$(GSL_HOME)/include
 GSL_LIBS = -L$(GSL_HOME)/lib
 HDF5INCL = -I$(HDF5_HOME)/include -DH5_USE_16_API
@@ -1231,19 +1234,30 @@ GRACKLEINCL =
 GRACKLELIBS =
 endif
 
+# if SLUG libraries are installed they must be a shared library as defined here
+ifeq (SLUG,$(findstring SLUG,$(CONFIGVARS)))
+SLUG_INCLUDE +=
+SLUG_LIBS += -lslug
+else
+SLUG_INCLUDE +=
+SLUG_LIBS +=
+endif
+
 # linking libraries (includes machine-dependent options above)
 CFLAGS = $(OPTIONS) $(GSL_INCL) $(FFTW_INCL) $(HDF5INCL) $(GMP_INCL) \
-         $(GRACKLEINCL) $(CHIMESINCL)
+         $(GRACKLEINCL) $(CHIMESINCL) $(SLUG_INCLUDE)
+
+CXXFLAGS = $(CFLAGS)
 
 LIBS = $(HDF5LIB) -g $(MPICHLIB) $(GSL_LIBS) -lgsl -lgslcblas \
-	   $(FFTW_LIBS) $(FFTW_LIBNAMES) -lm $(GRACKLELIBS) $(CHIMESLIBS)
+	   $(FFTW_LIBS) $(FFTW_LIBNAMES) -lm $(GRACKLELIBS) $(CHIMESLIBS) $(SLUG_LIBS)
 
 ifeq (PTHREADS_NUM_THREADS,$(findstring PTHREADS_NUM_THREADS,$(CONFIGVARS))) 
 LIBS += -lpthread
 endif
 
 $(EXEC): $(OBJS) $(FOBJS)  
-	$(CXX) $(LDFLAGS) $(OPTIMIZE) $(OBJS) $(FOBJS) $(LIBS) $(RLIBS) -o $(EXEC)
+	$(CXX) -v $(LDFLAGS) $(OPTIMIZE) $(OBJS) $(FOBJS) $(LIBS) $(RLIBS) -o $(EXEC)
 
 $(OBJS): $(INCL)  $(CONFIG)  compile_time_info.c
 
