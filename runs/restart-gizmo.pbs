@@ -8,7 +8,7 @@
 #PBS -m aeb
 #PBS -M ben.wibking@anu.edu.au
 #PBS -l wd
-#PBS -l walltime=48:00:00
+#PBS -l walltime=12:00:00
 #PBS -l storage=scratch/jh2+gdata/jh2
 
 # submit this job with a command such as:
@@ -30,7 +30,8 @@ cd /g/data/jh2/bw0729/gizmo-fork/runs
 #  inside HCOLL, resulting in hangs" [https://docs.mellanox.com/display/HPCXv27/HCOLL]
 # (We are getting hangs during MPI_Allreduce in domain.c, unclear whether this is the cause.)
 
-MPI_OPTIONS="-mca coll ^hcoll"
+#MPI_OPTIONS="-mca coll ^hcoll"
+MPI_OPTIONS=""
 
 
 ## --- restart GIZMO from restartfiles ---
