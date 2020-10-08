@@ -32,11 +32,17 @@
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_errno.h>
+
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
 #include "GIZMO_config.h"
+
+#ifdef SLUG // must be after GIZMO_config.h
+#include <slug_cluster.H>
+#endif //SLUG
+
 /*------- Things that are always recommended (this must follow loading GIZMO_config.h!) -------*/
 #define GIZMO_VERSION   "2020"  /*!< code version string */
 #define DOUBLEPRECISION         /* using double (not floating-point) precision */
@@ -1582,7 +1588,7 @@ extern struct global_data_all_processes
     MyDouble DM_KickPerCollision;  /*!< for exo-thermic DM reactions, this determines the energy gain 'per event': kick in code units (equivalent to specific energy) associated 'per event' */
     MyDouble DM_InteractionVelocityScale; /*!< scale above which the scattering becomes velocity-dependent */
 #endif
-    
+
   int MaxPart;			/*!< This gives the maxmimum number of particles that can be stored on one processor. */
   int MaxPartSph;		/*!< This gives the maxmimum number of SPH particles that can be stored on one processor. */
   int ICFormat;			/*!< selects different versions of IC file-format */
@@ -2184,7 +2190,13 @@ extern ALIGN(32) struct particle_data
 #define AREA_WEIGHTED_SUM_ELEMENTS 11 /* number of weights needed for full momentum-and-energy conserving system */
     MyFloat Area_weighted_sum[AREA_WEIGHTED_SUM_ELEMENTS]; /* normalized weights for particles in kernel weighted by area, not mass */
 #endif
-    
+
+#ifdef SLUG
+    bool slug_initialized = false;
+    slug_cluster_state<NISO_IN_YIELD_TABLE> slug_state; // defined in slug_cluster.H
+    // NISO_IN_YIELD_TABLE should be set in Config.sh
+#endif // SLUG
+
 #if defined(GRAIN_FLUID)
     MyFloat Grain_Size;
     MyFloat Gas_Density;
@@ -2716,6 +2728,7 @@ extern struct sph_particle_data
 
 
 extern peanokey *DomainKeyBuf;
+
 
 /* global state of system
 */
