@@ -20,7 +20,6 @@ unitdensity_per_H = unitdensity_cgs / m_H
 unitenergydensity_cgs = unitmass_cgs * unitvelocity_cgs**(2) * unitlength_cgs**(-3)
 unitbfield_cgs = np.sqrt(4*np.pi*unitenergydensity_cgs)
 
-print(f"unit B field in gauss = {unitbfield_cgs}")
 
 # plot resolution
 fig_dpi = 300

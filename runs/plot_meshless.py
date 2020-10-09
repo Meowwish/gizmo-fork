@@ -47,7 +47,6 @@ if __name__ == '__main__':
         if not magpressure_sliceplot.exists():
             bfield = pdata['MagneticField'] * unitbfield_cgs # gauss
             mag_energy_density = np.sqrt(np.einsum('ij,ij->i', bfield, bfield)) / (8.0*np.pi)
-            print(f"mean magnetic energy density = {np.mean(mag_energy_density))}")
             save_slice_plot(mesh, mag_energy_density,
                             magpressure_sliceplot,
                             colorbar_label=r'magnetic energy density (erg cm$^{-3}$)',
