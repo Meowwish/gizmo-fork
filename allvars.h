@@ -2193,7 +2193,7 @@ extern ALIGN(32) struct particle_data
 
 
 #ifdef SLUG
-    bool slug_initialized = false;
+    bool slug_state_initialized = false;
     slug_cluster_state_noyields slug_state; // defined in slug_cluster.H
 #endif // SLUG
 
