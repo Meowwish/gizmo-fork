@@ -45,16 +45,16 @@ if __name__ == '__main__':
 
 
         if not magpressure_sliceplot.exists():
-            bfield = pdata['MagneticField']
+            bfield = pdata['MagneticField'] * unitbfield_cgs # gauss
             mag_energy_density = np.sqrt(np.einsum('ij,ij->i', bfield, bfield)) / (8.0*np.pi)
-            print(mag_energy_density)
+            print(f"mean magnetic energy density = {np.mean(mag_energy_density))}")
             save_slice_plot(mesh, mag_energy_density,
                             magpressure_sliceplot,
-                            colorbar_label='magnetic energy density (cgs)',
+                            colorbar_label=r'magnetic energy density (erg cm$^{-3}$)',
                             rmax=rmax,
                             bfield=pdata['MagneticField'],
-                            vmin=np.min(mag_energy_density),
-                            vmax=np.max(mag_energy_density))
+                            vmin=1.0e-9,
+                            vmax=1.0e-15)
 
         if not zsliceplot_file.exists():
             save_slice_plot(mesh, mesh.Density()*unitdensity_per_H, zsliceplot_file,

@@ -13,9 +13,14 @@ gamma = 5./3.   # assumed constant
 unittime_cgs = 3.08568e16    # s  (0.976 Gyr in s)
 unitlength_cgs = 3.085678e21 # cm (1 kpc in cm)
 unitmass_cgs = 1.989e43      # g  (1e10 Msun in g)
+unitvelocity_cgs = unitlength_cgs / unittime_cgs
 unitenergypermass_cgs = unitlength_cgs**(2) * unittime_cgs**(-2) # erg g^{-1}
 unitdensity_cgs = unitmass_cgs * unitlength_cgs**(-3) # g cm^{-3}
 unitdensity_per_H = unitdensity_cgs / m_H
+unitenergydensity_cgs = unitmass_cgs * unitvelocity_cgs**(2) * unitlength_cgs**(-3)
+unitbfield_cgs = np.sqrt(4*np.pi*unitenergydensity_cgs)
+
+print(f"unit B field in gauss = {unitbfield_cgs}")
 
 # plot resolution
 fig_dpi = 300
