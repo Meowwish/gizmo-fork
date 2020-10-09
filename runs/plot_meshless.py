@@ -43,17 +43,23 @@ if __name__ == '__main__':
             save_slice_plot(mesh, temp, sliceplot_file,
                             colorbar_label=r'Temperature (K)', rmax=rmax)
 
+
+        if not magpressure_sliceplot.exists():
+            bfield = pdata['MagneticField']
+            mag_energy_density = np.sqrt(np.einsum('ij,ij->i', bfield, bfield)) / (8.0*np.pi)
+            print(mag_energy_density)
+            save_slice_plot(mesh, mag_energy_density,
+                            magpressure_sliceplot,
+                            colorbar_label='magnetic energy density (cgs)',
+                            rmax=rmax,
+                            bfield=pdata['MagneticField'],
+                            vmin=np.min(mag_energy_density),
+                            vmax=np.max(mag_energy_density))
+
         if not zsliceplot_file.exists():
             save_slice_plot(mesh, mesh.Density()*unitdensity_per_H, zsliceplot_file,
                             colorbar_label=r'Density (g cm$^-3$)', rmax=rmax, plane='y',
                             vmin=1e-5, vmax=1e5)
-
-        if not magpressure_sliceplot.exists():
-            bfield = pdata['MagneticField']
-            mag_pressure = bfield**2
-            save_slice_plot(mesh, mag_pressure, magpressure_sliceplot,
-                            colorbar_label='magnetic energy', rmax=rmax, plane='y',
-                            bfield=pdata['MagneticField'])
 
         if not ztempplot_file.exists() and rawtemp is not None:
             save_slice_plot(mesh, temp, ztempplot_file,

@@ -130,23 +130,25 @@ def save_slice_plot(mesh, field, filename, colorbar_label="",
                     aspect='equal',
                     norm=colors.LogNorm(vmin=vmin, vmax=vmax))
 
-    bfield_res = 20
-    bfield_slice = mesh.Slice(bfield,
-                              center=np.array([0,0,0]),
-                              size=2*rmax,
-                              res=bfield_res)
+    if bfield is not None:
+        bfield_res = 20
+        bfield_slice = mesh.Slice(bfield,
+                                  center=np.array([0,0,0]),
+                                  size=2*rmax,
+                                  res=bfield_res)
     
-    x = y = np.linspace(-rmax, rmax, bfield_res)
-    bfield_x = bfield_slice[:,:,0]
-    bfield_y = bfield_slice[:,:,1]
-    bfield_z = bfield_slice[:,:,2]
-    bfield_norm = np.sqrt( bfield_x**2 + bfield_y**2 + bfield_z**2 )
-    bfield_x /= bfield_norm
-    bfield_y /= bfield_norm
-    # plot B-fields
-    ax.quiver(x, y, bfield_x, bfield_y, angles='xy', pivot='middle')
+        x = y = np.linspace(-rmax, rmax, bfield_res)
+        bfield_x = bfield_slice[:,:,0]
+        bfield_y = bfield_slice[:,:,1]
+        bfield_z = bfield_slice[:,:,2]
+        bfield_norm = np.sqrt( bfield_x**2 + bfield_y**2 + bfield_z**2 )
+        bfield_x /= bfield_norm
+        bfield_y /= bfield_norm
+        # plot B-fields
+        ax.quiver(x, y, bfield_x, bfield_y, angles='xy', pivot='middle')
 
-    plot_stars_on_axis(ax, star_coords, rmax=rmax)
+    if star_coords is not None:
+        plot_stars_on_axis(ax, star_coords, rmax=rmax)
 
     ax.set_aspect('equal')
     #fig.colorbar(p,label=r"$\Sigma_{gas}$ $(\rm M_\odot\,pc^{-2})$")
@@ -178,23 +180,25 @@ def save_density_projection_plot(mesh, filename, star_coords=None,
                     aspect='equal',
                     norm=colors.LogNorm(vmin=1.0, vmax=1.0e3))
 
-    bfield_res = 20
-    bfield_slice = mesh.Slice(bfield,
-                              center=np.array([0,0,0]),
-                              size=2*rmax,
-                              res=bfield_res)
+    if bfield is not None:
+        bfield_res = 20
+        bfield_slice = mesh.Slice(bfield,
+                                  center=np.array([0,0,0]),
+                                  size=2*rmax,
+                                  res=bfield_res)
     
-    x = y = np.linspace(-rmax, rmax, bfield_res)
-    bfield_x = bfield_slice[:,:,0]
-    bfield_y = bfield_slice[:,:,1]
-    bfield_z = bfield_slice[:,:,2]
-    bfield_norm = np.sqrt( bfield_x**2 + bfield_y**2 + bfield_z**2 )
-    bfield_x /= bfield_norm
-    bfield_y /= bfield_norm
-    # plot B-fields
-    ax.quiver(x, y, bfield_x, bfield_y, angles='xy', pivot='middle')
+        x = y = np.linspace(-rmax, rmax, bfield_res)
+        bfield_x = bfield_slice[:,:,0]
+        bfield_y = bfield_slice[:,:,1]
+        bfield_z = bfield_slice[:,:,2]
+        bfield_norm = np.sqrt( bfield_x**2 + bfield_y**2 + bfield_z**2 )
+        bfield_x /= bfield_norm
+        bfield_y /= bfield_norm
+        # plot B-fields
+        ax.quiver(x, y, bfield_x, bfield_y, angles='xy', pivot='middle')
 
-    plot_stars_on_axis(ax, star_coords, rmax=rmax)
+    if star_coords is not None:
+        plot_stars_on_axis(ax, star_coords, rmax=rmax)
 
     ax.set_aspect('equal')
     fig.colorbar(p, label=colorbar_label)
