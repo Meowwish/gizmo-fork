@@ -394,4 +394,3 @@ ALLOW_IMBALANCED_GASPARTICLELOAD # increases All.MaxPartSph to All.MaxPart: can 
 
 # ----- extra options
 SLUG # use feedback computed from the SLUG2 library
-NISO_IN_YIELD_TABLE=0 # set the number of isotopes in the yield vectors

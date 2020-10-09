@@ -2191,11 +2191,12 @@ extern ALIGN(32) struct particle_data
     MyFloat Area_weighted_sum[AREA_WEIGHTED_SUM_ELEMENTS]; /* normalized weights for particles in kernel weighted by area, not mass */
 #endif
 
+
 #ifdef SLUG
     bool slug_initialized = false;
-    slug_cluster_state<NISO_IN_YIELD_TABLE> slug_state; // defined in slug_cluster.H
-    // NISO_IN_YIELD_TABLE should be set in Config.sh
+    slug_cluster_state_noyields slug_state; // defined in slug_cluster.H
 #endif // SLUG
+
 
 #if defined(GRAIN_FLUID)
     MyFloat Grain_Size;
