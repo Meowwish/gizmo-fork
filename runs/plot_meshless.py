@@ -49,10 +49,11 @@ if __name__ == '__main__':
                             vmin=1e-5, vmax=1e5)
 
         if not magpressure_sliceplot.exists():
-            bfield = pdata['MagneticField']
-            mag_pressure = bfield**2
+            bfield = pdata['MagneticField'] * unitbfield_cgs # gauss
+            mag_pressure = bfield**2 / (8.0*np.pi)
             save_slice_plot(mesh, mag_pressure, magpressure_sliceplot,
-                            colorbar_label='magnetic energy', rmax=rmax, plane='y',
+                            colorbar_label=r'magnetic energy density (erg cm$^{-3}$)',
+                            rmax=rmax, plane='y', vmin=1.0e-9, vmax=1.0e-15,
                             bfield=pdata['MagneticField'])
 
         if not ztempplot_file.exists() and rawtemp is not None:
