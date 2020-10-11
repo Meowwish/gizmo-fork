@@ -393,4 +393,4 @@ ALLOW_IMBALANCED_GASPARTICLELOAD # increases All.MaxPartSph to All.MaxPart: can 
 ####################################################################################################
 
 # ----- extra options
-SLUG # use feedback computed from the SLUG2 library
+#SLUG # use feedback computed from the SLUG2 library

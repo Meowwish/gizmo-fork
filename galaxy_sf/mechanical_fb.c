@@ -7,7 +7,10 @@
 #include "../allvars.h"
 #include "../proto.h"
 #include "../kernel.h"
+
+#ifdef SLUG
 #include "slug_wrapper.h"
+#endif
 
 /* Routines for mechanical feedback/enrichment models: stellar winds, supernovae, etc
  * This file was written by Phil Hopkins (phopkins@caltech.edu) for GIZMO.

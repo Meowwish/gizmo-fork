@@ -9,7 +9,10 @@
 #include <gsl/gsl_eigen.h>
 #include "../allvars.h"
 #include "../proto.h"
+
+#ifdef SLUG
 #include "slug_wrapper.h"
+#endif
 
 /*!
  *  routines for star formation in cosmological/galaxy/single-star/black hole simulations
