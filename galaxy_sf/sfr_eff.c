@@ -517,8 +517,10 @@ void star_formation_parent_routine(void)
                     mySlugObject.serializeCluster(P[i].slug_state);
                     P[i].slug_state_initialized = true;
 
+#ifdef SLUG_DEBUG_SFR
                     std::cout << "\tSLUG cluster created with stellar mass = "
                               << mySlugObject.getBirthMass() << " Msun." << std::endl;
+#endif
                 } // mySlugObject deallocated automatically
 #endif
 

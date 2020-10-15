@@ -120,11 +120,12 @@ void particle2in_addFB_fromstars(struct addFB_evaluate_data_in_ *in, int i, int 
     in->Msne = P[i].SNe_ThisTimeStep * (14.8/UNIT_MASS_IN_SOLAR); // assume every SNe carries 14.8 solar masses (IMF-average)
     in->SNe_v_ejecta = 2607. / UNIT_VEL_IN_KMS; // assume ejecta are ~2607 km/s [KE=1e51 erg, for M=14.8 Msun], which is IMF-averaged
 
-    // SLUG model here
-    // - assume 1e51 erg kinetic energy per SN
-    // - compute ejecta mass by summing the yields (including the yield from hydrogen)
+    // SLUG model:
+    // - Assume 1e51 erg kinetic energy per SN, and
+    // - Compute ejecta mass by summing the yields (including the yield from hydrogen).
+    //   [The ejecta mass is automatically distributed to neighboring particles
+    //      and subtracted from the star particle, with a floor to prevent negative mass.]
     
-
 
 #ifdef SINGLE_STAR_SINK_DYNAMICS // if single-star exploding or returning mass, use its actual mass & assumed energy to obtain the velocity
     in->Msne = DMIN(1.,P[i].SNe_ThisTimeStep) * P[i].Mass; // mass fraction of star being returned this timestep

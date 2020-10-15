@@ -111,12 +111,13 @@ void determine_where_SNe_occur(void)
             double cluster_age_in_years = (All.Time - P[i].StellarAge) * UNIT_TIME_IN_YR;
             mySlugObject.advanceToTime(cluster_age_in_years);
 
-            // TODO: add this to slugWrapper class
-            //P[i].EjectaMass_ThisTimestep = mySlugObject.getEjectMassThisTimestep(); // solar mass
-            //P[i].Yields_This_Timestep = mySlugObject.getYieldsThisTimestep(); // solar mass
+            // TODO: implement these functions in the slugWrapper class
+            //P[i].EjectaMass_ThisTimestep = mySlugObject.getEjectaMassThisTimestep(); // solar mass
+            //P[i].Yields_ThisTimestep = mySlugObject.getYieldsThisTimestep(); // solar mass
 
-            P[i].SNe_ThisTimeStep = mySlugObject.getNumberSNeThisTimestep();
+            P[i].SNe_ThisTimeStep = mySlugObject.getNumberSNeThisTimestep(); // dimensionless
 
+#ifdef SLUG_DEBUG_FEEDBACK
             if (P[i].SNe_ThisTimeStep > 0) {
                 double x = P[i].Pos[0];
                 double y = P[i].Pos[1];
@@ -128,6 +129,7 @@ void determine_where_SNe_occur(void)
                           << "\t\t" << "radius = " << (R * UNIT_LENGTH_IN_KPC) << " kpc."
                           << std::endl;
             }
+#endif
 
             // serialize slug object
             mySlugObject.serializeCluster(P[i].slug_state);
