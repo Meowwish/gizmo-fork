@@ -1126,7 +1126,8 @@ STARFORM_OBJS = galaxy_sf/sfr_eff.o \
                 galaxy_sf/mechanical_fb.o \
                 galaxy_sf/thermal_fb.o \
                 galaxy_sf/radfb_local.o \
-                galaxy_sf/dm_dispersion_hsml.o
+                galaxy_sf/dm_dispersion_hsml.o \
+				galaxy_sf/slug_wrapper.o
 
 SINK_OBJS = galaxy_sf/blackholes/blackhole.o \
             galaxy_sf/blackholes/blackhole_util.o \
@@ -1183,6 +1184,7 @@ INCL    += 	allvars.h \
 			kernel.h \
 			eos/eos.h \
 			galaxy_sf/blackholes/blackhole.h \
+			galaxy_sf/slug_wrapper.h \
 			structure/fof.h \
 			structure/subfind/subfind.h \
 			cooling/cooling.h \

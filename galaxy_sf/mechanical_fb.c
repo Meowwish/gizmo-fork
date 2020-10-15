@@ -108,34 +108,32 @@ void determine_where_SNe_occur(void)
             mySlugObject.reconstructCluster(P[i].slug_state);
 
             // advance slug object in time
-            double time_cluster = (All.Time - P[i].StellarAge) * (All.UnitTime_in_s / SEC_PER_YEAR);
-            std::vector<double> yields_timestep = mySlugObject.advanceToTime(time_cluster);
+            double cluster_age_in_years = (All.Time - P[i].StellarAge) * UNIT_TIME_IN_YR;
+            mySlugObject.advanceToTime(cluster_age_in_years);
 
-            // TODO: add yields here
+            // TODO: add this to slugWrapper class
+            //P[i].EjectaMass_ThisTimestep = mySlugObject.getEjectMassThisTimestep(); // solar mass
+            //P[i].Yields_This_Timestep = mySlugObject.getYieldsThisTimestep(); // solar mass
 
-            // get number of SNe
-            double Num_supernovae_tot = mySlugObject.getStochasticSN();
-            P[i].Nsn_timestep = 0;
-            P[i].Nsn_timestep = Num_supernovae_tot - P[i].Nsn_tot; // Nsn_tot(current_time) - Nsn_tot(current_time-dt)
-            P[i].Nsn_tot = Num_supernovae_tot; // update cumulative number of SNe
+            P[i].SNe_ThisTimeStep = mySlugObject.getNumberSNeThisTimestep();
 
-            if (P[i].Nsn_timestep > 0) {
+            if (P[i].SNe_ThisTimeStep > 0) {
                 double x = P[i].Pos[0];
                 double y = P[i].Pos[1];
                 double R = std::sqrt(x*x + y*y);
-                std::cout << "SN explosion:"
-                          << "\t" << "PID = " << P[i].ID << "\n"
-                          << "\t" << "N_SNe = " << P[i].Nsn_timestep << "\n"
-                          << "\t" << "density = " << (P[i].DensAroundStar * All.UnitDensity_in_cgs) << "\n"
-                          << "\t" << "radius = " << R << "\n"
+                std::cout << "\tSN explosion:\n"
+                          << "\t\t" << "PID = " << P[i].ID << "\n"
+                          << "\t\t" << "N_SNe = " << P[i].SNe_ThisTimeStep << "\n"
+                          << "\t\t" << "density = " << (P[i].DensAroundStar * UNIT_DENSITY_IN_NHCGS) << " n_H/cc\n"
+                          << "\t\t" << "radius = " << (R * UNIT_LENGTH_IN_KPC) << " kpc."
                           << std::endl;
             }
 
             // serialize slug object
             mySlugObject.serializeCluster(P[i].slug_state);
         } // mySlugObject deallocated automatically
-#else 
-        // otherwise use a calculation of mechanical event rates to determine where/when the events actually occur
+
+#else // without SLUG -- use a calculation of mechanical event rates to determine where/when the events actually occur
         double RSNe = mechanical_fb_calculate_eventrates(i, dt);
         rmean += RSNe;
         ptotal += RSNe * (P[i].Mass * UNIT_MASS_IN_SOLAR) * (dt * UNIT_TIME_IN_MYR);

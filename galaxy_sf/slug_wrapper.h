@@ -21,12 +21,16 @@ public:
   void reconstructCluster(slug_cluster_state_noyields &state);
   void serializeCluster(slug_cluster_state_noyields &state);
 
-  auto advanceToTime(double particle_age) -> std::vector<double>; // particle_age [yr]
+  void advanceToTime(double particle_age); // particle_age [yr]
   
-  auto getStochasticSN() -> int;
+  auto getNumberSNeThisTimestep() -> int;
+  auto getYieldsThisTimestep() -> std::vector<double>;
   auto getBirthMass() -> double;
   auto getStellarMass() -> double;
   auto getPhotometryQH0() -> double; // ionising luminosity [photon/s]
+
+  int numberSNeThisTimestep;
+  std::vector<double> yieldsThisTimestep;
 
   // This is a pointer to the slug_cluster object
   slug_cluster *cluster;

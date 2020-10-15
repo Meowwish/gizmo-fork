@@ -45,24 +45,31 @@ void slugWrapper::serializeCluster(slug_cluster_state_noyields &state)
   cluster->serializeToStructWithoutYields(state);
 }
 
-auto slugWrapper::advanceToTime(double particle_age) -> std::vector<double>
+void slugWrapper::advanceToTime(double particle_age)
 {
   const std::vector<double> yields_t0 = cluster->get_yield();
-  cluster->advance(particle_age);
-  const std::vector<double> yields_t1 = cluster->get_yield();
+  const int numberSNe_t0 = cluster->get_stoch_sn();
 
-  std::vector<double> delta_yields(yields_t0.size());
-  
-  for(size_t i=0; i < delta_yields.size(); ++i) {
-    delta_yields[i] = std::max(yields_t1[i] - yields_t0[i], 0.0);
+  cluster->advance(particle_age);
+
+  const std::vector<double> yields_t1 = cluster->get_yield();
+  const int numberSNe_t1 = cluster->get_stoch_sn();
+
+  for(size_t i=0; i < yieldsThisTimestep.size(); ++i) {
+    yieldsThisTimestep[i] = std::max(yields_t1[i] - yields_t0[i], 0.0);
   }
 
-  return delta_yields;
+  numberSNeThisTimestep = numberSNe_t1 - numberSNe_t0;
 }
 
-auto slugWrapper::getStochasticSN() -> int
+auto slugWrapper::getNumberSNeThisTimestep() -> int
 {
-  return cluster->get_stoch_sn();
+  return numberSNeThisTimestep;
+}
+
+auto slugWrapper::getYieldsThisTimestep() -> std::vector<double>
+{
+  return yieldsThisTimestep;
 }
 
 auto slugWrapper::getBirthMass() -> double

@@ -512,9 +512,13 @@ void star_formation_parent_routine(void)
 #ifdef SLUG
                 {
                     slugWrapper mySlugObject;
-                    mySlugObject.constructCluster(P[i].Mass * UNIT_MASS_IN_SOLAR);
+                    const double cluster_mass = P[i].Mass * UNIT_MASS_IN_SOLAR;
+                    mySlugObject.constructCluster(cluster_mass);
                     mySlugObject.serializeCluster(P[i].slug_state);
                     P[i].slug_state_initialized = true;
+
+                    std::cout << "\tSLUG cluster created with stellar mass = "
+                              << mySlugObject.getBirthMass() << " Msun." << std::endl;
                 } // mySlugObject deallocated automatically
 #endif
 
