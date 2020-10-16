@@ -109,18 +109,24 @@ void determine_where_SNe_occur(void)
             slug_objects_this_timestep++;
 
             // create slug object
-            slugWrapper mySlugObject;
-            mySlugObject.reconstructCluster(P[i].slug_state);
+            slugWrapper mySlugObject(P[i].slug_state);
 
             // advance slug object in time
             double cluster_age_in_years = (All.Time - P[i].StellarAge) * UNIT_TIME_IN_YR;
             mySlugObject.advanceToTime(cluster_age_in_years);
 
-            // TODO: implement these functions in the slugWrapper class
-            //P[i].EjectaMass_ThisTimestep = mySlugObject.getEjectaMassThisTimestep(); // solar mass
-            //P[i].Yields_ThisTimestep = mySlugObject.getYieldsThisTimestep(); // solar mass
-
             P[i].SNe_ThisTimeStep = mySlugObject.getNumberSNeThisTimestep(); // dimensionless
+            P[i].EjectaMass_ThisTimestep = mySlugObject.getEjectaMassThisTimestep(); // solar mass
+
+#ifdef SLUG_YIELDS
+            // WARNING: implementation not complete!
+            auto yields = mySlugObject.getYieldsThisTimestep(); // solar mass
+            assert(yields.size() == NUM_METAL_SPECIES);
+
+            for(size_t j = 0; j < yields.size(); ++j) {
+                P[i].Yields_ThisTimestep[j] = yields[j];
+            }
+#endif // SLUG_YIELDS
 
 #ifdef SLUG_DEBUG_FEEDBACK
             if (P[i].SNe_ThisTimeStep > 0) {
@@ -131,6 +137,7 @@ void determine_where_SNe_occur(void)
                 std::cout << "\tSN explosion:\n"
                           << "\t\t" << "PID = " << P[i].ID << "\n"
                           << "\t\t" << "N_SNe = " << P[i].SNe_ThisTimeStep << "\n"
+                          << "\t\t" << "M_ej = " << P[i].EjectaMass_ThisTimestep << "\n"
                           << "\t\t" << "density = " << (P[i].DensAroundStar * UNIT_DENSITY_IN_NHCGS) << " n_H/cc\n"
                           << "\t\t" << "radius = " << (R * UNIT_LENGTH_IN_KPC) << " kpc\n"
                           << "\t\t" << "height = " << (z * UNIT_LENGTH_IN_KPC) << " kpc."

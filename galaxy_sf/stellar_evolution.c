@@ -116,16 +116,23 @@ void particle2in_addFB_fromstars(struct addFB_evaluate_data_in_ *in, int i, int 
 
     if(P[i].SNe_ThisTimeStep<=0) {in->Msne=0; return;} // no event
 
-    // 'dummy' example model assumes all SNe are identical with IMF-averaged properties from the AGORA model (Kim et al., 2016 ApJ, 833, 202)
-    in->Msne = P[i].SNe_ThisTimeStep * (14.8/UNIT_MASS_IN_SOLAR); // assume every SNe carries 14.8 solar masses (IMF-average)
-    in->SNe_v_ejecta = 2607. / UNIT_VEL_IN_KMS; // assume ejecta are ~2607 km/s [KE=1e51 erg, for M=14.8 Msun], which is IMF-averaged
-
+#ifdef SLUG
     // SLUG model:
-    // - Assume 1e51 erg kinetic energy per SN, and
+    // - Assume 1e51 erg kinetic energy per SN
+    const double energyPerSN = 1.0e51 / UNIT_ENERGY_IN_CGS; // code units
     // - Compute ejecta mass by summing the yields (including the yield from hydrogen).
     //   [The ejecta mass is automatically distributed to neighboring particles
     //      and subtracted from the star particle, with a floor to prevent negative mass.]
+    const double ejectaMass = P[i].EjectaMass_ThisTimestep / UNIT_MASS_IN_SOLAR; // code units
     
+    in->Msne = ejectaMass; // code units
+    in->SNe_v_ejecta = std::sqrt(energyPerSN / ejectaMass); // code units
+
+#else // no SLUG
+    // 'dummy' example model assumes all SNe are identical with IMF-averaged properties from the AGORA model (Kim et al., 2016 ApJ, 833, 202)
+    in->Msne = P[i].SNe_ThisTimeStep * (14.8/UNIT_MASS_IN_SOLAR); // assume every SNe carries 14.8 solar masses (IMF-average)
+    in->SNe_v_ejecta = 2607. / UNIT_VEL_IN_KMS; // assume ejecta are ~2607 km/s [KE=1e51 erg, for M=14.8 Msun], which is IMF-averaged
+#endif // SLUG
 
 #ifdef SINGLE_STAR_SINK_DYNAMICS // if single-star exploding or returning mass, use its actual mass & assumed energy to obtain the velocity
     in->Msne = DMIN(1.,P[i].SNe_ThisTimeStep) * P[i].Mass; // mass fraction of star being returned this timestep

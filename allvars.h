@@ -2194,6 +2194,8 @@ extern ALIGN(32) struct particle_data
 
 #ifdef SLUG
     bool slug_state_initialized = false;
+    double EjectaMass_ThisTimestep = 0.;
+    double Yields_ThisTimestep[NUM_METAL_SPECIES];
     slug_cluster_state_noyields slug_state; // defined in slug_cluster.H
 #endif // SLUG
 
