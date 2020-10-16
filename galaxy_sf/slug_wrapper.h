@@ -24,9 +24,10 @@ public:
   void advanceToTime(double particle_age); // particle_age [yr]
   
   auto getNumberSNeThisTimestep() -> int;
+  auto getNumberAliveStochasticStars() -> int;
   auto getYieldsThisTimestep() -> std::vector<double>;
   auto getBirthMass() -> double;
-  auto getStellarMass() -> double;
+  auto getCurrentStellarMass() -> double;
   auto getPhotometryQH0() -> double; // ionising luminosity [photon/s]
 
   int numberSNeThisTimestep;

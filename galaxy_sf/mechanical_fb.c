@@ -129,10 +129,20 @@ void determine_where_SNe_occur(void)
                           << "\t\t" << "radius = " << (R * UNIT_LENGTH_IN_KPC) << " kpc."
                           << std::endl;
             }
-#endif
+#endif // SLUG_DEBUG_FEEDBACK
 
             // serialize slug object
             mySlugObject.serializeCluster(P[i].slug_state);
+
+            // check whether all stochastic stars have died
+            if(mySlugObject.getNumberAliveStochasticStars() == 0) {
+                // if so, mark the object as inactive
+                P[i].slug_state_initialized = false;
+
+#ifdef SLUG_DEBUG_FEEDBACK
+                std::cout << "\tAll stars have died, marking SLUG object inactive." << std::endl;
+#endif // SLUG_DEBUG_FEEDBACK
+            }
         } // mySlugObject deallocated automatically
 
 #else // without SLUG -- use a calculation of mechanical event rates to determine where/when the events actually occur
