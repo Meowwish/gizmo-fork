@@ -48,7 +48,10 @@ void determine_where_SNe_occur(void)
     double mpi_npossible, mpi_nhosttotal, mpi_ntotal, mpi_ptotal, mpi_dtmean, mpi_rmean;
     mpi_npossible = mpi_nhosttotal = mpi_ntotal = mpi_ptotal = mpi_dtmean = mpi_rmean = 0;
 
+    size_t slug_objects_this_timestep = 0;
+
     // loop over particles //
+    const double loop_begin_walltime = my_second();
     for (i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i])
     {
         P[i].SNe_ThisTimeStep = 0;
@@ -103,6 +106,8 @@ void determine_where_SNe_occur(void)
         // use SLUG to determine whether a SN event has occured in the last timestep
         if (P[i].slug_state_initialized)
         {
+            slug_objects_this_timestep++;
+
             // create slug object
             slugWrapper mySlugObject;
             mySlugObject.reconstructCluster(P[i].slug_state);
@@ -121,12 +126,14 @@ void determine_where_SNe_occur(void)
             if (P[i].SNe_ThisTimeStep > 0) {
                 double x = P[i].Pos[0];
                 double y = P[i].Pos[1];
+                double z = P[i].Pos[2];
                 double R = std::sqrt(x*x + y*y);
                 std::cout << "\tSN explosion:\n"
                           << "\t\t" << "PID = " << P[i].ID << "\n"
                           << "\t\t" << "N_SNe = " << P[i].SNe_ThisTimeStep << "\n"
                           << "\t\t" << "density = " << (P[i].DensAroundStar * UNIT_DENSITY_IN_NHCGS) << " n_H/cc\n"
-                          << "\t\t" << "radius = " << (R * UNIT_LENGTH_IN_KPC) << " kpc."
+                          << "\t\t" << "radius = " << (R * UNIT_LENGTH_IN_KPC) << " kpc\n"
+                          << "\t\t" << "height = " << (z * UNIT_LENGTH_IN_KPC) << " kpc."
                           << std::endl;
             }
 #endif // SLUG_DEBUG_FEEDBACK
@@ -139,9 +146,11 @@ void determine_where_SNe_occur(void)
                 // if so, mark the object as inactive
                 P[i].slug_state_initialized = false;
 
-#ifdef SLUG_DEBUG_FEEDBACK
-                std::cout << "\tAll stars have died, marking SLUG object inactive." << std::endl;
-#endif // SLUG_DEBUG_FEEDBACK
+#ifdef SLUG_DEBUG_DELETION
+                std::cout << "\n\tAll stars have died after "
+                          << (cluster_age_in_years / 1.0e6)
+                          << " Myr, marking SLUG object inactive." << std::endl;
+#endif // SLUG_DEBUG_DELETION
             }
         } // mySlugObject deallocated automatically
 
@@ -165,6 +174,21 @@ void determine_where_SNe_occur(void)
         }
         dtmean += dt;
     } // for(i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i]) //
+
+#ifdef SLUG_DEBUG_DELETION
+    if (slug_objects_this_timestep > 0)
+    {
+        const double dt = my_second() - loop_begin_walltime;
+        std::cout << "[rank=" << ThisTask << "] "
+                  << "Processed "
+                  << slug_objects_this_timestep
+                  << " SLUG objects in "
+                  << dt
+                  << " seconds ("
+                  << slug_objects_this_timestep/dt
+                  << " objects/second)." << std::endl;
+    }
+#endif // SLUG_DEBUG_DELETION
 
     MPI_Reduce(&dtmean, &mpi_dtmean, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&rmean, &mpi_rmean, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
