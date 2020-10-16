@@ -2,18 +2,20 @@
 
 #PBS -N gizmo_analysis
 #PBS -P jh2
-#PBS -q express
+#PBS -q normal
 #PBS -l ncpus=48
 #PBS -l mem=192GB
 #PBS -m aeb
 #PBS -M ben.wibking@anu.edu.au
 #PBS -l wd
-#PBS -l walltime=3:00:00
+#PBS -l walltime=12:00:00
 #PBS -l storage=scratch/jh2+gdata/jh2
 #PBS -l jobfs=400GB
 
+cd /g/data/jh2/bw0729/gizmo-fork/runs
 
-
+mv plots/*.png .
+./make_plots.sh
 
 
 

@@ -8,7 +8,7 @@
 #PBS -m aeb
 #PBS -M ben.wibking@anu.edu.au
 #PBS -l wd
-#PBS -l walltime=12:00:00
+#PBS -l walltime=48:00:00
 #PBS -l storage=scratch/jh2+gdata/jh2
 
 # submit this job with a command such as:
