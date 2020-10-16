@@ -120,13 +120,14 @@ void particle2in_addFB_fromstars(struct addFB_evaluate_data_in_ *in, int i, int 
     // SLUG model:
     // - Assume 1e51 erg kinetic energy per SN
     const double energyPerSN = 1.0e51 / UNIT_ENERGY_IN_CGS; // code units
+    const double energySNe = P[i].SNe_ThisTimeStep * energyPerSN;
     // - Compute ejecta mass by summing the yields (including the yield from hydrogen).
     //   [The ejecta mass is automatically distributed to neighboring particles
     //      and subtracted from the star particle, with a floor to prevent negative mass.]
     const double ejectaMass = P[i].EjectaMass_ThisTimestep / UNIT_MASS_IN_SOLAR; // code units
     
     in->Msne = ejectaMass; // code units
-    in->SNe_v_ejecta = std::sqrt(energyPerSN / ejectaMass); // code units
+    in->SNe_v_ejecta = std::sqrt(2.0 * energySNe / ejectaMass); // code units
 
 #else // no SLUG
     // 'dummy' example model assumes all SNe are identical with IMF-averaged properties from the AGORA model (Kim et al., 2016 ApJ, 833, 202)
