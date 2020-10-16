@@ -134,10 +134,18 @@ void determine_where_SNe_occur(void)
                 double y = P[i].Pos[1];
                 double z = P[i].Pos[2];
                 double R = std::sqrt(x*x + y*y);
-                std::cout << "\tSN explosion:\n"
-                          << "\t\t" << "PID = " << P[i].ID << "\n"
+
+		const double energyPerSN = 1.0e51 / UNIT_ENERGY_IN_CGS; // code units
+		const double ejectaMass = P[i].EjectaMass_ThisTimestep / UNIT_MASS_IN_SOLAR; // code units
+		const double ejectaMassPerSN = ejectaMass / P[i].SNe_ThisTimeStep; // code units
+
+		const double energySNe = P[i].SNe_ThisTimeStep * energyPerSN; // code units
+		const double ejectaVelocity = std::sqrt(2.0 * energySNe / ejectaMass); // code units
+		
+		std::cout << "\tSN explosion:\n"
                           << "\t\t" << "N_SNe = " << P[i].SNe_ThisTimeStep << "\n"
-                          << "\t\t" << "M_ej = " << P[i].EjectaMass_ThisTimestep << "\n"
+                          << "\t\t" << "M_ejecta/N_SNe = " << (ejectaMassPerSN * UNIT_MASS_IN_SOLAR) << " Msun\n"
+		          << "\t\t" << "v_ejecta = " << (ejectaVelocity * UNIT_VEL_IN_KMS) << " km/s\n"
                           << "\t\t" << "density = " << (P[i].DensAroundStar * UNIT_DENSITY_IN_NHCGS) << " n_H/cc\n"
                           << "\t\t" << "radius = " << (R * UNIT_LENGTH_IN_KPC) << " kpc\n"
                           << "\t\t" << "height = " << (z * UNIT_LENGTH_IN_KPC) << " kpc."
@@ -159,9 +167,10 @@ void determine_where_SNe_occur(void)
                           << " Myr, marking SLUG object inactive." << std::endl;
 #endif // SLUG_DEBUG_DELETION
             }
+	    
         } // mySlugObject deallocated automatically
 
-#else // without SLUG -- use a calculation of mechanical event rates to determine where/when the events actually occur
+#else // *without* SLUG: calculate event rates to determine where/when the events actually occur
         double RSNe = mechanical_fb_calculate_eventrates(i, dt);
         rmean += RSNe;
         ptotal += RSNe * (P[i].Mass * UNIT_MASS_IN_SOLAR) * (dt * UNIT_TIME_IN_MYR);
