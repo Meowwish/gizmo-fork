@@ -8,84 +8,177 @@
 #include "../proto.h"
 #include "../kernel.h"
 
+#ifdef SLUG
+#include "slug_wrapper.h"
+#endif
+
 /* Routines for mechanical feedback/enrichment models: stellar winds, supernovae, etc
  * This file was written by Phil Hopkins (phopkins@caltech.edu) for GIZMO.
  */
 
 #ifdef GALSF_FB_MECHANICAL
 
-
 int addFB_evaluate_active_check(int i, int fb_loop_iteration);
 int addFB_evaluate_active_check(int i, int fb_loop_iteration)
 {
-    if(P[i].Type <= 1) return 0;
-    if(P[i].Mass <= 0) return 0;
-    if(PPP[i].Hsml <= 0) return 0;
-    if(PPP[i].NumNgb <= 0) return 0;
-    if(P[i].SNe_ThisTimeStep>0) {if(fb_loop_iteration<0 || fb_loop_iteration==0) return 1;}
+    if (P[i].Type <= 1)
+        return 0;
+    if (P[i].Mass <= 0)
+        return 0;
+    if (PPP[i].Hsml <= 0)
+        return 0;
+    if (PPP[i].NumNgb <= 0)
+        return 0;
+    if (P[i].SNe_ThisTimeStep > 0)
+    {
+        if (fb_loop_iteration < 0 || fb_loop_iteration == 0)
+            return 1;
+    }
     return 0;
 }
 
-
 void determine_where_SNe_occur(void)
 {
-    if(All.Time<=0) return;
-    int i; double dt,star_age,npossible,nhosttotal,ntotal,ptotal,dtmean,rmean;
-    npossible=nhosttotal=ntotal=ptotal=dtmean=rmean=0;
-    double mpi_npossible,mpi_nhosttotal,mpi_ntotal,mpi_ptotal,mpi_dtmean,mpi_rmean;
-    mpi_npossible=mpi_nhosttotal=mpi_ntotal=mpi_ptotal=mpi_dtmean=mpi_rmean=0;
+    if (All.Time <= 0)
+        return;
+
+    int i;
+    double dt, star_age, npossible, nhosttotal, ntotal, ptotal, dtmean, rmean;
+    npossible = nhosttotal = ntotal = ptotal = dtmean = rmean = 0;
+    double mpi_npossible, mpi_nhosttotal, mpi_ntotal, mpi_ptotal, mpi_dtmean, mpi_rmean;
+    mpi_npossible = mpi_nhosttotal = mpi_ntotal = mpi_ptotal = mpi_dtmean = mpi_rmean = 0;
+
     // loop over particles //
-    for(i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i])
+    for (i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i])
     {
-        P[i].SNe_ThisTimeStep=0;
+        P[i].SNe_ThisTimeStep = 0;
+
 #if defined(SINGLE_STAR_SINK_DYNAMICS)
-        if(P[i].Type == 0) {continue;} // any non-gas type is eligible to be a 'star' here
+        if (P[i].Type == 0)
+        {
+            continue;
+        } // any non-gas type is eligible to be a 'star' here
 #else
-        if(All.ComovingIntegrationOn) {if(P[i].Type != 4) {continue;}} // in cosmological simulations, 'stars' have particle type=4
-        if(All.ComovingIntegrationOn==0) {if((P[i].Type<2)||(P[i].Type>4)) {continue;}} // in non-cosmological sims, types 2,3,4 are valid 'stars'
+        if (All.ComovingIntegrationOn)
+        {
+            if (P[i].Type != 4)
+            {
+                continue;
+            }
+        } // in cosmological simulations, 'stars' have particle type=4
+        if (All.ComovingIntegrationOn == 0)
+        {
+            if ((P[i].Type < 2) || (P[i].Type > 4))
+            {
+                continue;
+            }
+        }  // in non-cosmological sims, types 2,3,4 are valid 'stars'
 #endif
-        if(P[i].Mass<=0) {continue;}
+
+        if (P[i].Mass <= 0)
+        {
+            continue;
+        }
+
 #ifndef WAKEUP
-        dt = (P[i].TimeBin ? (((integertime) 1) << P[i].TimeBin) : 0) * All.Timebase_interval / All.cf_hubble_a; // dloga to dt_physical
+        dt = (P[i].TimeBin ? (((integertime)1) << P[i].TimeBin) : 0) * All.Timebase_interval / All.cf_hubble_a; // dloga to dt_physical
 #else
         dt = P[i].dt_step * All.Timebase_interval / All.cf_hubble_a; // get particle timestep //
 #endif
-        if(dt<=0) {continue;} // no time, no events
+
+        if (dt <= 0)
+        {
+            continue;
+        } // no time, no events
+
         star_age = evaluate_stellar_age_Gyr(P[i].StellarAge);
-        if(star_age<=0) {continue;} // unphysical age, no events
-        // now use a calculation of mechanical event rates to determine where/when the events actually occur //
-        npossible++;
-        double RSNe = mechanical_fb_calculate_eventrates(i,dt);
-        rmean += RSNe; ptotal += RSNe * (P[i].Mass*UNIT_MASS_IN_SOLAR) * (dt*UNIT_TIME_IN_MYR);
-#ifdef GALSF_SFR_IMF_SAMPLING
-        if(P[i].IMF_NumMassiveStars>0) {P[i].IMF_NumMassiveStars=DMAX(0,P[i].IMF_NumMassiveStars-P[i].SNe_ThisTimeStep);} // lose an O-star for every SNe //
+        if (star_age <= 0)
+        {
+            continue;
+        } // unphysical age, no events
+
+        npossible++; // it is possible for a SN event to occur
+
+#ifdef SLUG
+        // use SLUG to determine whether a SN event has occured in the last timestep
+        if (P[i].slug_state_initialized)
+        {
+            // create slug object
+            slugWrapper mySlugObject;
+            mySlugObject.reconstructCluster(P[i].slug_state);
+
+            // advance slug object in time
+            double cluster_age_in_years = (All.Time - P[i].StellarAge) * UNIT_TIME_IN_YR;
+            mySlugObject.advanceToTime(cluster_age_in_years);
+
+            // TODO: implement these functions in the slugWrapper class
+            //P[i].EjectaMass_ThisTimestep = mySlugObject.getEjectaMassThisTimestep(); // solar mass
+            //P[i].Yields_ThisTimestep = mySlugObject.getYieldsThisTimestep(); // solar mass
+
+            P[i].SNe_ThisTimeStep = mySlugObject.getNumberSNeThisTimestep(); // dimensionless
+
+#ifdef SLUG_DEBUG_FEEDBACK
+            if (P[i].SNe_ThisTimeStep > 0) {
+                double x = P[i].Pos[0];
+                double y = P[i].Pos[1];
+                double R = std::sqrt(x*x + y*y);
+                std::cout << "\tSN explosion:\n"
+                          << "\t\t" << "PID = " << P[i].ID << "\n"
+                          << "\t\t" << "N_SNe = " << P[i].SNe_ThisTimeStep << "\n"
+                          << "\t\t" << "density = " << (P[i].DensAroundStar * UNIT_DENSITY_IN_NHCGS) << " n_H/cc\n"
+                          << "\t\t" << "radius = " << (R * UNIT_LENGTH_IN_KPC) << " kpc."
+                          << std::endl;
+            }
 #endif
-        if(P[i].SNe_ThisTimeStep>0) {ntotal+=P[i].SNe_ThisTimeStep; nhosttotal++;}
+
+            // serialize slug object
+            mySlugObject.serializeCluster(P[i].slug_state);
+        } // mySlugObject deallocated automatically
+
+#else // without SLUG -- use a calculation of mechanical event rates to determine where/when the events actually occur
+        double RSNe = mechanical_fb_calculate_eventrates(i, dt);
+        rmean += RSNe;
+        ptotal += RSNe * (P[i].Mass * UNIT_MASS_IN_SOLAR) * (dt * UNIT_TIME_IN_MYR);
+#endif // SLUG
+
+#ifdef GALSF_SFR_IMF_SAMPLING
+        if (P[i].IMF_NumMassiveStars > 0)
+        {
+            P[i].IMF_NumMassiveStars = DMAX(0, P[i].IMF_NumMassiveStars - P[i].SNe_ThisTimeStep);
+        } // lose an O-star for every SNe //
+#endif
+
+        if (P[i].SNe_ThisTimeStep > 0)
+        {
+            ntotal += P[i].SNe_ThisTimeStep;
+            nhosttotal++;
+        }
         dtmean += dt;
     } // for(i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i]) //
-    
+
     MPI_Reduce(&dtmean, &mpi_dtmean, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&rmean, &mpi_rmean, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&ptotal, &mpi_ptotal, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&nhosttotal, &mpi_nhosttotal, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&ntotal, &mpi_ntotal, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&npossible, &mpi_npossible, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    
-    if(ThisTask == 0)
+
+    if (ThisTask == 0)
     {
-        if(mpi_ntotal > 0 && mpi_nhosttotal > 0 && mpi_dtmean > 0)
-        if(mpi_npossible>0)
+        if (mpi_ntotal > 0 && mpi_nhosttotal > 0 && mpi_dtmean > 0)
+            if (mpi_npossible > 0)
+            {
+                mpi_dtmean /= mpi_npossible;
+                mpi_rmean /= mpi_npossible;
+                fprintf(FdSneIIHeating, "%lg %g %g %g %g %g %g \n", All.Time, mpi_npossible, mpi_nhosttotal, mpi_ntotal, mpi_ptotal, mpi_dtmean, mpi_rmean);
+            }
+        if (All.HighestActiveTimeBin == All.HighestOccupiedTimeBin)
         {
-            mpi_dtmean /= mpi_npossible; mpi_rmean /= mpi_npossible;
-            fprintf(FdSneIIHeating, "%lg %g %g %g %g %g %g \n", All.Time,mpi_npossible,mpi_nhosttotal,mpi_ntotal,mpi_ptotal,mpi_dtmean,mpi_rmean);
+            fflush(FdSneIIHeating);
         }
-        if(All.HighestActiveTimeBin == All.HighestOccupiedTimeBin) {fflush(FdSneIIHeating);}
     } // if(ThisTask == 0) //
-    
+
 } // void determine_where_SNe_occur() //
-
-
-
 
 #define MASTER_FUNCTION_NAME addFB_evaluate /* name of the 'core' function doing the actual inter-neighbor operations. this MUST be defined somewhere as "int MASTER_FUNCTION_NAME(int target, int mode, int *exportflag, int *exportnodecount, int *exportindex, int *ngblist, int loop_iteration)" */
 #define INPUTFUNCTION_NAME particle2in_addFB    /* name of the function which loads the element data needed (for e.g. broadcast to other processors, neighbor search) */

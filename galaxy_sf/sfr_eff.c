@@ -10,6 +10,10 @@
 #include "../allvars.h"
 #include "../proto.h"
 
+#ifdef SLUG
+#include "slug_wrapper.h"
+#endif
+
 /*!
  *  routines for star formation in cosmological/galaxy/single-star/black hole simulations
  */
@@ -496,7 +500,7 @@ void star_formation_parent_routine(void)
                 TimeBinCountSph[P[i].TimeBin]--;
                 TimeBinSfr[P[i].TimeBin] -= SphP[i].Sfr;
 
-                P[i].StellarAge = All.Time;
+                P[i].StellarAge = All.Time; // not actually stellar age, but formation time!
 
 #ifdef DO_DENSITY_AROUND_STAR_PARTICLES
                 P[i].DensAroundStar = SphP[i].Density;
@@ -504,7 +508,21 @@ void star_formation_parent_routine(void)
 #ifdef HYDRO_MESHLESS_FINITE_VOLUME
                 P[i].Mass = SphP[i].MassTrue + SphP[i].dMass;
 #endif
-                
+
+#ifdef SLUG
+                {
+                    slugWrapper mySlugObject;
+                    const double cluster_mass = P[i].Mass * UNIT_MASS_IN_SOLAR;
+                    mySlugObject.constructCluster(cluster_mass);
+                    mySlugObject.serializeCluster(P[i].slug_state);
+                    P[i].slug_state_initialized = true;
+
+#ifdef SLUG_DEBUG_SFR
+                    std::cout << "\tSLUG cluster created with stellar mass = "
+                              << mySlugObject.getBirthMass() << " Msun." << std::endl;
+#endif
+                } // mySlugObject deallocated automatically
+#endif
 
 #ifdef SINGLE_STAR_SINK_DYNAMICS
                 P[i].Type = 5;

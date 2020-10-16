@@ -87,10 +87,14 @@ double particle_ionizing_luminosity_in_cgs(long i)
     
     if(P[i].Type != 5)
     {
+        /* simple model included in GIZMO */
         double lm_ssp=0, star_age=evaluate_stellar_age_Gyr(P[i].StellarAge), t0=0.0035, tmax=0.02;
         if(star_age < t0) {lm_ssp=500.;} else {double log_age=log10(star_age/t0); lm_ssp=470.*pow(10.,-2.24*log_age-4.2*log_age*log_age) + 60.*pow(10.,-3.6*log_age);}
         lm_ssp *= calculate_relative_light_to_mass_ratio_from_imf(star_age, i);
         if(star_age >= tmax) {return 0;} // skip since old stars don't contribute
+
+        // SLUG model here
+
         return lm_ssp * SOLAR_LUM * (P[i].Mass*UNIT_MASS_IN_SOLAR); // converts to cgs luminosity [lm_ssp is in Lsun/Msun, here]
     } // (P[i].Type != 5)
 
@@ -109,19 +113,35 @@ double particle_ionizing_luminosity_in_cgs(long i)
 void particle2in_addFB_fromstars(struct addFB_evaluate_data_in_ *in, int i, int fb_loop_iteration)
 {
 #if defined(GALSF_FB_MECHANICAL) || defined(GALSF_FB_THERMAL)
+
     if(P[i].SNe_ThisTimeStep<=0) {in->Msne=0; return;} // no event
+
     // 'dummy' example model assumes all SNe are identical with IMF-averaged properties from the AGORA model (Kim et al., 2016 ApJ, 833, 202)
     in->Msne = P[i].SNe_ThisTimeStep * (14.8/UNIT_MASS_IN_SOLAR); // assume every SNe carries 14.8 solar masses (IMF-average)
     in->SNe_v_ejecta = 2607. / UNIT_VEL_IN_KMS; // assume ejecta are ~2607 km/s [KE=1e51 erg, for M=14.8 Msun], which is IMF-averaged
+
+    // SLUG model:
+    // - Assume 1e51 erg kinetic energy per SN, and
+    // - Compute ejecta mass by summing the yields (including the yield from hydrogen).
+    //   [The ejecta mass is automatically distributed to neighboring particles
+    //      and subtracted from the star particle, with a floor to prevent negative mass.]
+    
+
 #ifdef SINGLE_STAR_SINK_DYNAMICS // if single-star exploding or returning mass, use its actual mass & assumed energy to obtain the velocity
     in->Msne = DMIN(1.,P[i].SNe_ThisTimeStep) * P[i].Mass; // mass fraction of star being returned this timestep
     in->SNe_v_ejecta = sqrt(2.*(1.e51/UNIT_ENERGY_IN_CGS)/P[i].Mass); // for SNe [total return], simple v=sqrt(2E/m)should be fine without relativistic corrections
     if(P[i].SNe_ThisTimeStep<1) {double m_msun=P[i].Mass*UNIT_MASS_IN_SOLAR; in->SNe_v_ejecta = (616. * sqrt((1.+0.1125*m_msun)/(1.+0.0125*m_msun)) * pow(m_msun,0.131)) / UNIT_VEL_IN_KMS;} // scaling from size-mass relation+eddington factor, assuming line-driven winds //
 #endif
+
 #ifdef METALS
+    // simple model here
     int k; for(k=0;k<NUM_METAL_SPECIES;k++) {in->yields[k]=0.178*All.SolarAbundances[k]/All.SolarAbundances[0];} // assume a universal solar-type yield with ~2.63 Msun of metals
     if(NUM_METAL_SPECIES>=10) {in->yields[1] = 0.4;} // (catch for Helium, which the above scaling would give bad values for)
+
+    // SLUG model here
+
 #endif
+
 #endif
 }
 
@@ -146,14 +166,19 @@ double mechanical_fb_calculate_eventrates(int i, double dt)
     return 1;
 #endif
     
-#ifdef GALSF_FB_THERMAL /* STELLAR-POPULATION version: pure thermal feedback: assumes AGORA model (Kim et al., 2016 ApJ, 833, 202) where everything occurs at 5Myr exactly */
+#ifdef GALSF_FB_THERMAL
+    /* STELLAR-POPULATION version: pure thermal feedback: assumes AGORA model (Kim et al., 2016 ApJ, 833, 202)
+        where everything occurs at 5Myr exactly */
     if(P[i].SNe_ThisTimeStep != 0) {P[i].SNe_ThisTimeStep=-1; return 0;} // already had an event, so this particle is "done"
     if(evaluate_stellar_age_Gyr(P[i].StellarAge) < 0.005) {return 0;} // enforce age limit of 5 Myr
     P[i].SNe_ThisTimeStep = P[i].Mass*UNIT_MASS_IN_SOLAR / 91.; // 1 event per 91 solar masses
     return 1;
 #endif
     
-#ifdef GALSF_FB_MECHANICAL /* STELLAR-POPULATION version: mechanical feedback: 'dummy' example model below assumes a constant SNe rate for t < 30 Myr, then nothing. experiment! */
+#ifdef GALSF_FB_MECHANICAL
+
+    /* STELLAR-POPULATION version: mechanical feedback:
+        'dummy' example model below assumes a constant SNe rate for t < 30 Myr, then nothing. experiment! */
     double RSNe=0, star_age = evaluate_stellar_age_Gyr(P[i].StellarAge);
     if(star_age < 0.03)
     {
@@ -162,6 +187,10 @@ double mechanical_fb_calculate_eventrates(int i, double dt)
         double n_sn_0=(float)floor(p); p-=n_sn_0; if(get_random_number(P[i].ID+6) < p) {n_sn_0++;} // determine if SNe occurs
         P[i].SNe_ThisTimeStep = n_sn_0; // assign to particle
     }
+
+    /* SLUG version */
+
+
     return RSNe;
 #endif
 
