@@ -19,8 +19,8 @@ if __name__ == '__main__':
         projplot_file = snap.parent.with_name(snap.name).with_suffix('.projection_density.png')
         magpressure_sliceplot = snap.parent.with_name(snap.name).with_suffix('.magnetic_energy.png')
 
-        files = [phaseplot_file, sliceplot_file, zsliceplot_file, projplot_file, ztempplot_file,
-                 magpressure_sliceplot]
+        files = [phaseplot_file, sliceplot_file, projplot_file, magpressure_sliceplot,
+                 zsliceplot_file, ztempplot_file]
         files_exist = [f.exists() for f in files]
 
         if all(files_exist):
@@ -28,6 +28,7 @@ if __name__ == '__main__':
 
         ## plotting parameters
         rmax = 15.0 # kpc
+        plot_zslice = False
         
         rawdata = load_hydro_data(snap)
         rawtemp = compute_temperature(rawdata)
@@ -55,18 +56,18 @@ if __name__ == '__main__':
                             vmin=1.0e-9,
                             vmax=1.0e-15)
 
-        if not zsliceplot_file.exists():
-            save_slice_plot(mesh, mesh.Density()*unitdensity_per_H, zsliceplot_file,
-                            colorbar_label=r'Density (g cm$^-3$)', rmax=rmax, plane='y',
-                            vmin=1e-5, vmax=1e5)
-
-        if not ztempplot_file.exists() and rawtemp is not None:
-            save_slice_plot(mesh, temp, ztempplot_file,
-                            colorbar_label=r'Temperature (K)', rmax=rmax, plane='y',
-                            vmin=10., vmax=1.0e7)
-
         if not projplot_file.exists():
             save_density_projection_plot(mesh, projplot_file,
                                          rmax=rmax,
                                          bfield=pdata['MagneticField'])
         
+        if not zsliceplot_file.exists() and plot_zslice:
+            save_slice_plot(mesh, mesh.Density()*unitdensity_per_H, zsliceplot_file,
+                            colorbar_label=r'Density (g cm$^-3$)', rmax=rmax, plane='y',
+                            vmin=1e-5, vmax=1e5)
+
+        if not ztempplot_file.exists() and rawtemp is not None and plot_zslice:
+            save_slice_plot(mesh, temp, ztempplot_file,
+                            colorbar_label=r'Temperature (K)', rmax=rmax, plane='y',
+                            vmin=10., vmax=1.0e7)
+
