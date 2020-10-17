@@ -162,14 +162,7 @@ void determine_where_SNe_occur(void)
             if(mySlugObject.getNumberAliveStochasticStars() == 0) {
                 // if so, mark the object as inactive
                 P[i].slug_state_initialized = false;
-
-#ifdef SLUG_DEBUG_DELETION
-                std::cout << "\n\tAll stars have died after "
-                          << (cluster_age_in_years / 1.0e6)
-                          << " Myr, marking SLUG object inactive." << std::endl;
-#endif // SLUG_DEBUG_DELETION
             }
-	    
         } // mySlugObject deallocated automatically
 
 #else // *without* SLUG: calculate event rates to determine where/when the events actually occur
@@ -193,7 +186,7 @@ void determine_where_SNe_occur(void)
         dtmean += dt;
     } // for(i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i]) //
 
-#ifdef SLUG_DEBUG_DELETION
+#ifdef SLUG_DEBUG_PERFORMANCE
     if (slug_objects_this_timestep > 0)
     {
         const double dt = my_second() - loop_begin_walltime;

@@ -15,7 +15,6 @@ void slugWrapper::advanceToTime(double particle_age)
   const std::vector<double> yields_t1 = cluster.get_yield();
   const int numberSNe_t1 = cluster.get_stoch_sn();
 
-  // TODO: yieldsThisTimestep needs to be initialized to the size of the yield table in use
   for (size_t i = 0; i < yieldsThisTimestep.size(); ++i)
   {
     yieldsThisTimestep[i] = std::max(yields_t1[i] - yields_t0[i], 0.0);
@@ -39,12 +38,13 @@ auto slugWrapper::getYieldsThisTimestep() -> std::vector<double>
 auto slugWrapper::getEjectaMassThisTimestep() -> double
 {
   double ejectaMass = 0.;
+  // we sum the yields of all elements to compute the total ejecta mass
   for (size_t i = 0; i < yieldsThisTimestep.size(); ++i)
   {
     ejectaMass += yieldsThisTimestep[i];
   }
 
-  return ejectaMass;
+  return ejectaMass; // solar masses
 }
 
 auto slugWrapper::getNumberAliveStochasticStars() -> int
