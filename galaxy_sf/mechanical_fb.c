@@ -112,6 +112,8 @@ void determine_where_SNe_occur(void)
             slugWrapper mySlugObject(P[i].slug_state);
 
             // advance slug object in time
+	    // [the slug object should NOT be advanced in time anywhere else in the code,
+	    //     otherwise the yields and SNe events will not be accounted for.]
             double cluster_age_in_years = (All.Time - P[i].StellarAge) * UNIT_TIME_IN_YR;
             mySlugObject.advanceToTime(cluster_age_in_years);
 

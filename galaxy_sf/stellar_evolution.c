@@ -77,31 +77,54 @@ double calculate_relative_light_to_mass_ratio_from_imf(double stellar_age_in_gyr
 /* routine to compute the -ionizing- luminosity coming from either individual stars or an SSP */
 double particle_ionizing_luminosity_in_cgs(long i)
 {
-#ifdef SINGLE_STAR_SINK_DYNAMICS /* SINGLE STAR VERSION: use effective temperature as a function of stellar mass and size to get ionizing photon production */
-    double l_sol=bh_lum_bol(0,P[i].Mass,i)*(UNIT_LUM_IN_SOLAR), m_sol=P[i].Mass*UNIT_MASS_IN_SOLAR, r_sol=pow(m_sol,0.738); // L/Lsun, M/Msun, R/Rsun
-    double T_eff=5780.*pow(l_sol/(r_sol*r_sol),0.25), x0=157800./T_eff, fion=0; // ZAMS effective temperature; x0=h*nu/kT for nu>13.6 eV; fion=fraction of blackbody emitted above x0
-    if(x0 < 30.) {double q=18./(x0*x0) + 1./(8. + x0 + 20.*exp(-x0/10.)); fion = exp(-1./q);} // accurate to <10% for a Planck spectrum to x0>30, well into vanishing flux //
-    return fion * l_sol * SOLAR_LUM; // return value in cgs, as desired for this routine [l_sol is in L_sun, by definition above] //
+#ifdef SINGLE_STAR_SINK_DYNAMICS
+  /* SINGLE STAR VERSION: use effective temperature as a function of stellar mass
+     and size to get ionizing photon production */
 
-#else /* STELLAR POPULATION VERSION: use updated SB99 tracks: including rotation, new mass-loss tracks, etc. */
-    
-    if(P[i].Type != 5)
+  double l_sol=bh_lum_bol(0,P[i].Mass,i)*(UNIT_LUM_IN_SOLAR);
+  double m_sol=P[i].Mass*UNIT_MASS_IN_SOLAR;
+  double r_sol=pow(m_sol,0.738); // L/Lsun, M/Msun, R/Rsun
+
+  // ZAMS effective temperature; x0=h*nu/kT for nu>13.6 eV; fion=fraction of blackbody emitted above x0
+  double T_eff=5780.*pow(l_sol/(r_sol*r_sol),0.25);
+  double x0=157800./T_eff;
+  double fion=0;
+  if(x0 < 30.) {
+    double q=18./(x0*x0) + 1./(8. + x0 + 20.*exp(-x0/10.));
+    fion = exp(-1./q);
+  } // accurate to <10% for a Planck spectrum to x0>30, well into vanishing flux
+
+  // return value in cgs, as desired for this routine [l_sol is in L_sun, by definition above]
+  return fion * l_sol * SOLAR_LUM;
+
+#else
+  /* STELLAR POPULATION VERSION: use updated SB99 tracks: including rotation, new mass-loss tracks, etc. */
+  if(P[i].Type != 5)
     {
-        /* simple model included in GIZMO */
-        double lm_ssp=0, star_age=evaluate_stellar_age_Gyr(P[i].StellarAge), t0=0.0035, tmax=0.02;
-        if(star_age < t0) {lm_ssp=500.;} else {double log_age=log10(star_age/t0); lm_ssp=470.*pow(10.,-2.24*log_age-4.2*log_age*log_age) + 60.*pow(10.,-3.6*log_age);}
-        lm_ssp *= calculate_relative_light_to_mass_ratio_from_imf(star_age, i);
-        if(star_age >= tmax) {return 0;} // skip since old stars don't contribute
-
-        // SLUG model here
-
-        return lm_ssp * SOLAR_LUM * (P[i].Mass*UNIT_MASS_IN_SOLAR); // converts to cgs luminosity [lm_ssp is in Lsun/Msun, here]
+      double lm_ssp=0;
+      double star_age=evaluate_stellar_age_Gyr(P[i].StellarAge);
+      double t0=0.0035;
+      double tmax=0.02;
+      if(star_age < t0) {
+	lm_ssp=500.;
+      } else {
+	double log_age=log10(star_age/t0);
+	lm_ssp = 470.*pow(10.,-2.24*log_age-4.2*log_age*log_age) + 60.*pow(10.,-3.6*log_age);
+      }
+      lm_ssp *= calculate_relative_light_to_mass_ratio_from_imf(star_age, i);
+      if(star_age >= tmax) {
+	return 0;
+      } // skip since old stars don't contribute
+      
+      // converts to cgs luminosity [lm_ssp is in Lsun/Msun, here]
+      return lm_ssp * SOLAR_LUM * (P[i].Mass*UNIT_MASS_IN_SOLAR);
     } // (P[i].Type != 5)
 
-#endif
-    return 0; // catch
+#endif // SINGLE_STAR_SINK_DYNAMICS
+
+  return 0; // catch
 }
-#endif
+#endif // defined(FLAG_NOT_IN_PUBLIC_CODE) || (defined(RT_CHEM_PHOTOION) && defined(GALSF))
 
 
 
