@@ -1,8 +1,7 @@
 # gizmo-fork
 
 ## notes
-* when SLUG is enabled, the simulation slows down significantly after burst of star formation
-* reconstructing clusters becomes much more expensive for older clusters
+* enabling SLUG adds significant (but subdominant) computational overhead to the simulation
 
 ## original readme
 This is **GIZMO**: a flexible, multi-method multi-physics code. The code solves the fluid using Lagrangian mesh-free finite-volume Godunov methods (or SPH, or fixed-grid Eulerian methods), and self-gravity with fast hybrid PM-Tree methods and fully-adaptive resolution. Other physics include: magnetic fields (ideal and non-ideal), radiation-hydrodynamics, anisotropic conduction and viscosity, sub-grid turbulent diffusion, radiative cooling, cosmological integration, sink particles, dust-gas mixtures, cosmic rays, degenerate equations of state, galaxy/star/black hole formation and feedback, self-interacting and scalar-field dark matter, on-the-fly structure finding, and more. 
