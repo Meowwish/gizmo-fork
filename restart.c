@@ -223,6 +223,23 @@ void restart(int modus)
 	  byten(gsl_rng_state(random_generator), gsl_rng_size(random_generator), modus);
 	  byten(&SelRnd, sizeof(SelRnd), modus);
 
+#ifdef SLUG
+	  // read/write state of SLUG's random number generator
+	  rng_state_t slug_rng_state; // defined in slug_PDF_segment.H (via slug_wrapper.h)
+
+#define READWRITE_SLUGRNG byten(&slug_rng_state, sizeof(slug_rng_state), modus)
+	  if(modus) {
+		  // reading state
+		  READWRITE_SLUGRNG;
+		  slug_rng->deserializeFromStruct(&slug_rng_state);
+	  } else {
+		  // writing state
+		  slug_rng->serializeToStruct(&slug_rng_state);
+		  READWRITE_SLUGRNG;
+	  }
+#undef READWRITE_SLUGRNG
+#endif // SLUG
+
 #ifdef TURB_DRIVING
       byten(gsl_rng_state(StRng), gsl_rng_size(StRng), modus);
  
