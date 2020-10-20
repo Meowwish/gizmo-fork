@@ -11,12 +11,6 @@
 #PBS -l walltime=48:00:00
 #PBS -l storage=scratch/jh2+gdata/jh2
 
-
-# --- tuning options for jemalloc [unused] ---
-
-#export MALLOC_CONF="background_thread:true,metadata_thp:auto,dirty_decay_ms:30000,muzzy_decay_ms:30000,stats_print:true,abort_conf:true"
-
-
 # --- ensure we start in the correct directory ----
 
 cd /g/data/jh2/bw0729/gizmo-fork/runs
@@ -27,7 +21,8 @@ cd /g/data/jh2/bw0729/gizmo-fork/runs
 #  inside HCOLL, resulting in hangs" [https://docs.mellanox.com/display/HPCXv27/HCOLL]
 # (We are getting hangs during MPI_Allreduce in domain.c, unclear whether this is the cause.)
 
-MPI_OPTIONS="-mca coll ^hcoll"
+#MPI_OPTIONS="-mca coll ^hcoll"
+MPI_OPTIONS=""
 
 
 # --- initialize GIZMO ---
