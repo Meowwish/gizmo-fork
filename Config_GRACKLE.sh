@@ -391,20 +391,3 @@ STOP_WHEN_BELOW_MINTIMESTEP    # forces code to quit when stepsize wants to go b
 ALLOW_IMBALANCED_GASPARTICLELOAD # increases All.MaxPartSph to All.MaxPart: can allow better load-balancing in some cases, but uses more memory. But use me if you run into errors where it can't fit the domain (where you would increase PartAllocFac, but can't for some reason)
 #SEPARATE_STELLARDOMAINDECOMP   # separate stars (ptype=4) and other non-gas particles in domain decomposition (may help load-balancing)
 ####################################################################################################
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
