@@ -77,31 +77,54 @@ double calculate_relative_light_to_mass_ratio_from_imf(double stellar_age_in_gyr
 /* routine to compute the -ionizing- luminosity coming from either individual stars or an SSP */
 double particle_ionizing_luminosity_in_cgs(long i)
 {
-#ifdef SINGLE_STAR_SINK_DYNAMICS /* SINGLE STAR VERSION: use effective temperature as a function of stellar mass and size to get ionizing photon production */
-    double l_sol=bh_lum_bol(0,P[i].Mass,i)*(UNIT_LUM_IN_SOLAR), m_sol=P[i].Mass*UNIT_MASS_IN_SOLAR, r_sol=pow(m_sol,0.738); // L/Lsun, M/Msun, R/Rsun
-    double T_eff=5780.*pow(l_sol/(r_sol*r_sol),0.25), x0=157800./T_eff, fion=0; // ZAMS effective temperature; x0=h*nu/kT for nu>13.6 eV; fion=fraction of blackbody emitted above x0
-    if(x0 < 30.) {double q=18./(x0*x0) + 1./(8. + x0 + 20.*exp(-x0/10.)); fion = exp(-1./q);} // accurate to <10% for a Planck spectrum to x0>30, well into vanishing flux //
-    return fion * l_sol * SOLAR_LUM; // return value in cgs, as desired for this routine [l_sol is in L_sun, by definition above] //
+#ifdef SINGLE_STAR_SINK_DYNAMICS
+  /* SINGLE STAR VERSION: use effective temperature as a function of stellar mass
+     and size to get ionizing photon production */
 
-#else /* STELLAR POPULATION VERSION: use updated SB99 tracks: including rotation, new mass-loss tracks, etc. */
-    
-    if(P[i].Type != 5)
+  double l_sol=bh_lum_bol(0,P[i].Mass,i)*(UNIT_LUM_IN_SOLAR);
+  double m_sol=P[i].Mass*UNIT_MASS_IN_SOLAR;
+  double r_sol=pow(m_sol,0.738); // L/Lsun, M/Msun, R/Rsun
+
+  // ZAMS effective temperature; x0=h*nu/kT for nu>13.6 eV; fion=fraction of blackbody emitted above x0
+  double T_eff=5780.*pow(l_sol/(r_sol*r_sol),0.25);
+  double x0=157800./T_eff;
+  double fion=0;
+  if(x0 < 30.) {
+    double q=18./(x0*x0) + 1./(8. + x0 + 20.*exp(-x0/10.));
+    fion = exp(-1./q);
+  } // accurate to <10% for a Planck spectrum to x0>30, well into vanishing flux
+
+  // return value in cgs, as desired for this routine [l_sol is in L_sun, by definition above]
+  return fion * l_sol * SOLAR_LUM;
+
+#else
+  /* STELLAR POPULATION VERSION: use updated SB99 tracks: including rotation, new mass-loss tracks, etc. */
+  if(P[i].Type != 5)
     {
-        /* simple model included in GIZMO */
-        double lm_ssp=0, star_age=evaluate_stellar_age_Gyr(P[i].StellarAge), t0=0.0035, tmax=0.02;
-        if(star_age < t0) {lm_ssp=500.;} else {double log_age=log10(star_age/t0); lm_ssp=470.*pow(10.,-2.24*log_age-4.2*log_age*log_age) + 60.*pow(10.,-3.6*log_age);}
-        lm_ssp *= calculate_relative_light_to_mass_ratio_from_imf(star_age, i);
-        if(star_age >= tmax) {return 0;} // skip since old stars don't contribute
-
-        // SLUG model here
-
-        return lm_ssp * SOLAR_LUM * (P[i].Mass*UNIT_MASS_IN_SOLAR); // converts to cgs luminosity [lm_ssp is in Lsun/Msun, here]
+      double lm_ssp=0;
+      double star_age=evaluate_stellar_age_Gyr(P[i].StellarAge);
+      double t0=0.0035;
+      double tmax=0.02;
+      if(star_age < t0) {
+	lm_ssp=500.;
+      } else {
+	double log_age=log10(star_age/t0);
+	lm_ssp = 470.*pow(10.,-2.24*log_age-4.2*log_age*log_age) + 60.*pow(10.,-3.6*log_age);
+      }
+      lm_ssp *= calculate_relative_light_to_mass_ratio_from_imf(star_age, i);
+      if(star_age >= tmax) {
+	return 0;
+      } // skip since old stars don't contribute
+      
+      // converts to cgs luminosity [lm_ssp is in Lsun/Msun, here]
+      return lm_ssp * SOLAR_LUM * (P[i].Mass*UNIT_MASS_IN_SOLAR);
     } // (P[i].Type != 5)
 
-#endif
-    return 0; // catch
+#endif // SINGLE_STAR_SINK_DYNAMICS
+
+  return 0; // catch
 }
-#endif
+#endif // defined(FLAG_NOT_IN_PUBLIC_CODE) || (defined(RT_CHEM_PHOTOION) && defined(GALSF))
 
 
 
@@ -114,35 +137,67 @@ void particle2in_addFB_fromstars(struct addFB_evaluate_data_in_ *in, int i, int 
 {
 #if defined(GALSF_FB_MECHANICAL) || defined(GALSF_FB_THERMAL)
 
-    if(P[i].SNe_ThisTimeStep<=0) {in->Msne=0; return;} // no event
+    if (P[i].SNe_ThisTimeStep <= 0) { in->Msne=0; return; } // no event
 
-    // 'dummy' example model assumes all SNe are identical with IMF-averaged properties from the AGORA model (Kim et al., 2016 ApJ, 833, 202)
-    in->Msne = P[i].SNe_ThisTimeStep * (14.8/UNIT_MASS_IN_SOLAR); // assume every SNe carries 14.8 solar masses (IMF-average)
-    in->SNe_v_ejecta = 2607. / UNIT_VEL_IN_KMS; // assume ejecta are ~2607 km/s [KE=1e51 erg, for M=14.8 Msun], which is IMF-averaged
-
-    // SLUG model:
-    // - Assume 1e51 erg kinetic energy per SN, and
+#ifdef SLUG
+    // - Assume 1e51 erg kinetic energy per SN
     // - Compute ejecta mass by summing the yields (including the yield from hydrogen).
-    //   [The ejecta mass is automatically distributed to neighboring particles
-    //      and subtracted from the star particle, with a floor to prevent negative mass.]
-    
+    //   [The mechanical feedback algorithm distributes the mass to neighboring particles
+    //      and subtracts it from the star particle, with a floor to prevent negative mass.]
 
-#ifdef SINGLE_STAR_SINK_DYNAMICS // if single-star exploding or returning mass, use its actual mass & assumed energy to obtain the velocity
-    in->Msne = DMIN(1.,P[i].SNe_ThisTimeStep) * P[i].Mass; // mass fraction of star being returned this timestep
-    in->SNe_v_ejecta = sqrt(2.*(1.e51/UNIT_ENERGY_IN_CGS)/P[i].Mass); // for SNe [total return], simple v=sqrt(2E/m)should be fine without relativistic corrections
-    if(P[i].SNe_ThisTimeStep<1) {double m_msun=P[i].Mass*UNIT_MASS_IN_SOLAR; in->SNe_v_ejecta = (616. * sqrt((1.+0.1125*m_msun)/(1.+0.0125*m_msun)) * pow(m_msun,0.131)) / UNIT_VEL_IN_KMS;} // scaling from size-mass relation+eddington factor, assuming line-driven winds //
-#endif
+    const double energyPerSN = 1.0e51 / UNIT_ENERGY_IN_CGS; // code units
+    const double ejectaMass = P[i].EjectaMass_ThisTimestep / UNIT_MASS_IN_SOLAR; // code units
+    in->Msne = ejectaMass;
+
+    const double energySNe = P[i].SNe_ThisTimeStep * energyPerSN; // code units
+    const double ejectaVelocity = std::sqrt(2.0 * energySNe / ejectaMass); // code units    
+    in->SNe_v_ejecta = ejectaVelocity;
+#else
+    // *without* SLUG: 'dummy' example model assumes all SNe are identical
+    // with IMF-averaged properties from the AGORA model (Kim et al., 2016 ApJ, 833, 202)
+
+    // assume every SNe carries 14.8 solar masses (IMF-average)
+    in->Msne = P[i].SNe_ThisTimeStep * (14.8/UNIT_MASS_IN_SOLAR);
+
+     // assume ejecta are ~2607 km/s [KE=1e51 erg, for M=14.8 Msun], which is IMF-averaged
+    in->SNe_v_ejecta = 2607. / UNIT_VEL_IN_KMS;
+#endif // SLUG
+
+#ifdef SINGLE_STAR_SINK_DYNAMICS
+    // if single-star exploding or returning mass, use its actual mass & assumed energy to obtain the velocity
+
+    // mass fraction of star being returned this timestep
+    in->Msne = DMIN(1.,P[i].SNe_ThisTimeStep) * P[i].Mass;
+    
+    // for SNe [total return], simple v=sqrt(2E/m)should be fine without relativistic corrections
+    in->SNe_v_ejecta = sqrt(2.*(1.e51/UNIT_ENERGY_IN_CGS)/P[i].Mass);
+
+    // scaling from size-mass relation+eddington factor, assuming line-driven winds
+    if (P[i].SNe_ThisTimeStep<1) {
+      double m_msun=P[i].Mass*UNIT_MASS_IN_SOLAR;
+      in->SNe_v_ejecta = (616. * sqrt((1.+0.1125*m_msun)/(1.+0.0125*m_msun)) * pow(m_msun,0.131)) / UNIT_VEL_IN_KMS;
+    }
+#endif // SINGLE_STAR_SINK_DYNAMICS
 
 #ifdef METALS
-    // simple model here
-    int k; for(k=0;k<NUM_METAL_SPECIES;k++) {in->yields[k]=0.178*All.SolarAbundances[k]/All.SolarAbundances[0];} // assume a universal solar-type yield with ~2.63 Msun of metals
-    if(NUM_METAL_SPECIES>=10) {in->yields[1] = 0.4;} // (catch for Helium, which the above scaling would give bad values for)
+#ifdef SLUG
+    // TODO: add yields from SLUG here
+#else
+    // GIZMO default: simple model here
 
-    // SLUG model here
+    // assume a universal solar-type yield with ~2.63 Msun of metals
+    for(int k=0; k<NUM_METAL_SPECIES; k++) {
+      in->yields[k] = 0.178*All.SolarAbundances[k]/All.SolarAbundances[0];
+    }
+    
+    if(NUM_METAL_SPECIES>=10) {
+      // (catch for Helium, which the above scaling would give bad values for)
+      in->yields[1] = 0.4;
+    }
+#endif // SLUG
+#endif // METALS
 
-#endif
-
-#endif
+#endif // defined(GALSF_FB_MECHANICAL) || defined(GALSF_FB_THERMAL)
 }
 
 
@@ -188,9 +243,9 @@ double mechanical_fb_calculate_eventrates(int i, double dt)
         P[i].SNe_ThisTimeStep = n_sn_0; // assign to particle
     }
 
-    /* SLUG version */
+    /* NOTE: SLUG version is implemented in mechanical_fb.c */
 
-
+    
     return RSNe;
 #endif
 

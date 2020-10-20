@@ -37,6 +37,10 @@ int PTask;			/*!< note: NTask = 2^PTask */
 
 double CPUThisRun;		/*!< Sums CPU time of current process */
 
+#ifdef SLUG
+double slug_total_elapsed_time = 0.;
+#endif // SLUG
+
 int NumForceUpdate;		/*!< number of active particles on local processor in current timestep  */
 long long GlobNumForceUpdate;
 int NumSphUpdate;		/*!< number of active SPH particles on local processor in current timestep  */
@@ -161,6 +165,10 @@ long long Ntype[6];		/*!< total number of particles of each type */
 int NtypeLocal[6];		/*!< local number of particles of each type */
 
 gsl_rng *random_generator;	/*!< the random number generator used */
+
+#ifdef SLUG
+rng_type *slug_rng; // rng for SLUG
+#endif // SLUG
 
 int Gas_split;           /*!< current number of newly-spawned gas particles outside block */
 #ifdef GALSF

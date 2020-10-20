@@ -48,7 +48,12 @@ void determine_where_SNe_occur(void)
     double mpi_npossible, mpi_nhosttotal, mpi_ntotal, mpi_ptotal, mpi_dtmean, mpi_rmean;
     mpi_npossible = mpi_nhosttotal = mpi_ntotal = mpi_ptotal = mpi_dtmean = mpi_rmean = 0;
 
+#ifdef SLUG
+    int slug_objects_this_timestep = 0;
+#endif // SLUG
+
     // loop over particles //
+    const double sn_loop_begin_walltime = MPI_Wtime();
     for (i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i])
     {
         P[i].SNe_ThisTimeStep = 0;
@@ -83,7 +88,7 @@ void determine_where_SNe_occur(void)
 #ifndef WAKEUP
         dt = (P[i].TimeBin ? (((integertime)1) << P[i].TimeBin) : 0) * All.Timebase_interval / All.cf_hubble_a; // dloga to dt_physical
 #else
-        dt = P[i].dt_step * All.Timebase_interval / All.cf_hubble_a; // get particle timestep //
+        dt = P[i].dt_step * All.Timebase_interval / All.cf_hubble_a; // get particle timestep
 #endif
 
         if (dt <= 0)
@@ -103,39 +108,75 @@ void determine_where_SNe_occur(void)
         // use SLUG to determine whether a SN event has occured in the last timestep
         if (P[i].slug_state_initialized)
         {
+            slug_objects_this_timestep++;
+
             // create slug object
-            slugWrapper mySlugObject;
-            mySlugObject.reconstructCluster(P[i].slug_state);
+            slugWrapper mySlugObject(P[i].slug_state);
 
             // advance slug object in time
+            // [the slug object should NOT be advanced in time anywhere else in the code,
+            //     otherwise the yields and SNe events will not be accounted for.]
             double cluster_age_in_years = (All.Time - P[i].StellarAge) * UNIT_TIME_IN_YR;
             mySlugObject.advanceToTime(cluster_age_in_years);
 
-            // TODO: implement these functions in the slugWrapper class
-            //P[i].EjectaMass_ThisTimestep = mySlugObject.getEjectaMassThisTimestep(); // solar mass
-            //P[i].Yields_ThisTimestep = mySlugObject.getYieldsThisTimestep(); // solar mass
+            P[i].SNe_ThisTimeStep = mySlugObject.getNumberSNeThisTimestep();         // dimensionless
+            P[i].EjectaMass_ThisTimestep = mySlugObject.getEjectaMassThisTimestep(); // solar mass
 
-            P[i].SNe_ThisTimeStep = mySlugObject.getNumberSNeThisTimestep(); // dimensionless
+#ifdef SLUG_YIELDS
+            // WARNING: implementation not complete!
+            auto yields = mySlugObject.getYieldsThisTimestep(); // solar mass
+            assert(yields.size() == NUM_METAL_SPECIES);
+
+            for (size_t j = 0; j < yields.size(); ++j)
+            {
+                P[i].Yields_ThisTimestep[j] = yields[j];
+            }
+#endif // SLUG_YIELDS
 
 #ifdef SLUG_DEBUG_FEEDBACK
-            if (P[i].SNe_ThisTimeStep > 0) {
+            if (P[i].SNe_ThisTimeStep > 0)
+            {
                 double x = P[i].Pos[0];
                 double y = P[i].Pos[1];
-                double R = std::sqrt(x*x + y*y);
+                double z = P[i].Pos[2];
+                double R = std::sqrt(x * x + y * y);
+
+                const double energyPerSN = 1.0e51 / UNIT_ENERGY_IN_CGS;                      // code units
+                const double ejectaMass = P[i].EjectaMass_ThisTimestep / UNIT_MASS_IN_SOLAR; // code units
+                const double ejectaMassPerSN = ejectaMass / P[i].SNe_ThisTimeStep;           // code units
+
+                const double energySNe = P[i].SNe_ThisTimeStep * energyPerSN;          // code units
+                const double ejectaVelocity = std::sqrt(2.0 * energySNe / ejectaMass); // code units
+
                 std::cout << "\tSN explosion:\n"
-                          << "\t\t" << "PID = " << P[i].ID << "\n"
-                          << "\t\t" << "N_SNe = " << P[i].SNe_ThisTimeStep << "\n"
-                          << "\t\t" << "density = " << (P[i].DensAroundStar * UNIT_DENSITY_IN_NHCGS) << " n_H/cc\n"
-                          << "\t\t" << "radius = " << (R * UNIT_LENGTH_IN_KPC) << " kpc."
+                          << "\t\t"
+                          << "N_SNe = " << P[i].SNe_ThisTimeStep << "\n"
+                          << "\t\t"
+                          << "M_ejecta/N_SNe = " << (ejectaMassPerSN * UNIT_MASS_IN_SOLAR) << " Msun\n"
+                          << "\t\t"
+                          << "v_ejecta = " << (ejectaVelocity * UNIT_VEL_IN_KMS) << " km/s\n"
+                          << "\t\t"
+                          << "density = " << (P[i].DensAroundStar * UNIT_DENSITY_IN_NHCGS) << " n_H/cc\n"
+                          << "\t\t"
+                          << "radius = " << (R * UNIT_LENGTH_IN_KPC) << " kpc\n"
+                          << "\t\t"
+                          << "height = " << (z * UNIT_LENGTH_IN_KPC) << " kpc."
                           << std::endl;
             }
-#endif
+#endif // SLUG_DEBUG_FEEDBACK
 
             // serialize slug object
             mySlugObject.serializeCluster(P[i].slug_state);
+
+            // check whether all stochastic stars have died
+            if (mySlugObject.getNumberAliveStochasticStars() == 0)
+            {
+                // if so, mark the object as inactive
+                P[i].slug_state_initialized = false;
+            }
         } // mySlugObject deallocated automatically
 
-#else // without SLUG -- use a calculation of mechanical event rates to determine where/when the events actually occur
+#else  // *without* SLUG: calculate event rates to determine where/when the events actually occur
         double RSNe = mechanical_fb_calculate_eventrates(i, dt);
         rmean += RSNe;
         ptotal += RSNe * (P[i].Mass * UNIT_MASS_IN_SOLAR) * (dt * UNIT_TIME_IN_MYR);
@@ -155,6 +196,36 @@ void determine_where_SNe_occur(void)
         }
         dtmean += dt;
     } // for(i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i]) //
+    const double sn_loop_end_walltime = MPI_Wtime();
+
+#ifdef SLUG_DEBUG_PERFORMANCE
+    double mpi_snloop_begin_time;
+    double mpi_snloop_end_time;
+    int mpi_slug_objects_this_timestep;
+
+    MPI_Reduce(&sn_loop_begin_walltime, &mpi_snloop_begin_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&sn_loop_end_walltime, &mpi_snloop_end_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&slug_objects_this_timestep, &mpi_slug_objects_this_timestep, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+    if (ThisTask == 0)
+    {
+        const double slug_elapsed_time = mpi_snloop_end_time - mpi_snloop_begin_time;
+        slug_total_elapsed_time += slug_elapsed_time;
+
+        if (mpi_slug_objects_this_timestep > 0)
+        {
+            std::cout << "[SLUG] Processed "
+                      << mpi_slug_objects_this_timestep
+                      << " SLUG objects in "
+                      << slug_elapsed_time
+                      << " seconds ("
+                      << mpi_slug_objects_this_timestep / slug_elapsed_time
+                      << " objects/second).\n[SLUG] SLUG accounts for "
+                      << 100.*(slug_total_elapsed_time / CPUThisRun)
+                      << "% of overall runtime.\n";
+        }
+    }
+#endif // SLUG_DEBUG_PERFORMANCE
 
     MPI_Reduce(&dtmean, &mpi_dtmean, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&rmean, &mpi_rmean, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);

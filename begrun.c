@@ -12,7 +12,9 @@
 #include "allvars.h"
 #include "proto.h"
 #include "kernel.h"
-
+#ifdef SLUG
+#include "galaxy_sf/slug_wrapper.h"
+#endif
 
 /*! \file begrun.c
  *  \brief initial set-up of a simulation run
@@ -193,6 +195,16 @@ void begrun(void)
   gsl_rng_set(random_generator, 42 + ThisTask);	/* start-up seed */
 
   set_random_numbers();
+
+
+#ifdef SLUG
+  // initialize rng for SLUG
+  // rng_type is a typedef defined by reference in slug_wrapper.h
+  slug_rng = new rng_type(42 + ThisTask);
+  // initialize global data for SLUG, pass in our rng
+  slugWrapper::slug_globals = new slug_predefined(slug_rng);
+#endif // SLUG
+
 
 #ifdef PMGRID
 #ifndef ADAPTIVE_GRAVSOFT_FORALL

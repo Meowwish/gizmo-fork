@@ -229,6 +229,7 @@ GALSF_SFR_CRITERION=0     # mix-and-match SF criteria with a bitflag: 0=density 
 GALSF_FB_MECHANICAL            # explicit algorithm including thermal+kinetic/momentum terms from Hopkins+ 2018 (MNRAS, 477, 1578): manifestly conservative+isotropic, and accounts properly for un-resolved PdV work+cooling during blastwave expansion. cite Hopkins et al. 2018, MNRAS, 477, 1578, and Hopkins+ 2014 (MNRAS 445, 581)
 #GALSF_FB_THERMAL               # simple 'pure thermal energy dump' feedback: mass, metals, and thermal energy are injected locally in simple kernel-weighted fashion around young stars. tends to severely over-cool owing to lack of mechanical/kinetic treatment at finite resolution (better algorithm is mechanical)
 GALSF_PHOTOIONIZATION           # re-implementation of photoionization feedback by Armillotta et al.
+#GALSF_PHOTOIONIZATION_DEBUGGING
 ## ----------------------------------------------------------------------------------------------------
 ############################################################################################################################
 
@@ -394,3 +395,6 @@ ALLOW_IMBALANCED_GASPARTICLELOAD # increases All.MaxPartSph to All.MaxPart: can 
 
 # ----- extra options
 SLUG # use feedback computed from the SLUG2 library
+SLUG_DEBUG_PERFORMANCE # compute SLUG objects/second in SN routine
+#SLUG_DEBUG_FEEDBACK # print SN events
+#GALSF_PHOTOIONIZATION_DEBUGGING

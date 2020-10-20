@@ -1362,6 +1362,10 @@ extern int PTask;		/*!< note: NTask = 2^PTask */
 
 extern double CPUThisRun;	/*!< Sums CPU time of current process */
 
+#ifdef SLUG
+extern double slug_total_elapsed_time;
+#endif // SLUG
+
 extern int NumForceUpdate;	/*!< number of active particles on local processor in current timestep  */
 extern long long GlobNumForceUpdate;
 
@@ -1422,6 +1426,9 @@ extern int NtypeLocal[6];	/*!< local number of particles of each type */
 
 extern gsl_rng *random_generator;	/*!< the random number generator used */
 
+#ifdef SLUG
+extern rng_type *slug_rng; // rng for SLUG
+#endif
 
 extern int Gas_split;           /*!< current number of newly-spawned gas particles outside block */
 #ifdef GALSF
@@ -2194,6 +2201,8 @@ extern ALIGN(32) struct particle_data
 
 #ifdef SLUG
     bool slug_state_initialized = false;
+    double EjectaMass_ThisTimestep = 0.;
+    double Yields_ThisTimestep[NUM_METAL_SPECIES];
     slug_cluster_state_noyields slug_state; // defined in slug_cluster.H
 #endif // SLUG
 
