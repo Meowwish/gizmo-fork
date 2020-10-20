@@ -112,12 +112,12 @@ void determine_where_SNe_occur(void)
             slugWrapper mySlugObject(P[i].slug_state);
 
             // advance slug object in time
-	    // [the slug object should NOT be advanced in time anywhere else in the code,
-	    //     otherwise the yields and SNe events will not be accounted for.]
+            // [the slug object should NOT be advanced in time anywhere else in the code,
+            //     otherwise the yields and SNe events will not be accounted for.]
             double cluster_age_in_years = (All.Time - P[i].StellarAge) * UNIT_TIME_IN_YR;
             mySlugObject.advanceToTime(cluster_age_in_years);
 
-            P[i].SNe_ThisTimeStep = mySlugObject.getNumberSNeThisTimestep(); // dimensionless
+            P[i].SNe_ThisTimeStep = mySlugObject.getNumberSNeThisTimestep();         // dimensionless
             P[i].EjectaMass_ThisTimestep = mySlugObject.getEjectaMassThisTimestep(); // solar mass
 
 #ifdef SLUG_YIELDS
@@ -125,32 +125,40 @@ void determine_where_SNe_occur(void)
             auto yields = mySlugObject.getYieldsThisTimestep(); // solar mass
             assert(yields.size() == NUM_METAL_SPECIES);
 
-            for(size_t j = 0; j < yields.size(); ++j) {
+            for (size_t j = 0; j < yields.size(); ++j)
+            {
                 P[i].Yields_ThisTimestep[j] = yields[j];
             }
 #endif // SLUG_YIELDS
 
 #ifdef SLUG_DEBUG_FEEDBACK
-            if (P[i].SNe_ThisTimeStep > 0) {
+            if (P[i].SNe_ThisTimeStep > 0)
+            {
                 double x = P[i].Pos[0];
                 double y = P[i].Pos[1];
                 double z = P[i].Pos[2];
-                double R = std::sqrt(x*x + y*y);
+                double R = std::sqrt(x * x + y * y);
 
-		const double energyPerSN = 1.0e51 / UNIT_ENERGY_IN_CGS; // code units
-		const double ejectaMass = P[i].EjectaMass_ThisTimestep / UNIT_MASS_IN_SOLAR; // code units
-		const double ejectaMassPerSN = ejectaMass / P[i].SNe_ThisTimeStep; // code units
+                const double energyPerSN = 1.0e51 / UNIT_ENERGY_IN_CGS;                      // code units
+                const double ejectaMass = P[i].EjectaMass_ThisTimestep / UNIT_MASS_IN_SOLAR; // code units
+                const double ejectaMassPerSN = ejectaMass / P[i].SNe_ThisTimeStep;           // code units
 
-		const double energySNe = P[i].SNe_ThisTimeStep * energyPerSN; // code units
-		const double ejectaVelocity = std::sqrt(2.0 * energySNe / ejectaMass); // code units
-		
-		std::cout << "\tSN explosion:\n"
-                          << "\t\t" << "N_SNe = " << P[i].SNe_ThisTimeStep << "\n"
-                          << "\t\t" << "M_ejecta/N_SNe = " << (ejectaMassPerSN * UNIT_MASS_IN_SOLAR) << " Msun\n"
-		          << "\t\t" << "v_ejecta = " << (ejectaVelocity * UNIT_VEL_IN_KMS) << " km/s\n"
-                          << "\t\t" << "density = " << (P[i].DensAroundStar * UNIT_DENSITY_IN_NHCGS) << " n_H/cc\n"
-                          << "\t\t" << "radius = " << (R * UNIT_LENGTH_IN_KPC) << " kpc\n"
-                          << "\t\t" << "height = " << (z * UNIT_LENGTH_IN_KPC) << " kpc."
+                const double energySNe = P[i].SNe_ThisTimeStep * energyPerSN;          // code units
+                const double ejectaVelocity = std::sqrt(2.0 * energySNe / ejectaMass); // code units
+
+                std::cout << "\tSN explosion:\n"
+                          << "\t\t"
+                          << "N_SNe = " << P[i].SNe_ThisTimeStep << "\n"
+                          << "\t\t"
+                          << "M_ejecta/N_SNe = " << (ejectaMassPerSN * UNIT_MASS_IN_SOLAR) << " Msun\n"
+                          << "\t\t"
+                          << "v_ejecta = " << (ejectaVelocity * UNIT_VEL_IN_KMS) << " km/s\n"
+                          << "\t\t"
+                          << "density = " << (P[i].DensAroundStar * UNIT_DENSITY_IN_NHCGS) << " n_H/cc\n"
+                          << "\t\t"
+                          << "radius = " << (R * UNIT_LENGTH_IN_KPC) << " kpc\n"
+                          << "\t\t"
+                          << "height = " << (z * UNIT_LENGTH_IN_KPC) << " kpc."
                           << std::endl;
             }
 #endif // SLUG_DEBUG_FEEDBACK
@@ -159,13 +167,14 @@ void determine_where_SNe_occur(void)
             mySlugObject.serializeCluster(P[i].slug_state);
 
             // check whether all stochastic stars have died
-            if(mySlugObject.getNumberAliveStochasticStars() == 0) {
+            if (mySlugObject.getNumberAliveStochasticStars() == 0)
+            {
                 // if so, mark the object as inactive
                 P[i].slug_state_initialized = false;
             }
         } // mySlugObject deallocated automatically
 
-#else // *without* SLUG: calculate event rates to determine where/when the events actually occur
+#else  // *without* SLUG: calculate event rates to determine where/when the events actually occur
         double RSNe = mechanical_fb_calculate_eventrates(i, dt);
         rmean += RSNe;
         ptotal += RSNe * (P[i].Mass * UNIT_MASS_IN_SOLAR) * (dt * UNIT_TIME_IN_MYR);
@@ -196,7 +205,7 @@ void determine_where_SNe_occur(void)
                   << " SLUG objects in "
                   << dt
                   << " seconds ("
-                  << slug_objects_this_timestep/dt
+                  << slug_objects_this_timestep / dt
                   << " objects/second)." << std::endl;
     }
 #endif // SLUG_DEBUG_DELETION

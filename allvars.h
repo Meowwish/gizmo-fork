@@ -1422,6 +1422,9 @@ extern int NtypeLocal[6];	/*!< local number of particles of each type */
 
 extern gsl_rng *random_generator;	/*!< the random number generator used */
 
+#ifdef SLUG
+extern rng_type *slug_rng; // rng for SLUG
+#endif
 
 extern int Gas_split;           /*!< current number of newly-spawned gas particles outside block */
 #ifdef GALSF

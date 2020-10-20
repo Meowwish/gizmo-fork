@@ -22,35 +22,38 @@ class slugWrapper
 {
 
 public:
+
+  static slug_predefined *slug_globals;
+
   // Constructor using particle_mass
   //  initialize a slug_cluster object with the given cluster mass (particle_mass)
   //  its internal ID is set to slug_cluster_internal_ID
   //  its internal time variable is set to slug_cluster_internal_time
   slugWrapper(double particle_mass)
-      : yieldsThisTimestep(slug_predef.yields(yield_table)->get_niso()),
+      : yieldsThisTimestep(slug_globals->yields(yield_table)->get_niso()),
         cluster(
             slug_cluster_internal_ID, particle_mass, slug_cluster_internal_time,
-            slug_predef.imf(imf_type, minimum_stochastic_mass, stochastic_sampling_type),
-            slug_predef.tracks(stellar_tracks),
-            slug_predef.specsyn(spectral_synthesis, slug_predef.tracks(stellar_tracks),
-                                slug_predef.imf(imf_type, minimum_stochastic_mass, stochastic_sampling_type)),
-            slug_predef.filter_set(spectral_filter), nullptr, nullptr,
-            slug_predef.yields(yield_table), nullptr,
-            slug_predef.ostreams, nullptr, do_stochastic_only)
+            slug_globals->imf(imf_type, minimum_stochastic_mass, stochastic_sampling_type),
+            slug_globals->tracks(stellar_tracks),
+            slug_globals->specsyn(spectral_synthesis, slug_globals->tracks(stellar_tracks),
+                                slug_globals->imf(imf_type, minimum_stochastic_mass, stochastic_sampling_type)),
+            slug_globals->filter_set(spectral_filter), nullptr, nullptr,
+            slug_globals->yields(yield_table), nullptr,
+            slug_globals->ostreams, nullptr, do_stochastic_only)
   {
   }
 
   // Method to reconstruct the slug_cluster object from a serialized buffer
   slugWrapper(slug_cluster_state_noyields &state)
-      : yieldsThisTimestep(slug_predef.yields(yield_table)->get_niso()),
+      : yieldsThisTimestep(slug_globals->yields(yield_table)->get_niso()),
         cluster(state,
-                     slug_predef.imf(imf_type, minimum_stochastic_mass, stochastic_sampling_type),
-                     slug_predef.tracks(stellar_tracks),
-                     slug_predef.specsyn(spectral_synthesis, slug_predef.tracks(stellar_tracks),
-                                         slug_predef.imf(imf_type, minimum_stochastic_mass, stochastic_sampling_type)),
-                     slug_predef.filter_set(spectral_filter), nullptr, nullptr,
-                     slug_predef.yields(yield_table), nullptr,
-                     slug_predef.ostreams, nullptr, do_stochastic_only, recompute_yields_after_reconstruct)
+                     slug_globals->imf(imf_type, minimum_stochastic_mass, stochastic_sampling_type),
+                     slug_globals->tracks(stellar_tracks),
+                     slug_globals->specsyn(spectral_synthesis, slug_globals->tracks(stellar_tracks),
+                                         slug_globals->imf(imf_type, minimum_stochastic_mass, stochastic_sampling_type)),
+                     slug_globals->filter_set(spectral_filter), nullptr, nullptr,
+                     slug_globals->yields(yield_table), nullptr,
+                     slug_globals->ostreams, nullptr, do_stochastic_only, recompute_yields_after_reconstruct)
   {
   }
 

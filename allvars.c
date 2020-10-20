@@ -162,6 +162,10 @@ int NtypeLocal[6];		/*!< local number of particles of each type */
 
 gsl_rng *random_generator;	/*!< the random number generator used */
 
+#ifdef SLUG
+rng_type *slug_rng; // rng for SLUG
+#endif // SLUG
+
 int Gas_split;           /*!< current number of newly-spawned gas particles outside block */
 #ifdef GALSF
 int Stars_converted;		/*!< current number of star particles in gas particle block */

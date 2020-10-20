@@ -120,31 +120,32 @@ void compute_photoionization(void)
             continue;
 
 #ifdef SLUG
-	// compute number of ionizing photons via SLUG
-	double N_photons = 0.;
-	
-	if (P[i].slug_state_initialized)
+        // compute number of ionizing photons via SLUG
+        double N_photons = 0.;
+
+        if (P[i].slug_state_initialized)
         {
             // re-create slug object
             slugWrapper mySlugObject(P[i].slug_state);
 
-	    // compute ionizing photons
-	    N_photons = mySlugObject.getPhotometryQH0();
-	}
+            // compute ionizing photons
+            N_photons = mySlugObject.getPhotometryQH0();
+        }
 #else
         // *without* SLUG: assume a fidicual number of 10^49 ionizing photons per 100 solar masses
         const double N_photons_per_100Msun = 1.0e49; // s^-1
         const double star_age = evaluate_stellar_age_Gyr(P[i].StellarAge);
 
-	// assume no ionizing photons after 5 Myr
-        if(star_age >= 0.005) {
+        // assume no ionizing photons after 5 Myr
+        if (star_age >= 0.005)
+        {
             N_photons_per_100Msun = 0.0;
         }
 
         const double stellar_mass_Msun = P[i].Mass * UNIT_MASS_IN_SOLAR;
         double N_photons = N_photons_per_100Msun * (stellar_mass_Msun / 100.);
 #endif // SLUG
-	
+
         if (N_photons <= 0)
             continue;
 

@@ -1,5 +1,7 @@
 #include "slug_wrapper.h"
 
+slug_predefined *slugWrapper::slug_globals = nullptr;
+
 void slugWrapper::serializeCluster(slug_cluster_state_noyields &state)
 {
   cluster.serializeToStructWithoutYields(state);
