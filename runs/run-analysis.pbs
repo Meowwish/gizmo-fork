@@ -14,7 +14,7 @@
 
 cd /g/data/jh2/bw0729/gizmo-fork/runs
 
-mv plots/*.png .
+#mv plots/*.png .
 ./make_plots.sh
 
 
