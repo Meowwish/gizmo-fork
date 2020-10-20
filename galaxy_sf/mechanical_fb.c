@@ -48,10 +48,12 @@ void determine_where_SNe_occur(void)
     double mpi_npossible, mpi_nhosttotal, mpi_ntotal, mpi_ptotal, mpi_dtmean, mpi_rmean;
     mpi_npossible = mpi_nhosttotal = mpi_ntotal = mpi_ptotal = mpi_dtmean = mpi_rmean = 0;
 
-    size_t slug_objects_this_timestep = 0;
+#ifdef SLUG
+    int slug_objects_this_timestep = 0;
+#endif // SLUG
 
     // loop over particles //
-    const double loop_begin_walltime = my_second();
+    const double sn_loop_begin_walltime = MPI_Wtime();
     for (i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i])
     {
         P[i].SNe_ThisTimeStep = 0;
@@ -86,7 +88,7 @@ void determine_where_SNe_occur(void)
 #ifndef WAKEUP
         dt = (P[i].TimeBin ? (((integertime)1) << P[i].TimeBin) : 0) * All.Timebase_interval / All.cf_hubble_a; // dloga to dt_physical
 #else
-        dt = P[i].dt_step * All.Timebase_interval / All.cf_hubble_a; // get particle timestep //
+        dt = P[i].dt_step * All.Timebase_interval / All.cf_hubble_a; // get particle timestep
 #endif
 
         if (dt <= 0)
@@ -194,21 +196,36 @@ void determine_where_SNe_occur(void)
         }
         dtmean += dt;
     } // for(i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i]) //
+    const double sn_loop_end_walltime = MPI_Wtime();
 
 #ifdef SLUG_DEBUG_PERFORMANCE
-    if (slug_objects_this_timestep > 0)
+    double mpi_snloop_begin_time;
+    double mpi_snloop_end_time;
+    int mpi_slug_objects_this_timestep;
+
+    MPI_Reduce(&sn_loop_begin_walltime, &mpi_snloop_begin_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&sn_loop_end_walltime, &mpi_snloop_end_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&slug_objects_this_timestep, &mpi_slug_objects_this_timestep, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+    if (ThisTask == 0)
     {
-        const double dt = my_second() - loop_begin_walltime;
-        std::cout << "[rank=" << ThisTask << "] "
-                  << "Processed "
-                  << slug_objects_this_timestep
-                  << " SLUG objects in "
-                  << dt
-                  << " seconds ("
-                  << slug_objects_this_timestep / dt
-                  << " objects/second)." << std::endl;
+        const double slug_elapsed_time = mpi_snloop_end_time - mpi_snloop_begin_time;
+        slug_total_elapsed_time += slug_elapsed_time;
+
+        if (mpi_slug_objects_this_timestep > 0)
+        {
+            std::cout << "[SLUG] Processed "
+                      << mpi_slug_objects_this_timestep
+                      << " SLUG objects in "
+                      << slug_elapsed_time
+                      << " seconds ("
+                      << mpi_slug_objects_this_timestep / slug_elapsed_time
+                      << " objects/second).\n[SLUG] SLUG accounts for "
+                      << 100.*(slug_total_elapsed_time / CPUThisRun)
+                      << "% of overall runtime.\n";
+        }
     }
-#endif // SLUG_DEBUG_DELETION
+#endif // SLUG_DEBUG_PERFORMANCE
 
     MPI_Reduce(&dtmean, &mpi_dtmean, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&rmean, &mpi_rmean, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);

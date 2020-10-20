@@ -1362,6 +1362,10 @@ extern int PTask;		/*!< note: NTask = 2^PTask */
 
 extern double CPUThisRun;	/*!< Sums CPU time of current process */
 
+#ifdef SLUG
+extern double slug_total_elapsed_time;
+#endif // SLUG
+
 extern int NumForceUpdate;	/*!< number of active particles on local processor in current timestep  */
 extern long long GlobNumForceUpdate;
 
