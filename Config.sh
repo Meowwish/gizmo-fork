@@ -397,3 +397,4 @@ ALLOW_IMBALANCED_GASPARTICLELOAD # increases All.MaxPartSph to All.MaxPart: can 
 SLUG # use feedback computed from the SLUG2 library
 SLUG_DEBUG_PERFORMANCE # compute SLUG objects/second in SN routine
 #SLUG_DEBUG_FEEDBACK # print SN events
+#GALSF_PHOTOIONIZATION_DEBUGGING
