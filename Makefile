@@ -992,7 +992,7 @@ GRACKLE_HOME = $(shell pwd)/grackle_install
 GRACKLEINCL = -I$(GRACKLE_HOME)/include
 GRACKLELIBS = -L$(GRACKLE_HOME)/lib -Wl,-rpath=$(GRACKLE_HOME)/lib
 SLUG_HOME= $(shell pwd)/slug2
-SLUG_INCLUDE = -I$(SLUG_HOME)/src -I$(SLUG_HOME)/pcg-cpp/include
+SLUG_INCLUDE = -I$(SLUG_HOME)/src
 SLUG_LIBS = -L$(SLUG_HOME)/src -Wl,-rpath=$(SLUG_HOME)/src
 GSL_INCL = -I$(GSL_HOME)/include
 GSL_LIBS = -L$(GSL_HOME)/lib
@@ -1005,12 +1005,12 @@ endif
 
 
 ifeq ($(SYSTYPE),"Gadi")
-CC       =  mpicc
-CXX      =  mpicxx
-FC       =  mpif90 -nofor_main
+CC       = mpicxx -x c++ -std=c++17 # use C++ compiler
+CXX      = mpicxx -std=c++17
+FC       = mpif90 -nofor_main -cxxlib
 #OPTIMIZE = -g -O2 -xCORE-AVX2 -ipo -funroll-loops -fp-model precise -prec-div -prec-sqrt -no-ftz -unroll-aggressive -ip -no-ipo # conservative numerical precision, probably not necessary
 # unless you like code to run slow, do not use AVX512 (does not vectorize well anyway)
-OPTIMIZE = -O2 -xCORE-AVX2 -ipo -funroll-loops -no-prec-div -fp-model fast=2  # speed
+OPTIMIZE = -O2 -xCORE-AVX2 -funroll-loops -fp-model precise
 ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
 OPTIMIZE += -qopenmp
 endif
@@ -1021,6 +1021,9 @@ MKL_LIBS = -L$(MKL_HOME)/lib -mkl=sequential
 GRACKLE_HOME = $(shell pwd)/grackle_install
 GRACKLEINCL = -I$(GRACKLE_HOME)/include
 GRACKLELIBS = -L$(GRACKLE_HOME)/lib -Wl,-rpath=$(GRACKLE_HOME)/lib
+SLUG_HOME= $(shell pwd)/slug2
+SLUG_INCLUDE = -I$(SLUG_HOME)/src
+SLUG_LIBS = -L$(SLUG_HOME)/src -Wl,-rpath=$(SLUG_HOME)/src
 GSL_INCL = -I$(GSL_HOME)/include
 GSL_LIBS = -L$(GSL_HOME)/lib
 HDF5INCL = -I$(HDF5_HOME)/include -DH5_USE_16_API
