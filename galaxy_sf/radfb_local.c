@@ -152,23 +152,22 @@ void compute_photoionization(void)
 #ifdef GALSF_PHOTOIONIZATION_DEBUGGING
         const double n_H = 10.; // approximate lower bound for HII region mean density
         const double r1_approx = pow(3.0 * N_photons / (4.0 * M_PI * n_H * n_H * beta), 1. / 3.); // cm
-	const double parsec_in_cm = 3.085678e18;
-        printf("[Photoionization] Q [photons/sec] = %g\n", N_photons);
-        printf("\tApproximate upper bound on size of HII region = %g pc\n", r1_approx / parsec_in_cm);
+	    const double cm_in_parsec = 3.085678e18;
+        printf("[Photoionization] Q [photons/sec/(100 Msun)] = %g\n", N_photons / (P[i].Mass * UNIT_MASS_IN_SOLAR / 100.));
+        printf("\tApproximate upper bound on size of HII region = %g pc; ", r1_approx / cm_in_parsec);
 #endif
 
         const double star_timestep = (P[i].TimeBin ? (1 << P[i].TimeBin) : 0) * All.Timebase_interval / All.cf_hubble_a;
 
         // FIXME: this *only* loops over the local particles!!
-	int j;
-        for (j = 0; j < N_gas; j++) /* loop over the gas block */
+        for (int j = 0; j < N_gas; j++) /* loop over the gas block */
         {
             ParticleNum[j] = j;
             Tag_HIIregion[j] = SphP[j].HIIregion;
-            const double distx = P[i].Pos[0] - P[j].Pos[0];
-            const double disty = P[i].Pos[1] - P[j].Pos[1];
-            const double distz = P[i].Pos[2] - P[j].Pos[2];
-            Distance[j] = sqrt(distx * distx + disty * disty + distz * distz);
+            const double dx = P[i].Pos[0] - P[j].Pos[0];
+            const double dy = P[i].Pos[1] - P[j].Pos[1];
+            const double dz = P[i].Pos[2] - P[j].Pos[2];
+            Distance[j] = sqrt(dx*dx + dy*dy + dz*dz);
 
             const double Rhob = SphP[j].Density * UNIT_DENSITY_IN_CGS;
             const double Mb = P[j].Mass * UNIT_MASS_IN_CGS;
@@ -187,12 +186,13 @@ void compute_photoionization(void)
         sort(Distance, IonRate, Tini, ParticleNum, Tag_HIIregion, N_gas);
 
         // FIXME: this *only* loops over local particles!!
+        int jmax = (N_gas - 1);
         for (int j = 0; j < N_gas; j++) /* loop over the gas block */
         {
             if (Tag_HIIregion[j] == 1)
                 continue; // The particle belongs to another HII region
             if (Tini[j] >= Tfin)
-                continue; //Particle already ionized
+                continue; // Particle already ionized
             if (IonRate[j] <= N_photons)
             {
                 SphP[ParticleNum[j]].InternalEnergy = BOLTZMANN * Tfin / ((EOS_GAMMA - 1) * molw_i * PROTONMASS) * UNIT_MASS_IN_CGS / UNIT_ENERGY_IN_CGS;
@@ -221,13 +221,13 @@ void compute_photoionization(void)
             }
             //P[i].Feedback_timestep = DMIN(P[i].Feedback_timestep,fbtime);
             if (N_photons <= 0)
+                jmax = j;
                 break;
         }
 
 #ifdef GALSF_PHOTOIONIZATION_DEBUGGING
-        const int jmax = (j < N_gas) ? j : (N_gas - 1);
         const double r1 = Distance[jmax];
-        printf("\tActual size of HII region [code units]: %g\n", r1);
+        printf("actual size of HII region = %g pc.\n", r1 * UNIT_LENGTH_IN_PC);
 #endif
     }
 
