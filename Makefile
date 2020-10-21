@@ -970,7 +970,7 @@ OPT     += -DNOCALLSOFSYSTEM -DNO_ISEND_IRECV_IN_DOMAIN -DMPICH_IGNORE_CXX_SEEK
 endif
 
 #----------------------------------------------------------------------------------------------
-ifeq ($(SYSTYPE),"Ubuntu")
+ifeq ($(SYSTYPE),"Gadi") # use `module load llvm/10.0.0`
 export OMPI_CC = clang
 export OMPI_CXX = clang++
 export OMPI_FC = clang
@@ -979,7 +979,7 @@ CXX      = mpicxx -std=c++17
 FC       = mpif90
 LDFLAGS	 = -lgfortran
 # WARNING: do *NOT* run with -ffast-math !!
-OPTIMIZE += -O2 -march=native -ffp-contract=off #-fstandalone-debug #-fsanitize=address # clang options
+OPTIMIZE += -O2 -march=native -ffp-contract=off -fstandalone-debug #-fsanitize=address # clang options
 ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
 OPTIMIZE += -fopenmp # openmp required compiler flags
 FC       = mpif90
@@ -999,12 +999,12 @@ GSL_LIBS = -L$(GSL_HOME)/lib
 HDF5INCL = -I$(HDF5_HOME)/include -DH5_USE_16_API
 HDF5LIB  = -L$(HDF5_HOME)/lib -lhdf5 -lz
 MPICHLIB = 
-OPT     += -DUSE_MPI_IN_PLACE # very important for OpenMPI!
+OPT     += -DUSE_MPI_IN_PLACE  -DNO_ISEND_IRECV_IN_DOMAIN # both critical for OpenMPI!
 endif
 #----------------------------------------------------------------------------------------------
 
 
-ifeq ($(SYSTYPE),"Gadi")
+ifeq ($(SYSTYPE),"Gadi-Intel") # NOT recommended!
 CC       = mpicxx -x c++ -std=c++17 # use C++ compiler
 CXX      = mpicxx -std=c++17
 FC       = mpif90 -nofor_main -cxxlib
