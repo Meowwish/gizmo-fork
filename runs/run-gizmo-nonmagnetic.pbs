@@ -11,34 +11,17 @@
 #PBS -l walltime=48:00:00
 #PBS -l storage=scratch/jh2+gdata/jh2
 
-# --- print commands ---
-set -x
-
-
-# --- tuning options for jemalloc [unused] ---
-
-#export MALLOC_CONF="background_thread:true,metadata_thp:auto,dirty_decay_ms:30000,muzzy_decay_ms:30000,stats_print:true,abort_conf:true"
-
 
 # --- ensure we start in the correct directory ----
 
 cd /g/data/jh2/bw0729/gizmo-fork/runs
 
 
-# --- disable hardware accelerated MPI collectives ---
-# "Mixed MPI datatypes, in general, can prevent protocol consensus
-#  inside HCOLL, resulting in hangs" [https://docs.mellanox.com/display/HPCXv27/HCOLL]
-# (We are getting hangs during MPI_Allreduce in domain.c, unclear whether this is the cause.)
-
-MPI_OPTIONS="-mca coll ^hcoll"
+# --- set MPI options ---
+MPI_OPTIONS=""
 
 
 # --- initialize GIZMO ---
 
 mpirun $MPI_OPTIONS ./GIZMO isodisk_nonmagnetic.params > gizmo_isolated_disk_nonmagnetic.log 2>&1
-
-
-
-
-
 
