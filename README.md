@@ -1,7 +1,15 @@
 # gizmo-fork
 
 ## notes
-* enabling SLUG adds significant (but subdominant) computational overhead to the simulation
+* enabling SLUG adds a ~20% memory overhead to the particle data allocations but should have ~1% runtime overhead or less
+* NO_ISEND_IRECV_IN_DOMAIN should *always* be enabled; otherwise the code will randomly hang in an MPI call during the domain decomposition
+* USE_MPI_IN_PLACE should *almost always* be enabled (required if using OpenMPI); if it is not but it should be, the code will crash during MPI calls with aliased pointers
+* STOP_WHEN_BELOW_MINTIMESTEP is always recommended (to avoid burning through a compute allocation due to infinitesimal timesteps as a result of a misconfiguration or some other problem)
+* Clang is the recommended compiler. GCC also mostly works (but do *not* use GCC version 7, it will generate incorrect code that will crash). The Intel compiler has problems (at least the versions I tried), attempt at your own risk. Recent Clang versions often produce faster code than Intel in any case.
+* SLUG objects are saved in restartfiles, but are *not* saved in snapshot files. This could be implemented, but snapshot files do not reliably work for restarting anyway (see next item)
+* Restart only from restartfiles; restarting from snapshot files sometimes causes temperatures to blow up (cause unknown); if you must restart from a snapshot, create a new parameter file and set ICFile to be the snapshot
+* This version of the code is only tested with the included versions of Grackle and SLUG. Use other versions at your own risk.
+* yt does not compute the temperature from GIZMO snapshots correctly. Use the pseudocode given in the GIZMO User's Guide to compute the temperature instead.
 
 ## original readme
 This is **GIZMO**: a flexible, multi-method multi-physics code. The code solves the fluid using Lagrangian mesh-free finite-volume Godunov methods (or SPH, or fixed-grid Eulerian methods), and self-gravity with fast hybrid PM-Tree methods and fully-adaptive resolution. Other physics include: magnetic fields (ideal and non-ideal), radiation-hydrodynamics, anisotropic conduction and viscosity, sub-grid turbulent diffusion, radiative cooling, cosmological integration, sink particles, dust-gas mixtures, cosmic rays, degenerate equations of state, galaxy/star/black hole formation and feedback, self-interacting and scalar-field dark matter, on-the-fly structure finding, and more. 
