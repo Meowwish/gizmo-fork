@@ -9,8 +9,10 @@
 * All C code in this version of the code must be compiled as C++ code with a C++ compiler (since SLUG C++ objects are used directly). This is simple to do (shown in the Makefile). To successfully compile with a C++ compiler, the C code must avoid using multiply-defined variables (i.e. it must compile with -fno-common), but there was only one such variable and it was moved into main.c from proto.h.
 * SLUG objects are saved in restartfiles, but are *not* saved in snapshot files. This could be implemented, but snapshot files do not reliably work for restarting anyway (see next item)
 * Restart only from restartfiles; restarting from snapshot files sometimes causes temperatures to blow up (cause unknown); if you must restart from a snapshot, create a new parameter file and set ICFile to be the snapshot
+* Restarting from restartfiles is likely to fail if any parameters in the parameter file or compile-time options are changed.
 * This version of the code is only tested with the included versions of Grackle and SLUG. Use other versions at your own risk.
 * yt does not compute the temperature from GIZMO snapshots correctly. Use the pseudocode given in the GIZMO User's Guide to compute the temperature instead.
+* The cooling function included in GIZMO (in cooling.c) is incorrect for temperatures below 10^4 K. It does not have an unstable phase between WNM/CNM. Use Grackle instead.
 
 ## original readme
 This is **GIZMO**: a flexible, multi-method multi-physics code. The code solves the fluid using Lagrangian mesh-free finite-volume Godunov methods (or SPH, or fixed-grid Eulerian methods), and self-gravity with fast hybrid PM-Tree methods and fully-adaptive resolution. Other physics include: magnetic fields (ideal and non-ideal), radiation-hydrodynamics, anisotropic conduction and viscosity, sub-grid turbulent diffusion, radiative cooling, cosmological integration, sink particles, dust-gas mixtures, cosmic rays, degenerate equations of state, galaxy/star/black hole formation and feedback, self-interacting and scalar-field dark matter, on-the-fly structure finding, and more. 
