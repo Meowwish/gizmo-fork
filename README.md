@@ -1,4 +1,4 @@
-# gizmo-fork
+# gizmo-slug
 
 ## notes
 * enabling SLUG adds a ~20% memory overhead to the particle data allocations but should have ~1% runtime overhead or less
