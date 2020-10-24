@@ -181,10 +181,10 @@ GMP_INCL =
 GMP_LIBS =
 MKL_INCL =
 MKL_LIBS =
-GRACKLE_HOME = $(SRC_DIR)/grackle_install
+GRACKLE_HOME = $(SRC_DIR)/../grackle_install
 GRACKLEINCL = -I$(GRACKLE_HOME)/include
 GRACKLELIBS = -L$(GRACKLE_HOME)/lib -Wl,-rpath=$(GRACKLE_HOME)/lib
-SLUG_HOME= $(SRC_DIR)/slug2
+SLUG_HOME= $(SRC_DIR)/../slug2
 SLUG_INCLUDE = -I$(SLUG_HOME)/src
 SLUG_LIBS = -L$(SLUG_HOME)/src -Wl,-rpath=$(SLUG_HOME)/src
 GSL_INCL = -I$(GSL_HOME)/include
@@ -211,10 +211,10 @@ GMP_INCL = #
 GMP_LIBS = #
 MKL_INCL = -I$(MKL_HOME)/include
 MKL_LIBS = -L$(MKL_HOME)/lib -mkl=sequential
-GRACKLE_HOME = $(SRC_DIR)/grackle_install
+GRACKLE_HOME = $(SRC_DIR)/../grackle_install
 GRACKLEINCL = -I$(GRACKLE_HOME)/include
 GRACKLELIBS = -L$(GRACKLE_HOME)/lib -Wl,-rpath=$(GRACKLE_HOME)/lib
-SLUG_HOME= $(SRC_DIR)/slug2
+SLUG_HOME= $(SRC_DIR)/../slug2
 SLUG_INCLUDE = -I$(SLUG_HOME)/src
 SLUG_LIBS = -L$(SLUG_HOME)/src -Wl,-rpath=$(SLUG_HOME)/src
 GSL_INCL = -I$(GSL_HOME)/include
