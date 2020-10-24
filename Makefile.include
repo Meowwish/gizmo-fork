@@ -1,0 +1,431 @@
+#-----------------------------------------------------------------
+#
+# You might be looking for the compile-time Makefile options of the code...
+#
+# They have moved to a separate file.
+#
+# To build the code, do the following:
+#
+#  (1) Copy the file "Template-Config.sh"  to  "Config.sh"
+#
+#        cp Template-Config.sh Config.sh 
+#
+#  (2) Edit "Config.sh" as needed for your application
+#
+#  (3) Run "make"
+#
+#
+#  New compile-time options should be added to the 
+#  file "Template-Config.sh" only. Usually, the should be added
+#  there in the disabled/default version.
+#
+#  "Config.sh" should *not* be checked in to the repository
+#
+#  Note: It is possible to override the default name of the 
+#  Config.sh file, if desired, as well as the name of the
+#  executable. For example:
+#
+#   make  CONFIG=MyNewConf.sh  EXEC=GIZMO
+# 
+#-----------------------------------------------------------------
+#
+# You might also be looking for the target system SYSTYPE option
+#
+# It has also moved to a separate file.
+#
+# To build the code, do the following:
+#
+# (A) set the SYSTYPE variable in your .bashrc (or similar file):
+#
+#        e.g. export SYSTYPE=Magny
+# or
+#
+# (B) set SYSTYPE in Makefile.systype 
+#     This file has priority over your shell variable.:
+#
+#     Uncomment your system in  "Makefile.systype".
+#
+# If you add an ifeq for a new system below, also add that systype to
+# Template-Makefile.systype
+#
+###########
+#
+# This file was originally part of the GADGET3 code developed by
+#   Volker Springel. The code has been modified
+#   slighty by Phil Hopkins (phopkins@caltech.edu) for GIZMO (mostly 
+#   dealing with new files and filename conventions)
+#
+#############
+
+CONFIG   =  Config.sh
+PERL     =  /usr/bin/perl
+
+RESULT     := $(shell CONFIG=$(CONFIG) PERL=$(PERL) SRC_DIR=$(SRC_DIR) make -f config-makefile)
+CONFIGVARS := $(shell cat GIZMO_config.h)
+
+HG_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null)
+HG_REPO := $(shell git config --get remote.origin.url)
+HG_BRANCH := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
+HOST := $(shell hostname)
+BUILDINFO = "Built on $(HOST) by $(USER) from $(HG_BRANCH):$(HG_COMMIT) at $(HG_REPO)"
+OPT += -DBUILDINFO='$(BUILDINFO)'
+
+
+# initialize some default flags -- these will all get re-written below
+CC	= mpicc		# sets the C-compiler (default, will be set for machine below)
+CXX	= mpiCC		# sets the C++-compiler (default, will be set for machine below)
+FC	= mpif90	# sets the fortran compiler (default, will be set for machine below)
+OPTIMIZE = -Wall  -g   # optimization and warning flags (default)
+MPICHLIB = -lmpich	# mpi library (arbitrary default, set for machine below)
+CHIMESINCL = # default to empty, will only be used below if called
+CHIMESLIBS = # default to empty, will only be used below if called
+
+# one annoying thing here is the FFTW libraries, since they are named differently depending on
+#  whether they are compiled in different precision levels, or with different parallelization options, so we
+#  have to have a big block here 'sorting them out'.
+#
+ifeq (NOTYPEPREFIX_FFTW,$(findstring NOTYPEPREFIX_FFTW,$(CONFIGVARS)))  # fftw installed without type prefix?
+    FFTW_LIBNAMES =  #-lrfftw_mpi -lfftw_mpi -lrfftw -lfftw
+else
+ifeq (DOUBLEPRECISION_FFTW,$(findstring DOUBLEPRECISION_FFTW,$(CONFIGVARS)))  # test for double precision libraries
+    FFTW_LIBNAMES =  #-ldrfftw_mpi -ldfftw_mpi -ldrfftw -ldfftw
+else
+    FFTW_LIBNAMES =  #-lsrfftw_mpi -lsfftw_mpi -lsrfftw -lsfftw
+endif
+endif
+# we only need fftw if PMGRID is turned on
+ifneq (USE_FFTW3, $(findstring USE_FFTW3, $(CONFIGVARS)))
+ifeq (PMGRID, $(findstring PMGRID, $(CONFIGVARS)))
+ifeq (NOTYPEPREFIX_FFTW,$(findstring NOTYPEPREFIX_FFTW,$(CONFIGVARS)))  # fftw installed without type prefix?
+  FFTW_LIBNAMES = -lrfftw_mpi -lfftw_mpi -lrfftw -lfftw
+else
+ifeq (DOUBLEPRECISION_FFTW,$(findstring DOUBLEPRECISION_FFTW,$(CONFIGVARS)))  # test for double precision libraries
+  FFTW_LIBNAMES = -ldrfftw_mpi -ldfftw_mpi -ldrfftw -ldfftw
+else
+  FFTW_LIBNAMES = -lsrfftw_mpi -lsfftw_mpi -lsrfftw -lsfftw
+endif
+endif
+else
+# or if TURB_DRIVING_SPECTRUMGRID is activated
+ifeq (TURB_DRIVING_SPECTRUMGRID, $(findstring TURB_DRIVING_SPECTRUMGRID, $(CONFIGVARS)))
+ifeq (NOTYPEPREFIX_FFTW,$(findstring NOTYPEPREFIX_FFTW,$(CONFIGVARS)))  # fftw installed without type prefix?
+  FFTW_LIBNAMES = -lrfftw_mpi -lfftw_mpi -lrfftw -lfftw
+else
+ifeq (DOUBLEPRECISION_FFTW,$(findstring DOUBLEPRECISION_FFTW,$(CONFIGVARS)))  # test for double precision libraries
+  FFTW_LIBNAMES = -ldrfftw_mpi -ldfftw_mpi -ldrfftw -ldfftw
+else
+  FFTW_LIBNAMES = -lsrfftw_mpi -lsfftw_mpi -lsrfftw -lsfftw
+endif
+endif
+else
+  FFTW_LIBNAMES = #
+endif
+endif
+else # use FFTW3 instead of FFTW2.?
+ifeq (PMGRID, $(findstring PMGRID, $(CONFIGVARS)))
+ifeq (DOUBLEPRECISION_FFTW,$(findstring DOUBLEPRECISION_FFTW,$(CONFIGVARS)))  # test for double precision libraries
+  FFTW_LIBNAMES = -lfftw3_mpi -lfftw3
+else #single precision 
+  FFTW_LIBNAMES = -lfftw3f_mpi -lfftw3f
+endif
+else 
+# or if TURB_DRIVING_SPECTRUMGRID is activated
+ifeq (TURB_DRIVING_SPECTRUMGRID, $(findstring TURB_DRIVING_SPECTRUMGRID, $(CONFIGVARS)))
+ifeq (DOUBLEPRECISION_FFTW,$(findstring DOUBLEPRECISION_FFTW,$(CONFIGVARS)))  # test for double precision libraries
+  FFTW_LIBNAMES = -lfftw3_mpi -lfftw3
+else #single precision  
+  FFTW_LIBNAMES = -lfftw3f_mpi -lfftw3f
+endif
+else 
+  FFTW_LIBNAMES = #
+endif
+endif
+endif
+
+
+## read the systype information to use the blocks below for different machines
+ifdef SYSTYPE
+SYSTYPE := "$(SYSTYPE)"
+-include Makefile.systype
+else
+include Makefile.systype
+endif
+
+ifeq ($(wildcard Makefile.systype), Makefile.systype)
+INCL = Makefile.systype
+else
+INCL =
+endif
+FINCL =
+
+
+
+#----------------------------------------------------------------------------------------------
+ifeq ($(SYSTYPE),"Gadi") # use `module load llvm/10.0.0`
+export OMPI_CC = clang
+export OMPI_CXX = clang++
+export OMPI_FC = clang
+CC       = mpicxx -x c++ -std=c++17 # use C++ compiler
+CXX      = mpicxx -std=c++17
+FC       = mpif90
+LDFLAGS	 = -lgfortran	# necessary for Grackle
+# WARNING: do *NOT* run with -ffast-math
+# add -fsanitize=address to debug memory issues (out-of-bounds array accesses, etc.)
+OPTIMIZE += -O2 -march=native -ffp-contract=off -fstandalone-debug
+#OPTIMIZE += -flto=thin # Clang on Gadi does not support ThinLTO
+ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
+OPTIMIZE += -fopenmp # openmp required compiler flags
+FC       = mpif90
+endif
+GMP_INCL =
+GMP_LIBS =
+MKL_INCL =
+MKL_LIBS =
+GRACKLE_HOME = $(SRC_DIR)/grackle_install
+GRACKLEINCL = -I$(GRACKLE_HOME)/include
+GRACKLELIBS = -L$(GRACKLE_HOME)/lib -Wl,-rpath=$(GRACKLE_HOME)/lib
+SLUG_HOME= $(SRC_DIR)/slug2
+SLUG_INCLUDE = -I$(SLUG_HOME)/src
+SLUG_LIBS = -L$(SLUG_HOME)/src -Wl,-rpath=$(SLUG_HOME)/src
+GSL_INCL = -I$(GSL_HOME)/include
+GSL_LIBS = -L$(GSL_HOME)/lib
+HDF5INCL = -I$(HDF5_HOME)/include -DH5_USE_16_API
+HDF5LIB  = -L$(HDF5_HOME)/lib -lhdf5 -lz
+MPICHLIB = 
+OPT     += -DUSE_MPI_IN_PLACE  -DNO_ISEND_IRECV_IN_DOMAIN # both critical for OpenMPI!
+endif
+#----------------------------------------------------------------------------------------------
+
+
+ifeq ($(SYSTYPE),"Gadi-Intel") # NOT recommended!
+CC       = mpicxx -x c++ -std=c++17 # use C++ compiler
+CXX      = mpicxx -std=c++17
+FC       = mpif90 -nofor_main -cxxlib
+#OPTIMIZE = -g -O2 -xCORE-AVX2 -ipo -funroll-loops -fp-model precise -prec-div -prec-sqrt -no-ftz -unroll-aggressive -ip -no-ipo # conservative numerical precision, probably not necessary
+# unless you like code to run slow, do not use AVX512 (does not vectorize well anyway)
+OPTIMIZE = -O2 -xCORE-AVX2 -funroll-loops -fp-model precise
+ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
+OPTIMIZE += -qopenmp
+endif
+GMP_INCL = #
+GMP_LIBS = #
+MKL_INCL = -I$(MKL_HOME)/include
+MKL_LIBS = -L$(MKL_HOME)/lib -mkl=sequential
+GRACKLE_HOME = $(SRC_DIR)/grackle_install
+GRACKLEINCL = -I$(GRACKLE_HOME)/include
+GRACKLELIBS = -L$(GRACKLE_HOME)/lib -Wl,-rpath=$(GRACKLE_HOME)/lib
+SLUG_HOME= $(SRC_DIR)/slug2
+SLUG_INCLUDE = -I$(SLUG_HOME)/src
+SLUG_LIBS = -L$(SLUG_HOME)/src -Wl,-rpath=$(SLUG_HOME)/src
+GSL_INCL = -I$(GSL_HOME)/include
+GSL_LIBS = -L$(GSL_HOME)/lib
+HDF5INCL = -I$(HDF5_HOME)/include -DH5_USE_16_API
+HDF5LIB  = -L$(HDF5_HOME)/lib -lhdf5 -lz
+MPICHLIB = #
+OPT     += -DUSE_MPI_IN_PLACE -DNO_ISEND_IRECV_IN_DOMAIN
+endif
+
+#----------------------------------------------------------------------------------------------
+
+
+#
+# different code groups that need to be compiled. the groupings below are
+# arbitrary (they will all be added to OBJS and compiled, and if they are
+# un-used it should be through use of macro flags in the source code). But
+# they are grouped below for the sake of clarity when adding/removing code
+# blocks in the future
+#
+CORE_OBJS =	main.o accel.o  timestep.o init.o restart.o io.o \
+			predict.o global.o begrun.o run.o allvars.o read_ic.o \
+			domain.o driftfac.o kicks.o ngb.o compile_time_info.o merge_split.o
+
+SYSTEM_OBJS =   system/system.o \
+				system/allocate.o \
+				system/mymalloc.o \
+				system/parallel_sort.o \
+                system/peano.o \
+                system/parallel_sort_special.o \
+                system/mpi_util.o \
+                system/pinning.o
+
+GRAVITY_OBJS  = gravity/forcetree.o \
+                gravity/forcetree_update.o \
+                gravity/gravtree.o \
+				gravity/cosmology.o \
+				gravity/potential.o \
+				gravity/pm_periodic.o \
+                gravity/pm_nonperiodic.o \
+                gravity/longrange.o \
+                gravity/ags_hsml.o \
+                gravity/binary.o
+
+HYDRO_OBJS = 	hydro/hydra_master.o \
+				hydro/density.o \
+				hydro/gradients.o \
+				turb/dynamic_diffusion.o \
+				turb/dynamic_diffusion_velocities.o \
+				turb/turb_driving.o \
+				turb/turb_powerspectra.o
+
+EOSCOOL_OBJS =  cooling/cooling.o \
+				cooling/grackle.o \
+				eos/eos.o \
+				eos/cosmic_ray_fluid/cosmic_ray_alfven.o \
+				eos/cosmic_ray_fluid/cosmic_ray_utilities.o \
+				solids/elastic_physics.o \
+				solids/grain_physics.o \
+				nuclear/nuclear_network_solver.o \
+				nuclear/nuclear_network.o 
+
+STARFORM_OBJS = galaxy_sf/sfr_eff.o \
+                galaxy_sf/stellar_evolution.o \
+                galaxy_sf/mechanical_fb.o \
+                galaxy_sf/thermal_fb.o \
+                galaxy_sf/radfb_local.o \
+                galaxy_sf/dm_dispersion_hsml.o \
+				galaxy_sf/slug_wrapper.o
+
+SINK_OBJS = galaxy_sf/blackholes/blackhole.o \
+            galaxy_sf/blackholes/blackhole_util.o \
+            galaxy_sf/blackholes/blackhole_environment.o \
+            galaxy_sf/blackholes/blackhole_feed.o \
+            galaxy_sf/blackholes/blackhole_swallow_and_kick.o
+
+RHD_OBJS =  radiation/rt_utilities.o \
+			radiation/rt_CGmethod.o \
+			radiation/rt_source_injection.o \
+			radiation/rt_chem.o \
+			radiation/rt_cooling.o
+
+FOF_OBJS =	structure/fof.o \
+			structure/subfind/subfind.o \
+			structure/subfind/subfind_vars.o \
+			structure/subfind/subfind_collective.o \
+			structure/subfind/subfind_serial.o \
+			structure/subfind/subfind_so.o \
+			structure/subfind/subfind_cont.o \
+			structure/subfind/subfind_distribute.o \
+			structure/subfind/subfind_findlinkngb.o \
+			structure/subfind/subfind_nearesttwo.o \
+			structure/subfind/subfind_loctree.o \
+			structure/subfind/subfind_potential.o \
+			structure/subfind/subfind_density.o \
+			structure/twopoint.o \
+			structure/lineofsight.o
+
+MISC_OBJS = sidm/cbe_integrator.o \
+			sidm/dm_fuzzy.o \
+			sidm/sidm_core.o
+
+## name of executable and optimizations
+EXEC   = GIZMO
+OPTIONS = $(OPTIMIZE) $(OPT)
+
+## combine all the objects above
+OBJS  = $(CORE_OBJS) $(SYSTEM_OBJS) $(GRAVITY_OBJS) $(HYDRO_OBJS) \
+		$(EOSCOOL_OBJS) $(STARFORM_OBJS) $(SINK_OBJS) $(RHD_OBJS) \
+		$(FOF_OBJS) $(MISC_OBJS)
+
+## fortran recompiler block
+FOPTIONS = $(OPTIMIZE) $(FOPT)
+FOBJS =
+
+## include files needed at compile time for the above objects
+INCL    += 	allvars.h \
+			proto.h \
+			gravity/forcetree.h \
+			gravity/myfftw3.h \
+			domain.h \
+			system/myqsort.h \
+			kernel.h \
+			eos/eos.h \
+			galaxy_sf/blackholes/blackhole.h \
+			galaxy_sf/slug_wrapper.h \
+			structure/fof.h \
+			structure/subfind/subfind.h \
+			cooling/cooling.h \
+			nuclear/nuclear_network.h \
+			Makefile
+
+
+## now we add special cases dependent on compiler flags. normally we would
+##  include the files always, and simply use the in-file compiler variables
+##  to determine whether certain code is compiled [this allows us to take
+##  advantage of compiler logic, and makes it easier for the user to
+##  always specify what they want]. However special cases can arise, if e.g.
+##  there are certain special libraries needed, or external compilers, for
+##  certain features
+
+# helmholtz eos routines need special treatment here because they are written
+#  in fortran and call the additional fortran compilers and linkers. these could
+#  be written to always compile and just be ignored, but then the large majority
+#  of cases that -don't- need the fortran linker would always have to go
+#  through these additional compilation options and steps (and this
+#  can cause additional problems on some machines). so we sandbox it here.
+ifeq (EOS_HELMHOLTZ,$(findstring EOS_HELMHOLTZ,$(CONFIGVARS)))
+OBJS    += eos/eos_interface.o
+INCL    += eos/helmholtz/helm_wrap.h
+FOBJS   += eos/helmholtz/helm_impl.o eos/helmholtz/helm_wrap.o
+FINCL   += eos/helmholtz/helm_const.dek eos/helmholtz/helm_implno.dek eos/helmholtz/helm_table_storage.dek eos/helmholtz/helm_vector_eos.dek
+endif
+
+# chimes files are treated as special for now because they are not in the public
+#  code and have not had their macro logic cleaned up to allow appropriate compilation without chimes flags enabled
+ifeq (CHIMES,$(findstring CHIMES,$(CONFIGVARS)))
+OBJS    += cooling/chimes/chimes.o cooling/chimes/chimes_cooling.o cooling/chimes/init_chimes.o cooling/chimes/rate_equations.o cooling/chimes/update_rates.o 
+INCL    += cooling/chimes/chimes_interpol.h cooling/chimes/chimes_proto.h cooling/chimes/chimes_vars.h 
+endif
+
+# if HDF5 explicitly disabled, remove the linked libraries
+ifeq (IO_DISABLE_HDF5,$(findstring IO_DISABLE_HDF5,$(CONFIGVARS)))
+HDF5INCL =
+HDF5LIB  =
+endif
+
+# if grackle libraries are installed they must be a shared library as defined here
+ifeq (COOL_GRACKLE,$(findstring COOL_GRACKLE,$(CONFIGVARS)))
+OPTIONS += -DCONFIG_BFLOAT_8
+GRACKLEINCL +=
+GRACKLELIBS += -lgrackle
+else
+GRACKLEINCL =
+GRACKLELIBS =
+endif
+
+# if SLUG libraries are installed they must be a shared library as defined here
+ifeq (SLUG,$(findstring SLUG,$(CONFIGVARS)))
+SLUG_INCLUDE +=
+SLUG_LIBS += -lslug
+else
+SLUG_INCLUDE +=
+SLUG_LIBS +=
+endif
+
+# linking libraries (includes machine-dependent options above)
+CFLAGS = $(OPTIONS) $(GSL_INCL) $(FFTW_INCL) $(HDF5INCL) $(GMP_INCL) \
+         $(GRACKLEINCL) $(CHIMESINCL) $(SLUG_INCLUDE)
+
+CXXFLAGS = $(CFLAGS)
+
+LIBS = $(HDF5LIB) -g $(MPICHLIB) $(GSL_LIBS) -lgsl -lgslcblas \
+	   $(FFTW_LIBS) $(FFTW_LIBNAMES) -lm $(GRACKLELIBS) $(CHIMESLIBS) $(SLUG_LIBS)
+
+ifeq (PTHREADS_NUM_THREADS,$(findstring PTHREADS_NUM_THREADS,$(CONFIGVARS))) 
+LIBS += -lpthread
+endif
+
+$(EXEC): $(OBJS) $(FOBJS)  
+	$(CXX) $(LDFLAGS) $(OPTIMIZE) $(OBJS) $(FOBJS) $(LIBS) $(RLIBS) -o $(EXEC)
+
+$(OBJS): $(INCL)  $(CONFIG)  compile_time_info.c
+
+$(FOBJS): %.o: %.f90
+	$(FC) $(OPTIMIZE) -c $< -o $@
+
+compile_time_info.c: $(CONFIG)
+	$(PERL) prepare-config.perl $(CONFIG)
+
+clean:
+	rm -f $(OBJS) $(FOBJS) $(EXEC) *.oo *.c~ compile_time_info.c GIZMO_config.h
+
+
