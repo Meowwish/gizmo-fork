@@ -172,7 +172,7 @@ LDFLAGS	 = -lgfortran	# necessary for Grackle
 # WARNING: do *NOT* run with -ffast-math
 # add -fsanitize=address to debug memory issues (out-of-bounds array accesses, etc.)
 OPTIMIZE += -O2 -march=native -ffp-contract=off -fstandalone-debug
-#OPTIMIZE += -flto=thin # Clang on Gadi does not support ThinLTO
+OPTIMIZE += -flto=thin
 ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
 OPTIMIZE += -fopenmp # openmp required compiler flags
 FC       = mpif90
@@ -403,7 +403,7 @@ endif
 
 # linking libraries (includes machine-dependent options above)
 CFLAGS = $(OPTIONS) $(GSL_INCL) $(FFTW_INCL) $(HDF5INCL) $(GMP_INCL) \
-         $(GRACKLEINCL) $(CHIMESINCL) $(SLUG_INCLUDE)
+         $(GRACKLEINCL) $(CHIMESINCL) $(SLUG_INCLUDE) $(BUILD_INCLUDE)
 
 CXXFLAGS = $(CFLAGS)
 
