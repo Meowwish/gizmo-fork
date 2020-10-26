@@ -7,7 +7,9 @@
 #include "../allvars.h"
 #include "../proto.h"
 #include "../kernel.h"
+#ifdef SLUG
 #include "slug_wrapper.h"
+#endif // SLUG
 
 /* independent re-implementation of photoionization feedback by Armillotta et al. */
 

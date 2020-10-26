@@ -282,8 +282,7 @@ STARFORM_OBJS = galaxy_sf/sfr_eff.o \
                 galaxy_sf/mechanical_fb.o \
                 galaxy_sf/thermal_fb.o \
                 galaxy_sf/radfb_local.o \
-                galaxy_sf/dm_dispersion_hsml.o \
-				galaxy_sf/slug_wrapper.o
+                galaxy_sf/dm_dispersion_hsml.o
 
 SINK_OBJS = galaxy_sf/blackholes/blackhole.o \
             galaxy_sf/blackholes/blackhole_util.o \
@@ -325,6 +324,7 @@ OPTIONS = $(OPTIMIZE) $(OPT)
 OBJS  = $(CORE_OBJS) $(SYSTEM_OBJS) $(GRAVITY_OBJS) $(HYDRO_OBJS) \
 		$(EOSCOOL_OBJS) $(STARFORM_OBJS) $(SINK_OBJS) $(RHD_OBJS) \
 		$(FOF_OBJS) $(MISC_OBJS)
+
 
 ## fortran recompiler block
 FOPTIONS = $(OPTIMIZE) $(FOPT)
@@ -396,6 +396,7 @@ endif
 ifeq (SLUG,$(findstring SLUG,$(CONFIGVARS)))
 SLUG_INCLUDE +=
 SLUG_LIBS += -lslug
+OBJS += galaxy_sf/slug_wrapper.o
 else
 SLUG_INCLUDE +=
 SLUG_LIBS +=
