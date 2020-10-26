@@ -161,7 +161,7 @@ FINCL =
 
 
 #----------------------------------------------------------------------------------------------
-ifeq ($(SYSTYPE),"Gadi") # use `module load llvm/10.0.0`
+ifeq ($(SYSTYPE),"Gadi") # use `module load llvm/11.0.0`
 export OMPI_CC = clang
 export OMPI_CXX = clang++
 export OMPI_FC = clang
@@ -172,7 +172,7 @@ LDFLAGS	 = -lgfortran	# necessary for Grackle
 # WARNING: do *NOT* run with -ffast-math
 # add -fsanitize=address to debug memory issues (out-of-bounds array accesses, etc.)
 OPTIMIZE += -O2 -march=native -ffp-contract=off -fstandalone-debug
-OPTIMIZE += -flto=thin
+#OPTIMIZE += -flto=thin # not supported on Gadi
 ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
 OPTIMIZE += -fopenmp # openmp required compiler flags
 FC       = mpif90
