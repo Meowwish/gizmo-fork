@@ -1,7 +1,7 @@
 #ifndef EOS_INTERFACE_H
 #define EOS_INTERFACE_H
 
-#include "../GIZMO_config.h"
+#include "GIZMO_config.h"
 
 
 #if (defined(EOS_TILLOTSON) || defined(EOS_ELASTIC) || defined(EOS_HELMHOLTZ) || defined(FLAG_NOT_IN_PUBLIC_CODE) || defined(RT_RADPRESSURE_IN_HYDRO) || defined(EOS_TRUELOVE_PRESSURE) || defined(TRUELOVE_CRITERION_PRESSURE) || defined(EOS_GMC_BAROTROPIC)) && !defined(EOS_GENERAL)

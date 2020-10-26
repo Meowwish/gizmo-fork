@@ -16,12 +16,7 @@
 cd /g/data/jh2/bw0729/gizmo-fork/runs
 
 
-# --- disable hardware accelerated MPI collectives ---
-# "Mixed MPI datatypes, in general, can prevent protocol consensus
-#  inside HCOLL, resulting in hangs" [https://docs.mellanox.com/display/HPCXv27/HCOLL]
-# (We are getting hangs during MPI_Allreduce in domain.c, unclear whether this is the cause.)
-
-#MPI_OPTIONS="-mca coll ^hcoll"
+# --- set MPI options ---
 MPI_OPTIONS=""
 
 
