@@ -181,7 +181,8 @@ def save_density_projection_plot(mesh, filename, star_coords=None,
                                     zmax=0.5*projection_length)
 
     proj_dens = np.swapaxes(proj_dens, 0, 1)
-
+    proj_dens[proj_dens < vmin] = vmin # set zeros to vmin
+    
     fig,ax = plt.subplots(figsize=(6,6))
     p = ax.imshow(proj_dens, cmap='viridis',
                     extent=[x.min(), x.max(), y.min(), y.max()],
@@ -242,7 +243,8 @@ def save_zdensity_projection_plot(mesh, filename, star_coords=None,
     proj_dens = np.swapaxes(proj_dens, 0, 1)
 
     mean_dens = proj_dens / (projection_length * unitlength)
-
+    mean_dens[mean_dens < vmin] = vmin # set zeros to vmin
+    
     fig,ax = plt.subplots(figsize=(6,6))
     p = ax.imshow(mean_dens, cmap='viridis',
                     extent=[x.min(), x.max(), y.min(), y.max()],
