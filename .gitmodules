@@ -1,6 +1,6 @@
 [submodule "meshoid"]
 	path = meshoid
-	url = https://github.com/mikegrudic/meshoid
+	url = git@github.com:BenWibking/meshoid.git
 [submodule "grackle"]
 	path = grackle
 	url = https://github.com/grackle-project/grackle
