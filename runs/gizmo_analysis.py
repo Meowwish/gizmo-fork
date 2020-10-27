@@ -40,13 +40,7 @@ def load_stars(filename):
         return star_coords
 
 def compute_temperature(pdata):
-    # ONLY if COOL_LINE_METALS is enabled
-    #metal_mass_frac = pdata["Metallicity"][:,0] # total metallicity (mass fraction)
-    #He_mass_frac = pdata["Metallicity"][:,1]
-    #y_Helium = He_mass_frac
-    #z_metals = metal_mass_frac
-
-    # otherwise, assume solar metallicity
+    # otherwise, assume solar metallicity (Grackle assumes this)
     y_Helium = 0.23
     z_metals = 0.02
 
@@ -74,7 +68,11 @@ def compute_temperature(pdata):
 
 def apply_radius_cut(pdata, T, rmax=40.):
     coords = pdata["Coordinates"]
-    radius_cut = np.sum(coords*coords,axis=1) < (rmax**2)
+    x = coords[:,0]
+    y = coords[:,1]
+    z = coords[:,2]
+    R = np.sqrt(x*x + y*y)
+    radius_cut = (R < rmax)
 
     ndata = {}
     ndata['Coordinates']     = coords[radius_cut]
@@ -122,8 +120,6 @@ def save_slice_plot(mesh, field, filename, colorbar_label="",
     x = y = np.linspace(-rmax,rmax,res)
     X, Y = np.meshgrid(x, y)
 
-    #sigma_gas_msun_pc2 = 1e4 * M.SurfaceDensity(M.m,center=np.array([0,0,0]),size=40.,res=res)
-    #density_slice_nHcgs =300 * M.Slice(M.Density(),center=np.array([0,0,0]),size=40.,res=res)
     slice = mesh.Slice(field,center=np.array([0,0,0]),size=2*rmax,res=res,plane=plane)
 
     fig,ax = plt.subplots(figsize=(6,6))
@@ -135,11 +131,12 @@ def save_slice_plot(mesh, field, filename, colorbar_label="",
                     norm=colors.LogNorm(vmin=vmin, vmax=vmax))
 
     if bfield is not None:
-        bfield_res = 20
+        bfield_res = 40
         bfield_slice = mesh.Slice(bfield,
                                   center=np.array([0,0,0]),
                                   size=2*rmax,
-                                  res=bfield_res)
+                                  res=bfield_res,
+                                  plane=plane)
     
         x = y = np.linspace(-rmax, rmax, bfield_res)
         bfield_x = bfield_slice[:,:,0]
@@ -155,8 +152,6 @@ def save_slice_plot(mesh, field, filename, colorbar_label="",
         plot_stars_on_axis(ax, star_coords, rmax=rmax)
 
     ax.set_aspect('equal')
-    #fig.colorbar(p,label=r"$\Sigma_{gas}$ $(\rm M_\odot\,pc^{-2})$")
-    #fig.colorbar(p, label=r"$n_{H}$ (cm$^{-3}$)")
     fig.colorbar(p, label=colorbar_label)
     ax.set_xlabel("X (kpc)")
     ax.set_ylabel("Y (kpc)")
@@ -164,32 +159,44 @@ def save_slice_plot(mesh, field, filename, colorbar_label="",
     plt.close()
 
 def save_density_projection_plot(mesh, filename, star_coords=None,
+                                vmin=1.0,
+                                vmax=1.0e3,
                                 bfield=None,
                                 rmax=10.,
+                                plane='z',
+                                projection_length=1.0, # code units [kpc]
                                 colorbar_label=r"$\Sigma_{gas}$ $(\rm M_\odot\,pc^{-2})$"):
     res = 1000
     x = y = np.linspace(-rmax,rmax,res)
     X, Y = np.meshgrid(x, y)
 
-    sigma_gas_msun_pc2 = 1e4 * mesh.SurfaceDensity(mesh.m,
-                                    center=np.array([0,0,0]),size=2*rmax,res=res)
+    unitlength_pc = 1000.
+    unitmass_msun = 1.0e10
+    unitsurfacedensity_msun_persq_pc = unitmass_msun * unitlength_pc**(-2)
 
-    sigma_gas_msun_pc2 = np.swapaxes(sigma_gas_msun_pc2, 0, 1)
+    proj_dens = unitsurfacedensity_msun_persq_pc * mesh.SurfaceDensity(mesh.m,
+                                    center=np.array([0,0,0]),
+                                    size=2*rmax,res=res,
+                                    plane=plane,
+                                    zmax=0.5*projection_length)
+
+    proj_dens = np.swapaxes(proj_dens, 0, 1)
 
     fig,ax = plt.subplots(figsize=(6,6))
-    p = ax.imshow(sigma_gas_msun_pc2, cmap='viridis',
+    p = ax.imshow(proj_dens, cmap='viridis',
                     extent=[x.min(), x.max(), y.min(), y.max()],
                     interpolation='nearest',
                     origin='lower',
                     aspect='equal',
-                    norm=colors.LogNorm(vmin=1.0, vmax=1.0e3))
+                    norm=colors.LogNorm(vmin=vmin, vmax=vmax))
 
     if bfield is not None:
-        bfield_res = 20
+        bfield_res = 40
         bfield_slice = mesh.Slice(bfield,
                                   center=np.array([0,0,0]),
                                   size=2*rmax,
-                                  res=bfield_res)
+                                  res=bfield_res,
+                                  plane=plane)
     
         x = y = np.linspace(-rmax, rmax, bfield_res)
         bfield_x = bfield_slice[:,:,0]
@@ -199,7 +206,7 @@ def save_density_projection_plot(mesh, filename, star_coords=None,
         bfield_x /= bfield_norm
         bfield_y /= bfield_norm
         # plot B-fields
-        ax.quiver(x, y, bfield_x, bfield_y, angles='xy', pivot='middle')
+        ax.quiver(x, y, bfield_x, bfield_y, angles='xy', pivot='middle', headwidth=1, headlength=2)
 
     if star_coords is not None:
         plot_stars_on_axis(ax, star_coords, rmax=rmax)
@@ -208,6 +215,47 @@ def save_density_projection_plot(mesh, filename, star_coords=None,
     fig.colorbar(p, label=colorbar_label)
     ax.set_xlabel("X (kpc)")
     ax.set_ylabel("Y (kpc)")
+    plt.savefig(filename, dpi=fig_dpi)
+    plt.close()
+
+def save_zdensity_projection_plot(mesh, filename, star_coords=None,
+                                vmin=1.0,
+                                vmax=1.0e3,
+                                bfield=None,
+                                rmax=10.,
+                                plane='y',
+                                projection_length=1.0, # code units [kpc]
+                                colorbar_label=r"y-average density $(\rm H\,cm^{-3})$"):
+    res = 1000
+    x = y = np.linspace(-rmax,rmax,res)
+    X, Y = np.meshgrid(x, y)
+
+    unitlength = unitlength_cgs
+    unitmass = unitmass_cgs / m_H
+    unitsurfacedensity = unitmass * unitlength**(-2)
+
+    proj_dens = unitsurfacedensity * mesh.SurfaceDensity(mesh.m,
+                                    center=np.array([0,0,0]),
+                                    size=2*rmax,res=res,
+                                    plane=plane,
+                                    zmax=0.5*projection_length)
+    proj_dens = np.swapaxes(proj_dens, 0, 1)
+
+    mean_dens = proj_dens / (projection_length * unitlength)
+
+    fig,ax = plt.subplots(figsize=(6,6))
+    p = ax.imshow(mean_dens, cmap='viridis',
+                    extent=[x.min(), x.max(), y.min(), y.max()],
+                    interpolation='nearest',
+                    origin='lower',
+                    aspect='equal',
+                    norm=colors.LogNorm(vmin=vmin, vmax=vmax))
+
+    ax.set_aspect('equal')
+    fig.colorbar(p, label=colorbar_label)
+    ax.set_xlabel("X (kpc)")
+    ax.set_ylabel("Z (kpc)")
+    plt.title(r"average density for $|\Delta y| \, < \, 500$ pc")
     plt.savefig(filename, dpi=fig_dpi)
     plt.close()
 
