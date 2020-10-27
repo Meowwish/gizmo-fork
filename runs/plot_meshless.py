@@ -2,9 +2,6 @@ import numpy as np
 import argparse
 from pathlib import Path
 from gizmo_analysis import *
-import yt
-import yt.visualization.api
-import yt.units
 
 if __name__ == '__main__':
 
