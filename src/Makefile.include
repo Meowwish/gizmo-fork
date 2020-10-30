@@ -172,7 +172,7 @@ LDFLAGS	 = -lgfortran	# necessary for Grackle
 # WARNING: do *NOT* run with -ffast-math
 # add -fsanitize=address to debug memory issues (out-of-bounds array accesses, etc.)
 OPTIMIZE += -O2 -march=native -ffp-contract=off -fstandalone-debug
-#OPTIMIZE += -flto=thin # not supported on Gadi
+OPTIMIZE += -flto
 ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
 OPTIMIZE += -fopenmp # openmp required compiler flags
 FC       = mpif90

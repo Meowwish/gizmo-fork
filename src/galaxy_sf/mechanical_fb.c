@@ -42,7 +42,6 @@ void determine_where_SNe_occur(void)
     if (All.Time <= 0)
         return;
 
-    int i;
     double dt, star_age, npossible, nhosttotal, ntotal, ptotal, dtmean, rmean;
     npossible = nhosttotal = ntotal = ptotal = dtmean = rmean = 0;
     double mpi_npossible, mpi_nhosttotal, mpi_ntotal, mpi_ptotal, mpi_dtmean, mpi_rmean;
@@ -54,7 +53,7 @@ void determine_where_SNe_occur(void)
 
     // loop over particles //
     const double sn_loop_begin_walltime = MPI_Wtime();
-    for (i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i])
+    for (int i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i])
     {
         P[i].SNe_ThisTimeStep = 0;
 
@@ -122,6 +121,9 @@ void determine_where_SNe_occur(void)
             P[i].SNe_ThisTimeStep = mySlugObject.getNumberSNeThisTimestep();         // dimensionless
             P[i].EjectaMass_ThisTimestep = mySlugObject.getEjectaMassThisTimestep(); // solar mass
 
+	    // keep track of the cumulative number of SNe produced by this particle
+	    P[i].SNe_Cumulative += P[i].SNe_ThisTimeStep;
+	    
 #ifdef SLUG_YIELDS
             // WARNING: implementation not complete!
             auto yields = mySlugObject.getYieldsThisTimestep(); // solar mass
@@ -196,6 +198,43 @@ void determine_where_SNe_occur(void)
         }
         dtmean += dt;
     } // for(i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i]) //
+
+#ifdef SLUG    
+    // compute total mass in star particles (P[i].Type == 4)
+    double thisTaskStellarMass = 0.; // solar masses
+    double thisTaskNumberSNe = 0.; // dimensionless
+    for(int i=0; i < NumPart; ++i)
+    {
+      if (P[i].Type != 4) {
+	continue;
+      }
+
+      if (P[i].Mass <= 0.) {
+	continue;
+      }
+
+      const double mass = P[i].Mass * UNIT_MASS_IN_SOLAR;
+      const double numberSNe = P[i].SNe_Cumulative;
+
+      thisTaskStellarMass += mass;
+      thisTaskNumberSNe += numberSNe;
+    }
+    
+    double totalStellarMass; // solar masses
+    double totalNumberSNe; // dimensionless
+    MPI_Reduce(&thisTaskStellarMass, &totalStellarMass, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&thisTaskNumberSNe, &totalNumberSNe, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+    if (ThisTask == 0)
+    {
+      const double SNe_per_100Msun = totalNumberSNe / (totalStellarMass / 100.0);
+      std::cout << "[SLUG] Total stellar mass = " << totalStellarMass << " Msun\n";
+      std::cout << "[SLUG] Total number of SNe = " << totalNumberSNe << "\n";
+      std::cout << "[SLUG] SNe per 100 Msun = " << SNe_per_100Msun << std::endl;
+    }
+#endif // SLUG
+
+    // end timing measurement
     const double sn_loop_end_walltime = MPI_Wtime();
 
 #ifdef SLUG_DEBUG_PERFORMANCE
