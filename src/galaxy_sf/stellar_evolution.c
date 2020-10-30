@@ -139,7 +139,7 @@ void particle2in_addFB_fromstars(struct addFB_evaluate_data_in_ *in, int i, int 
 
     if (P[i].SNe_ThisTimeStep <= 0) { in->Msne=0; return; } // no event
 
-#ifdef SLUG
+#ifdef SLUG_COMPUTE_EJECTA_MASS
     // - Assume 1e51 erg kinetic energy per SN
     // - Compute ejecta mass by summing the yields (including the yield from hydrogen).
     //   [The mechanical feedback algorithm distributes the mass to neighboring particles
@@ -161,7 +161,7 @@ void particle2in_addFB_fromstars(struct addFB_evaluate_data_in_ *in, int i, int 
 
      // assume ejecta are ~2607 km/s [KE=1e51 erg, for M=14.8 Msun], which is IMF-averaged
     in->SNe_v_ejecta = 2607. / UNIT_VEL_IN_KMS;
-#endif // SLUG
+#endif // SLUG_COMPUTE_EJECTA_MASS
 
 #ifdef SINGLE_STAR_SINK_DYNAMICS
     // if single-star exploding or returning mass, use its actual mass & assumed energy to obtain the velocity
@@ -182,6 +182,7 @@ void particle2in_addFB_fromstars(struct addFB_evaluate_data_in_ *in, int i, int 
 #ifdef METALS
 #ifdef SLUG
     // TODO: add yields from SLUG here
+
 #else
     // GIZMO default: simple model here
 
