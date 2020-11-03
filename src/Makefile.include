@@ -166,11 +166,12 @@ FINCL =
 #export OMPI_FC = clang
 
 ## (NOTE: You may need to build Boost.Filesystem and Boost.Regex (for SLUG) with Clang...)
+# -Wnodeprecated is needed for Boost headers when compiling in C++17 mode
 # use `module load llvm/11.0.0`
  
 ifeq ($(SYSTYPE),"Gadi")
-CC       = mpicxx -x c++ -std=c++17 # use C++ compiler
-CXX      = mpicxx -std=c++17
+CC       = mpicxx -x c++ -std=c++17 -Wno-deprecated-declarations
+CXX      = mpicxx -std=c++17 -Wno-deprecated-declarations
 FC       = mpif90
 LDFLAGS	 = -lgfortran
 # WARNING: do *NOT* run with -ffast-math
@@ -190,7 +191,8 @@ GRACKLEINCL = -I$(GRACKLE_HOME)/include
 GRACKLELIBS = -L$(GRACKLE_HOME)/lib -Wl,-rpath=$(GRACKLE_HOME)/lib
 SLUG_HOME= $(SRC_DIR)/../slug2
 SPDLOG_HOME = $(SRC_DIR)/../spdlog
-SLUG_INCLUDE = -I$(SLUG_HOME)/src -I$(SPDLOG_HOME)/include
+BOOST_HOME = $(HOME)/boost_install
+SLUG_INCLUDE = -I$(SLUG_HOME)/src -I$(SPDLOG_HOME)/include -I$(BOOST_HOME)/include
 SLUG_LIBS = -L$(SLUG_HOME)/src -Wl,-rpath=$(SLUG_HOME)/src
 GSL_INCL = -I$(GSL_HOME)/include
 GSL_LIBS = -L$(GSL_HOME)/lib
