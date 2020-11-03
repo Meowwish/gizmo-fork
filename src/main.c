@@ -11,6 +11,8 @@
 #include "allvars.h"
 #include "proto.h"
 
+#include <spdlog/sinks/basic_file_sink.h>
+
 // must be defined here to avoid multiple definition issues
 // [see: https://gcc.gnu.org/gcc-10/porting_to.html]
 // (an extern *declaration* is in proto.h)
@@ -128,6 +130,10 @@ int main(int argc, char **argv)
   CPUThisRun = 0;
   WallclockTime = my_second();
 
+  // initialize logging
+  auto logger = spdlog::basic_logger_mt("debug", "debug." + std::to_string(ThisTask) + ".txt");
+  logger->set_pattern("%v");
+  
   begrun();			/* set-up run  */
 
   run();			/* main simulation loop */

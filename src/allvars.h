@@ -43,6 +43,8 @@
 #include <slug_cluster.H>
 #endif //SLUG
 
+#include <spdlog/spdlog.h>
+
 /*------- Things that are always recommended (this must follow loading GIZMO_config.h!) -------*/
 #define GIZMO_VERSION   "2020"  /*!< code version string */
 #define DOUBLEPRECISION         /* using double (not floating-point) precision */

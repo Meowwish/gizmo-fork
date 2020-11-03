@@ -16,6 +16,8 @@
 #include "galaxy_sf/slug_wrapper.h"
 #endif
 
+
+
 /*! \file begrun.c
  *  \brief initial set-up of a simulation run
  *
@@ -47,6 +49,7 @@ void begrun(void)
 #ifdef _OPENMP
   int tid;
 #endif
+
   if(ThisTask == 0)
     {
      printf("Running on %d MPI tasks.\n", NTask);

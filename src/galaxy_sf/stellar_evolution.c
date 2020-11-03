@@ -145,6 +145,8 @@ void particle2in_addFB_fromstars(struct addFB_evaluate_data_in_ *in, int i, int 
     //   [The mechanical feedback algorithm distributes the mass to neighboring particles
     //      and subtracts it from the star particle, with a floor to prevent negative mass.]
 
+//#error "For testing this option (SLUG_COMPUTE_EJECTA_MASS) should be disabled!"
+    
     const double energyPerSN = 1.0e51 / UNIT_ENERGY_IN_CGS; // code units
     const double ejectaMass = P[i].EjectaMass_ThisTimestep / UNIT_MASS_IN_SOLAR; // code units
     in->Msne = ejectaMass;
@@ -155,6 +157,8 @@ void particle2in_addFB_fromstars(struct addFB_evaluate_data_in_ *in, int i, int 
 #else
     // *without* SLUG: 'dummy' example model assumes all SNe are identical
     // with IMF-averaged properties from the AGORA model (Kim et al., 2016 ApJ, 833, 202)
+
+#error "For production, this model should not be used! Look at stellar_evolution.c"
 
     // assume every SNe carries 14.8 solar masses (IMF-average)
     in->Msne = P[i].SNe_ThisTimeStep * (14.8/UNIT_MASS_IN_SOLAR);

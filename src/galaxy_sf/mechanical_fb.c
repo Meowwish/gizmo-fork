@@ -301,7 +301,8 @@ struct kernel_addFB {double dp[3], r, wk, dwk, hinv, hinv3, hinv4;};
 
 struct OUTPUT_STRUCT_NAME
 {
-    MyFloat M_coupled, Area_weighted_sum[AREA_WEIGHTED_SUM_ELEMENTS];
+  MyFloat M_coupled, Area_weighted_sum[AREA_WEIGHTED_SUM_ELEMENTS];
+  MyFloat injected_radial_momentum;
 }
 *DATARESULT_NAME, *DATAOUT_NAME;
 
@@ -333,6 +334,16 @@ void out2particle_addFB(struct OUTPUT_STRUCT_NAME *out, int i, int mode, int loo
         for(k=kmin;k<kmax;k++) {ASSIGN_ADD(P[i].Area_weighted_sum[k], out->Area_weighted_sum[k], mode);}
     } else {
         P[i].Mass -= out->M_coupled; if((P[i].Mass<0)||(isnan(P[i].Mass))) {P[i].Mass=0;}
+
+#ifdef DEBUG_RADIAL_MOMENTUM
+	const double momentum_cgs = out->injected_radial_momentum * UNIT_MASS_IN_CGS * UNIT_VEL_IN_CGS;
+	const double momentum_per_Msun_cgs = (momentum_cgs / SOLAR_MASS); // cm/s
+	const double momentum_per_Msun_kms = momentum_per_Msun_cgs / 1.0e5; // km/s
+	if (momentum_per_Msun_kms > 0.) {
+	  spdlog::get("debug")->info(momentum_per_Msun_kms);
+	}
+#endif
+	
     }
 }
 
@@ -607,7 +618,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
     struct addFB_evaluate_data_in_ local;
     struct OUTPUT_STRUCT_NAME out;
     memset(&out, 0, sizeof(struct OUTPUT_STRUCT_NAME));
-    
+
     /* Load the data for the particle injecting feedback */
     if(mode == 0) {particle2in_addFB(&local, target, loop_iteration);} else {local = DATAGET_NAME[target];}
     if(local.Msne<=0) {return 0;} // no SNe for the master particle! nothing to do here //
@@ -804,7 +815,14 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 double mj_preshock, massratio_ejecta;
                 mj_preshock = P[j].Mass;
                 massratio_ejecta = dM_ejecta_in / (dM_ejecta_in + P[j].Mass);
-                
+
+		// compute p_j[k] before injecting mass or momentum
+		//   (in the frame of the star velocity v_i, i.e. where v_i = 0)
+		double p_j_initial[3] = {0., 0., 0.};
+		for (int k = 0; k < 3; ++k) {
+		  p_j_initial[k] = P[j].Mass * (P[j].Vel[k] - local.Vel[k]);
+		}
+		
                 /* inject actual mass from mass return */
                 if(P[j].Hsml<=0) {if(SphP[j].Density>0){SphP[j].Density*=(1+dM_ejecta_in/P[j].Mass);} else {SphP[j].Density=dM_ejecta_in*kernel.hinv3;}} else {SphP[j].Density+=kernel_zero*dM_ejecta_in*hinv3_j;}
                 SphP[j].Density *= 1 + dM_ejecta_in/P[j].Mass; // inject mass at constant particle volume //
@@ -851,8 +869,35 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 for(k=0; k<3; k++)
                 {
                     double d_vel = mom_prefactor * pvec[k] + massratio_ejecta*(local.Vel[k] - P[j].Vel[k]); // local.Vel term from extra momentum of moving star, P[j].Vel term from going from momentum to velocity boost with added mass
-                    KE_initial += P[j].Vel[k]*P[j].Vel[k]; P[j].Vel[k] += d_vel; SphP[j].VelPred[k] += d_vel; KE_final += P[j].Vel[k]*P[j].Vel[k];
+                    KE_initial += P[j].Vel[k]*P[j].Vel[k];
+		    P[j].Vel[k] += d_vel;
+		    SphP[j].VelPred[k] += d_vel;
+		    KE_final += P[j].Vel[k]*P[j].Vel[k];
                 }
+
+		// compute p_j[k] after injecting mass or momentum
+		//   (in the frame of the star velocity v_i, i.e. where v_i = 0)
+		double p_j_final[3] = {0., 0., 0.};
+		for (int k = 0; k < 3; ++k) {
+		  p_j_final[k] = P[j].Mass * (P[j].Vel[k] - local.Vel[k]);
+		}
+
+		// compute dMomentum for particle j
+		double dp_j[3] = {0., 0., 0.};
+		for (int k = 0; k < 3; ++k) {
+		  dp_j[k] = p_j_final[k] - p_j_initial[k];
+		}
+
+		// compute ||dMomentum|| == dmom_radial and add to cumulative total dMom
+		double dp_j_normsq = 0.;
+		for (int k = 0; k < 3; ++k) {
+		  dp_j_normsq += dp_j[k]*dp_j[k];
+		}
+		const double dp_j_norm = std::sqrt(dp_j_normsq);
+		// add to cumulative total dMom
+		out.injected_radial_momentum += dp_j_norm;
+		
+		
                 /* now calculate the residual energy and add it as thermal */
                 KE_initial *= 0.5 * mj_preshock * All.cf_a2inv;
                 KE_final *= 0.5 * P[j].Mass * All.cf_a2inv;
@@ -888,7 +933,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
             }
         } // if(mode == 1)
     } // while(startnode >= 0)
-    
+
     /* Now collect the result at the right place */
     if(mode == 0) {out2particle_addFB(&out, target, 0, loop_iteration);} else {DATARESULT_NAME[target] = out;}
     
