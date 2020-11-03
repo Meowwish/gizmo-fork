@@ -16,26 +16,7 @@
  * This file was written by Phil Hopkins (phopkins@caltech.edu) for GIZMO.
  */
 
-#ifdef GALSF_FB_MECHANICAL
-
-int addFB_evaluate_active_check(int i, int fb_loop_iteration);
-int addFB_evaluate_active_check(int i, int fb_loop_iteration)
-{
-    if (P[i].Type <= 1)
-        return 0;
-    if (P[i].Mass <= 0)
-        return 0;
-    if (PPP[i].Hsml <= 0)
-        return 0;
-    if (PPP[i].NumNgb <= 0)
-        return 0;
-    if (P[i].SNe_ThisTimeStep > 0)
-    {
-        if (fb_loop_iteration < 0 || fb_loop_iteration == 0)
-            return 1;
-    }
-    return 0;
-}
+#if defined(GALSF_FB_MECHANICAL) || defined(GALSF_FB_THERMAL)
 
 void determine_where_SNe_occur(void)
 {
@@ -289,6 +270,32 @@ void determine_where_SNe_occur(void)
     } // if(ThisTask == 0) //
 
 } // void determine_where_SNe_occur() //
+
+#endif // defined(GALSF_FB_MECHANICAL) || defined(GALSF_FB_THERMAL)
+
+
+// The rest of this file is for mechanical feedback only
+
+#ifdef GALSF_FB_MECHANICAL
+
+int addFB_evaluate_active_check(int i, int fb_loop_iteration);
+int addFB_evaluate_active_check(int i, int fb_loop_iteration)
+{
+    if (P[i].Type <= 1)
+        return 0;
+    if (P[i].Mass <= 0)
+        return 0;
+    if (PPP[i].Hsml <= 0)
+        return 0;
+    if (PPP[i].NumNgb <= 0)
+        return 0;
+    if (P[i].SNe_ThisTimeStep > 0)
+    {
+        if (fb_loop_iteration < 0 || fb_loop_iteration == 0)
+            return 1;
+    }
+    return 0;
+}
 
 #define MASTER_FUNCTION_NAME addFB_evaluate /* name of the 'core' function doing the actual inter-neighbor operations. this MUST be defined somewhere as "int MASTER_FUNCTION_NAME(int target, int mode, int *exportflag, int *exportnodecount, int *exportindex, int *ngblist, int loop_iteration)" */
 #define INPUTFUNCTION_NAME particle2in_addFB    /* name of the function which loads the element data needed (for e.g. broadcast to other processors, neighbor search) */

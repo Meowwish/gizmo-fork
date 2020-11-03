@@ -524,7 +524,8 @@ void mechanical_fb_calc(int fb_loop_iteration);
 #endif
 
 #ifdef GALSF_FB_THERMAL
-void determine_where_addthermalFB_events_occur(void);
+void determine_where_SNe_occur(void);
+//void determine_where_addthermalFB_events_occur(void);
 void thermal_fb_calc(void);
 #endif
 

@@ -1533,7 +1533,7 @@ extern FILE
 #ifdef GALSF
 extern FILE *FdSfr;		/*!< file handle for sfr.txt log-file. */
 #endif
-#ifdef GALSF_FB_MECHANICAL
+#if defined(GALSF_FB_MECHANICAL) || defined(GALSF_FB_THERMAL)
 extern FILE *FdSneIIHeating;	/*!< file handle for SNIIheating.txt log-file */
 #endif
 

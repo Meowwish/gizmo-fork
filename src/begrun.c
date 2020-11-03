@@ -701,7 +701,7 @@ void open_outputfiles(void)
 #endif
 
     
-#ifdef GALSF_FB_MECHANICAL
+#if defined(GALSF_FB_MECHANICAL) || defined(GALSF_FB_THERMAL)
     sprintf(buf, "%s%s", All.OutputDir, "SNeIIheating.txt");
     if(!(FdSneIIHeating = fopen(buf, mode)))
     {

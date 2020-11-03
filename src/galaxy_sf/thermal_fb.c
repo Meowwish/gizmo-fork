@@ -24,6 +24,10 @@
 
 #if defined(GALSF_FB_THERMAL)
 
+// This routine should not be called.
+//  Instead, determine_where_SNe_occur() should be called regardless
+//  of feedback implementation.
+#if 0
 /* routine that evaluates whether a FB event occurs in a given particle, in a given timestep */
 void determine_where_addthermalFB_events_occur(void)
 {
@@ -35,6 +39,7 @@ void determine_where_addthermalFB_events_occur(void)
         check += mechanical_fb_calculate_eventrates(i,1); // this should do the calculation and add to number of SNe as needed //
     } // for(i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i]) //
 }
+#endif
 
 struct kernel_addthermalFB {double dp[3], r, wk, dwk, hinv, hinv3, hinv4;};
 
@@ -162,6 +167,7 @@ int addthermalFB_evaluate(int target, int mode, int *exportflag, int *exportnode
                 /* inject energy */
                 SphP[j].InternalEnergy += wk * local.Esne / P[j].Mass;
                 SphP[j].InternalEnergyPred += wk * local.Esne / P[j].Mass;
+
 #ifdef GALSF_FB_TURNOFF_COOLING
                 /* if the sub-grid 'cooling turnoff' model is enabled, turn off cooling for the 'blastwave timescale',
                  which is physically the timescale for the blastwave to be completely stopped by ISM ram-pressure
@@ -171,7 +177,8 @@ int addthermalFB_evaluate(int target, int mode, int *exportflag, int *exportnode
                 double pressure_to_p4 = (1/All.cf_afac1)*density_to_n*U_TO_TEMP_UNITS / 1.0e4; 
                 double dt_ram = 7.08 * pow(Esne51*SphP[j].Density*density_to_n,0.34) * pow(SphP[j].Pressure*pressure_to_p4,-0.70) / (UNIT_TIME_IN_MYR);
                 if(dt_ram > SphP[j].DelayTimeCoolingSNe) SphP[j].DelayTimeCoolingSNe = dt_ram;
-#endif
+#endif // GALSF_FB_TURNOFF_COOLING
+		
             } // for(n = 0; n < numngb; n++)
         } // while(startnode >= 0)
         if(mode == 1)

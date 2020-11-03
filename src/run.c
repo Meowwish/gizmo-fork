@@ -115,12 +115,13 @@ void run(void)
 #endif
 
         /* flag particles which will be feedback centers, so kernel lengths can be computed for them */
-#ifdef GALSF_FB_MECHANICAL
-        determine_where_SNe_occur(); // for mechanical FB models
+#if defined(GALSF_FB_MECHANICAL) || defined(GALSF_FB_THERMAL)
+        determine_where_SNe_occur(); // for either mechanical or thermal FB models
 #endif
-#ifdef GALSF_FB_THERMAL
-        determine_where_addthermalFB_events_occur(); // (same, but for simple thermal feedback models)
-#endif
+
+	//#ifdef GALSF_FB_THERMAL
+	//        determine_where_addthermalFB_events_occur(); // (same, but for simple thermal feedback models)
+	//#endif
         
         compute_hydro_densities_and_forces();	/* densities, gradients, & hydro-accels for synchronous particles */
         
