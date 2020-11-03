@@ -227,7 +227,6 @@ GALSF_SFR_CRITERION=0     # mix-and-match SF criteria with a bitflag: 0=density 
 # -------- these modules explicitly evolve individual stars+stellar populations. Event rates (SNe rates, mass-loss rates) and associated yields, etc, are all specified in 'stellar_evolution.c'. the code will then handle the actual injection and events.
 # -------- users are encouraged to explore their own stellar evolution models and include various types of feedback (e.g. SNe, stellar mass-loss, NS mergers, etc)
 GALSF_FB_MECHANICAL            # explicit algorithm including thermal+kinetic/momentum terms from Hopkins+ 2018 (MNRAS, 477, 1578): manifestly conservative+isotropic, and accounts properly for un-resolved PdV work+cooling during blastwave expansion. cite Hopkins et al. 2018, MNRAS, 477, 1578, and Hopkins+ 2014 (MNRAS 445, 581)
-MECHANICAL_FB_MOMENTUM_ONLY
 #GALSF_FB_THERMAL               # simple 'pure thermal energy dump' feedback: mass, metals, and thermal energy are injected locally in simple kernel-weighted fashion around young stars. tends to severely over-cool owing to lack of mechanical/kinetic treatment at finite resolution (better algorithm is mechanical)
 GALSF_PHOTOIONIZATION           # re-implementation of photoionization feedback by Armillotta et al.
 #GALSF_PHOTOIONIZATION_DEBUGGING
@@ -398,4 +397,6 @@ ALLOW_IMBALANCED_GASPARTICLELOAD # increases All.MaxPartSph to All.MaxPart: can 
 SLUG # use feedback computed from the SLUG2 library
 SLUG_DEBUG_PERFORMANCE # compute SLUG runtime overhead
 SLUG_COMPUTE_EJECTA_MASS
+MECHANICAL_FB_MOMENTUM_ONLY
 DEBUG_RADIAL_MOMENTUM
+ARTIFICIALLY_REDUCE_MOM_INJECTION

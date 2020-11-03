@@ -865,6 +865,12 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 
                 /* actually do the injection */
                 double mom_prefactor =  mom_boost_fac * massratio_ejecta * (All.cf_atime*v_ejecta_eff) / pnorm; // this gives the appropriately-normalized tap-able momentum from the energy-conserving solution
+
+#ifdef ARTIFICIALLY_REDUCE_MOM_INJECTION
+		// artifically reduce momentum prefactor by 0.1 for debugging exploding galaxies
+		mom_prefactor *= 0.1;
+#endif // ARTIFICIALLY_REDUCE_MOM_INJECTION
+		
                 double KE_initial = 0, KE_final = 0;
                 for(k=0; k<3; k++)
                 {
