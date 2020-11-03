@@ -7,3 +7,6 @@
 [submodule "slug2"]
 	path = slug2
 	url = git@bitbucket.org:benwibking/slug2.git
+[submodule "spdlog"]
+	path = spdlog
+	url = git@github.com:gabime/spdlog.git
