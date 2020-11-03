@@ -162,9 +162,9 @@ FINCL =
 
 #----------------------------------------------------------------------------------------------
 ifeq ($(SYSTYPE),"Gadi") # use `module load llvm/11.0.0`
-export OMPI_CC = clang
-export OMPI_CXX = clang++
-export OMPI_FC = clang
+export OMPI_CC = clang-11
+export OMPI_CXX = clang++-11
+export OMPI_FC = clang-11
 CC       = mpicxx -x c++ -std=c++17 # use C++ compiler
 CXX      = mpicxx -std=c++17
 FC       = mpif90
