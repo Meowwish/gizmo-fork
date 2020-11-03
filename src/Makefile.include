@@ -161,19 +161,22 @@ FINCL =
 
 
 #----------------------------------------------------------------------------------------------
-ifeq ($(SYSTYPE),"Gadi") # use `module load llvm/11.0.0`
-export OMPI_CC = clang-11
-export OMPI_CXX = clang++-11
-export OMPI_FC = clang-11
+#export OMPI_CC = clang
+#export OMPI_CXX = clang++
+#export OMPI_FC = clang
+
+## (NOTE: You may need to build Boost.Filesystem and Boost.Regex (for SLUG) with Clang...)
+# use `module load llvm/11.0.0`
+ 
+ifeq ($(SYSTYPE),"Gadi")
 CC       = mpicxx -x c++ -std=c++17 # use C++ compiler
 CXX      = mpicxx -std=c++17
 FC       = mpif90
-#LDFLAGS	 = -L$(COMPILER_PATH) -lgfortran
 LDFLAGS	 = -lgfortran
 # WARNING: do *NOT* run with -ffast-math
 # add -fsanitize=address to debug memory issues (out-of-bounds array accesses, etc.)
 OPTIMIZE += -O2 -march=native -ffp-contract=off -fstandalone-debug
-OPTIMIZE += -flto
+OPTIMIZE += -flto=thin
 ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
 OPTIMIZE += -fopenmp # openmp required compiler flags
 FC       = mpif90
