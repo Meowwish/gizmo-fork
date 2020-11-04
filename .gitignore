@@ -6,6 +6,7 @@ GIZMO_config.h
 compile_time_info.c
 GRACKLE_INFO
 
+debug.*.txt
 *.log
 *.params-usedvalues
 *.patch
