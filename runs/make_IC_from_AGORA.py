@@ -3,7 +3,7 @@ import h5py as h5py
 import pandas as pd # to read csv files
 from pathlib import Path
 
-def make_agora_IC(filename, magnetic_fields=True):
+def make_agora_IC(filename, magnetic_fields=True, snapshot_zero=None):
 
     gamma_eos = 5./3.
     T_gas = 1.0e4       # K
@@ -31,7 +31,7 @@ def make_agora_IC(filename, magnetic_fields=True):
     # Mass: 10^9 Msun
     # Length: kpc
 
-    agora_dir = Path("../../agora_highres")
+    agora_dir = Path("../../agora/LOW")
     
     # dark matter
     dm = pd.read_csv(agora_dir / "halo.dat", delimiter=' ', skipinitialspace=True,
@@ -46,6 +46,39 @@ def make_agora_IC(filename, magnetic_fields=True):
     gas = pd.read_csv(agora_dir / "gas.dat", delimiter=' ', skipinitialspace=True,
                         names=['x','y','z','vx','vy','vz','mass','u_gas'])
 
+
+    ## super-sample gas particles
+    supersample_factor = 8
+
+    snapshot_t0 = h5py.File(snapshot_zero, 'r')
+    hsml = snapshot_t0['/PartType0/SmoothingLength'][:]
+
+    # compute random unit vectors
+    ngas_old = len(gas)
+    ngas = supersample_factor * ngas_old
+    mu  = np.random.uniform(low=-1.0, high=1.0, size=ngas)  # == cos(theta)
+    phi = np.random.uniform(low=0., high=2.0*np.pi, size=ngas)
+
+    xhat = np.sqrt(1-(mu*mu)) * np.cos(phi)
+    yhat = np.sqrt(1-(mu*mu)) * np.sin(phi)
+    zhat = mu
+
+    gas_oldx = np.repeat(gas['x'].to_numpy(), supersample_factor)
+    gas_oldy = np.repeat(gas['y'].to_numpy(), supersample_factor)
+    gas_oldz = np.repeat(gas['z'].to_numpy(), supersample_factor)
+    gas_oldhsml = np.repeat(hsml[:], supersample_factor)
+
+    gas_x = gas_oldx + 0.2*gas_oldhsml*xhat
+    gas_y = gas_oldy + 0.2*gas_oldhsml*yhat
+    gas_z = gas_oldz + 0.2*gas_oldhsml*zhat
+
+    gas_vx = np.repeat(gas['vx'].to_numpy(), supersample_factor)
+    gas_vy = np.repeat(gas['vy'].to_numpy(), supersample_factor)
+    gas_vz = np.repeat(gas['vz'].to_numpy(), supersample_factor)
+
+    gas_mass = np.repeat(gas['mass'].to_numpy(), supersample_factor) / float(supersample_factor)
+
+
     #%---- System of units used in GIZMO parameterfile
     #UnitLength_in_cm            3.085678e21    % 1.0 kpc
     #UnitMass_in_g               1.989e43  	    % 1.0e10 solar masses
@@ -59,16 +92,16 @@ def make_agora_IC(filename, magnetic_fields=True):
     ## Gas particles (particle type 0)
 
     # position
-    x_g=gas['x']
-    y_g=gas['y']
-    z_g=gas['z']
+    x_g=gas_x
+    y_g=gas_y
+    z_g=gas_z
     R = np.sqrt( x_g**2 + y_g**2 ) # kpc
     z = z_g                     # kpc
 
     # velocity
-    vx_g=gas['vx']
-    vy_g=gas['vy']
-    vz_g=gas['vz']
+    vx_g=gas_vx
+    vy_g=gas_vy
+    vz_g=gas_vz
 
     # magnetic fields
     # (by default, identically zero)
@@ -89,18 +122,18 @@ def make_agora_IC(filename, magnetic_fields=True):
         bz_g = 0.
 
     # masses
-    m_g=gas['mass']*mass_fac
+    m_g=gas_mass*mass_fac
     print(f"Gas particle mass: {1e10*m_g[0]:.3g}")
 
     # specific internal gas energy [i.e., NOT including magnetic energy]
     R_g = np.sqrt(x_g**2 + y_g**2)
     is_disk_gas = np.logical_and( R_g <= 20.0, np.abs(z_g) <= 3.0 )
-    u_g = np.zeros(len(gas))
+    u_g = np.zeros(ngas)
     u_g[is_disk_gas] = u_diskgas
     u_g[~is_disk_gas] = u_halogas
 
     # particle ID
-    Ngas = len(gas)
+    Ngas = ngas
     print(f"Number of gas particles: {Ngas:.3g}")
     id_g=np.arange(1, Ngas+1)
 
@@ -302,6 +335,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('filename', help='output hdf5 filename')
+    parser.add_argument('snapshot_zero_filename', help='snapshot at time zero (to read in hsml)')
     feature_parser = parser.add_mutually_exclusive_group(required=False)
     feature_parser.add_argument('--magnetic-fields', dest='magnetic_fields', action='store_true')
     feature_parser.add_argument('--no-magnetic-fields', dest='magnetic_fields', action='store_false')
@@ -309,4 +343,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     print(f"Magnetic fields: {args.magnetic_fields}")
-    make_agora_IC(args.filename, magnetic_fields=args.magnetic_fields)
+    make_agora_IC(args.filename,
+                    magnetic_fields=args.magnetic_fields,
+                    snapshot_zero=args.snapshot_zero_filename)
