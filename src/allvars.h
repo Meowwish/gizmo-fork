@@ -43,7 +43,9 @@
 #include <slug_cluster.H>
 #endif //SLUG
 
+#ifdef DEBUG_RADIAL_MOMENTUM
 #include <spdlog/spdlog.h>
+#endif // DEBUG_RADIAL_MOMENTUM
 
 /*------- Things that are always recommended (this must follow loading GIZMO_config.h!) -------*/
 #define GIZMO_VERSION   "2020"  /*!< code version string */

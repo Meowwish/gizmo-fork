@@ -180,7 +180,7 @@ void determine_where_SNe_occur(void)
         dtmean += dt;
     } // for(i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i]) //
 
-#ifdef SLUG    
+#ifdef SLUG_DEBUG_SN_RATE
     // compute total mass in star particles (P[i].Type == 4)
     double thisTaskStellarMass = 0.; // solar masses
     double thisTaskNumberSNe = 0.; // dimensionless
@@ -213,7 +213,7 @@ void determine_where_SNe_occur(void)
       std::cout << "[SLUG] Total number of SNe = " << totalNumberSNe << "\n";
       std::cout << "[SLUG] SNe per 100 Msun = " << SNe_per_100Msun << std::endl;
     }
-#endif // SLUG
+#endif // SLUG_DEBUG_SN_RATE
 
     // end timing measurement
     const double sn_loop_end_walltime = MPI_Wtime();

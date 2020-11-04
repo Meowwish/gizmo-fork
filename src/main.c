@@ -11,7 +11,9 @@
 #include "allvars.h"
 #include "proto.h"
 
+#ifdef DEBUG_RADIAL_MOMENTUM
 #include <spdlog/sinks/basic_file_sink.h>
+#endif // DEBUG_RADIAL_MOMENTUM
 
 // must be defined here to avoid multiple definition issues
 // [see: https://gcc.gnu.org/gcc-10/porting_to.html]
@@ -130,9 +132,11 @@ int main(int argc, char **argv)
   CPUThisRun = 0;
   WallclockTime = my_second();
 
+#ifdef DEBUG_RADIAL_MOMENTUM
   // initialize logging
   auto logger = spdlog::basic_logger_mt("debug", "debug." + std::to_string(ThisTask) + ".txt");
   logger->set_pattern("%v");
+#endif // DEBUG_RADIAL_MOMENTUM
   
   begrun();			/* set-up run  */
 
