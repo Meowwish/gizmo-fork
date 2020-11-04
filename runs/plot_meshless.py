@@ -20,7 +20,7 @@ if __name__ == '__main__':
         zprojplot_file = snap.with_suffix('.zprojection_density.png')
         magpressure_sliceplot = snap.with_suffix('.magnetic_energy.png')
 
-        files = [projplot_file, zprojplot_file]
+        files = [projplot_file, zprojplot_file, sliceplot_file, phaseplot_file]
         files_exist = [f.exists() for f in files]
 
         if all(files_exist):
@@ -35,8 +35,8 @@ if __name__ == '__main__':
         pdata, temp = apply_radius_cut(rawdata, rawtemp, rmax=np.sqrt(2.)*rmax)
         mesh = compute_mesh(pdata)
 
-        #if not phaseplot_file.exists() and rawtemp is not None:
-        #    save_phase_plot(mesh.Density(), temp, phaseplot_file)
+        if not phaseplot_file.exists() and rawtemp is not None:
+            save_phase_plot(mesh.Density(), temp, phaseplot_file)
 
         if not projplot_file.exists():
             save_density_projection_plot(mesh, projplot_file,
@@ -88,9 +88,9 @@ if __name__ == '__main__':
         #                     vmin=1.0e-9,
         #                     vmax=1.0e-15)
 
-        #if not sliceplot_file.exists() and rawtemp is not None:
-        #    save_slice_plot(mesh, temp, sliceplot_file,
-        #                    colorbar_label=r'Temperature (K)', rmax=rmax)
+        if not sliceplot_file.exists() and rawtemp is not None:
+            save_slice_plot(mesh, temp, sliceplot_file,
+                            colorbar_label=r'Temperature (K)', rmax=rmax)
         
         # if not zsliceplot_file.exists() and plot_zslice:
         #     save_slice_plot(mesh, mesh.Density()*unitdensity_per_H, zsliceplot_file,
