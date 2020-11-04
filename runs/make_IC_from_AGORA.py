@@ -31,7 +31,7 @@ def make_agora_IC(filename, magnetic_fields=True, snapshot_zero=None):
     # Mass: 10^9 Msun
     # Length: kpc
 
-    agora_dir = Path("../../agora/LOW")
+    agora_dir = Path("../../agora_highres")
     
     # dark matter
     dm = pd.read_csv(agora_dir / "halo.dat", delimiter=' ', skipinitialspace=True,
