@@ -261,11 +261,13 @@ void compute_photoionization(void)
 #endif
     }
 
+    // free temporary arrays
+    // NOTE: this *MUST* be done in exactly the reverse order that they are allocated above!
+    myfree(Tag_HIIregion);
+    myfree(ParticleNum);
+    myfree(Tini);
     myfree(IonRate);
     myfree(Distance);
-    myfree(Tini);
-    myfree(ParticleNum);
-    myfree(Tag_HIIregion);
 }
 
 #endif // GALSF_PHOTOIONIZATION
