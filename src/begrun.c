@@ -88,8 +88,17 @@ void begrun(void)
 
   read_parameter_file(ParameterFile);	/* ... read in parameters for this run */
 
+  if(ThisTask == 0) {
+    printf("Committing memory on all ranks...");
+  }
+  
   mymalloc_init();
-
+  
+  MPI_Barrier();
+  if(ThisTask == 0) {
+    printf("done.\n\n");
+  }
+  
 #ifdef DEBUG
   write_pid_file();
   enable_core_dumps_and_fpu_exceptions();
