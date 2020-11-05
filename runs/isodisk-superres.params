@@ -12,8 +12,8 @@ RestartFile                 restart
 SnapshotFileBase            snapshot 
 OutputListOn                0  % =1 to use list in "OutputListFilename" 
 OutputListFilename          output_times.txt  % list of times for snaps 
-NumFilesPerSnapshot         1 
-NumFilesWrittenInParallel   1  % must be < N_processors & power of 2
+NumFilesPerSnapshot         768 % must be <= NTasks
+NumFilesWrittenInParallel   128	% must be <= NTasks, *and* must be a power of 2
 
 %---- Output frequency 
 TimeOfFirstSnapshot     0.0
@@ -30,9 +30,9 @@ ResubmitCommand         none   % change this to a shell script if needed
 
 %----- Memory allocation 
 MaxMemSize          3800    % sets maximum MPI process memory use, in MiByte
-		    	    %   (NOTE: only sets a limit for heap allocations that use "mymalloc()"!
-			    %	 Application binary image size, any other
-			    %	 static allocations, and internal MPI library allocations are NOT included!)
+		    	    %   (NOTE: only sets a limit for allocations that use "mymalloc()"!
+			    %	 Application binary image size, any static allocations,
+			    %    and internal MPI library allocations are NOT included!)
 PartAllocFactor     1.5     % maximum relative memory imbalance allowed for particle buffers
 		    	    %   (AGORA disc appears not to require large values for this.)
 BufferSize          30      % in MiByte
