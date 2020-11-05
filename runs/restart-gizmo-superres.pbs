@@ -1,0 +1,32 @@
+#!/bin/bash
+
+#PBS -N gizmo_MHD_superres_16nodes
+#PBS -P jh2
+#PBS -q normal
+#PBS -l ncpus=768
+#PBS -l mem=3040GB
+#PBS -m aeb
+#PBS -M ben.wibking@anu.edu.au
+#PBS -l wd
+#PBS -l walltime=24:00:00
+#PBS -l storage=scratch/jh2+gdata/jh2
+
+# submit this job with a command such as:
+# qsub -W depend=afterok:11269086 restart-gizmo-superres.pbs
+
+
+# --- ensure we start in the correct directory ----
+
+cd /g/data/jh2/bw0729/gizmo-fork/runs
+
+
+# --- set MPI options ---
+MPI_OPTIONS=""
+
+
+## --- restart GIZMO from restartfiles ---
+## WARNING: if the parameterfile or compile options change *AT ALL*,
+##          this will likely fail!  [This can even fail for trivial
+##          changes, such as extending the MaxTime of the simulation.]
+
+mpirun $MPI_OPTIONS ./GIZMO isodisk-superres.params 1 > isolated_disk_superres.log 2>&1
