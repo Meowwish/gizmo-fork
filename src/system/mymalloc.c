@@ -66,6 +66,9 @@ void mymalloc_init(void)
       endrun(122);
     }
 
+  // commit memory
+  memset(Base, 0, n);
+  
   TotBytes = FreeBytes = n;
 
   AllocatedBytes = 0;
