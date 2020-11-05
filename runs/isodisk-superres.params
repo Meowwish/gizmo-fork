@@ -12,7 +12,7 @@ RestartFile                 restart
 SnapshotFileBase            snapshot 
 OutputListOn                0  % =1 to use list in "OutputListFilename" 
 OutputListFilename          output_times.txt  % list of times for snaps 
-NumFilesPerSnapshot         16  % must be <= NTasks
+NumFilesPerSnapshot         16  % must be <= NTasks; best performance when equal to NNodes
 NumFilesWrittenInParallel   16	% must be <= NTasks, *and* must be a power of 2
 
 %---- Output frequency 
