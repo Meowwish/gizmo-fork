@@ -1,14 +1,14 @@
 #!/bin/bash
 
-#PBS -N gizmo_MHD_superres_32nodes
+#PBS -N gizmo_MHD_superres_16nodes
 #PBS -P jh2
 #PBS -q normal
-#PBS -l ncpus=1536
-#PBS -l mem=6080GB
+#PBS -l ncpus=768
+#PBS -l mem=3040GB
 #PBS -m aeb
 #PBS -M ben.wibking@anu.edu.au
 #PBS -l wd
-#PBS -l walltime=10:00:00
+#PBS -l walltime=24:00:00
 #PBS -l storage=scratch/jh2+gdata/jh2
 
 # --- ensure we start in the correct directory ----
