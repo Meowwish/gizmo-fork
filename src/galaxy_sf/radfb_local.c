@@ -92,11 +92,11 @@ void sort(double *data1, double *data2, double *data3, int *data4, int *data5, c
 
 void compute_photoionization(void)
 {
-    double *Distance = (double *)malloc(N_gas * sizeof(double));
-    double *IonRate = (double *)malloc(N_gas * sizeof(double));
-    double *Tini = (double *)malloc(N_gas * sizeof(double));
-    int *ParticleNum = (int *)malloc(N_gas * sizeof(int));
-    int *Tag_HIIregion = (int *)malloc(N_gas * sizeof(int));
+    double *Distance = (double *) mymalloc("Distance", N_gas * sizeof(double));
+    double *IonRate = (double *) mymalloc("IonRate", N_gas * sizeof(double));
+    double *Tini = (double *) mymalloc("Tini", N_gas * sizeof(double));
+    int *ParticleNum = (int *) mymalloc("ParticleNum", N_gas * sizeof(int));
+    int *Tag_HIIregion = (int *) mymalloc("Tag_HIIregion", N_gas * sizeof(int));
 
     // if gas is photoionized, assume it is heated to this temperature
     const double Tfin = 1.0e4;
