@@ -93,8 +93,8 @@ void begrun(void)
   }
   
   mymalloc_init();
-  
-  MPI_Barrier();
+  MPI_Barrier(MPI_COMM_WORLD);
+
   if(ThisTask == 0) {
     printf("done.\n\n");
   }
