@@ -286,7 +286,7 @@ GALSF_PHOTOIONIZATION           # re-implementation of photoionization feedback 
 ####################################################################################################
 #OPENMP=2                       # Masterswitch for explicit OpenMP implementation
 #PTHREADS_NUM_THREADS=4         # custom PTHREADs implementation (don't enable with OPENMP)
-MULTIPLEDOMAINS=64             # Multi-Domain option for the top-tree level (alters load-balancing)
+MULTIPLEDOMAINS=16             # Multi-Domain option for the top-tree level (alters load-balancing)
 ####################################################################################################
 
 

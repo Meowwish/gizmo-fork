@@ -29,7 +29,7 @@ ResubmitCommand         none   % change this to a shell script if needed
 
 
 %----- Memory allocation 
-MaxMemSize          3800    % sets maximum MPI process memory use, in MiByte
+MaxMemSize          3200    % sets maximum MPI process memory use, in MiByte
 		    	    %   (NOTE: only sets a limit for allocations that use "mymalloc()"!
 			    %	 Application binary image size, any static allocations,
 			    %    and internal MPI library allocations are NOT included!)
