@@ -261,11 +261,11 @@ void compute_photoionization(void)
 #endif
     }
 
-    free(IonRate);
-    free(Distance);
-    free(Tini);
-    free(ParticleNum);
-    free(Tag_HIIregion);
+    myfree(IonRate);
+    myfree(Distance);
+    myfree(Tini);
+    myfree(ParticleNum);
+    myfree(Tag_HIIregion);
 }
 
 #endif // GALSF_PHOTOIONIZATION
