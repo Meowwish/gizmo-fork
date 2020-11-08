@@ -22,7 +22,7 @@ TimeBetStatistics       0.001   % Gyr
 
 
 %---- CPU-time limits 
-TimeLimitCPU            172800 % seconds [= 48 hours]
+TimeLimitCPU            86400 % seconds [= 24 hours]
 CpuTimeBetRestartFile   3600   % seconds
 ResubmitOn              0
 ResubmitCommand         none   % change this to a shell script if needed
