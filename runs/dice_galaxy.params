@@ -1,0 +1,235 @@
+###################
+# Global parameters
+###################
+
+# overridden by m200
+v200				0.
+# Virial mass of the galaxy [in units of 1e10 Msun]
+# (110.0 == 1.1e12 Msun)
+m200				110.
+# Halo spin parameter
+lambda		 	        0.04
+
+# Refinement level of the potential grid 
+level_coarse		    	8
+# Refinement level of the turbulence grid 
+level_grid_turb		    	7
+# Size of the potential grid [kpc]
+boxsize1	 	        100.0
+boxsize2	 	        50.0
+boxsize3	 	        25.0
+
+# Seed for the random number generator
+seed			        42
+# Switch to MCMC ntry algorithm to position particles for a value > 1
+mcmc_ntry		        1
+# Number of iterations to reach hydrostatic equilibrium 
+hydro_eq_niter			6
+
+#######################
+# Components parameters
+#######################
+
+#######################
+# Component 1: DM Halo
+#######################
+
+# Fraction of the virial mass in the component 1
+mass_frac1		        0.95
+# Number of particles for the component 1
+npart1			        80000000
+# Number of particles for the potential computation
+npart_pot1              	80000000
+
+# Component 1 density model
+# Available models:
+# 1  = Exponential disk + sech-z profile
+# 2  = Myamoto-Nagai profile
+# 3  = Exponential disk + exponential-z profile
+# 4  = Hernquist profile
+# 5  = Plummer profile
+# 6  = Jaffe profile
+# 7  = Isothermal profile
+# 8  = NFW profile 
+# 9  = Burkert
+# 10 = Einasto profile
+# 11 = Mestel profile
+# 12 = Kalnajs profile
+# 13 = Sersic profile
+# 14 = Toomre-Kuzmin profile
+# 15 = Uniform profile
+# 16 = Pseudo-isothermal profile
+model1			        8
+
+# Scale radius r_s of the density profile [kpc]
+scale_length1		    	25.0
+
+# Gaussian step for the MCMC Metropolis-Hasting particle postionning algorithm,
+# expressed in units of the component scale length. Default value is 0.5.
+mcmc_step1		        0.50
+# Maximum velocity for the component 1 particles in expressed in units of escape velocity
+vmax_esc1		        5.0
+# Particles type (GADGET format -- 0=Gas,1=Halo,2=Disk,3=Bulge,4=Stars)
+type1			        1
+
+# Streaming fraction of the component 1
+stream_fraction1	    	0.00
+
+# Target mass of individual particles [Msol]
+part_mass1		        0.0
+# Cut the density function in the Jeans equation integration
+jeans_mass_cut1		    	0
+
+################################
+# Component 2: Thin stellar disk
+################################
+
+# [3.5e10 Msun stellar mass]
+mass_frac2		        0.03181818182
+npart2			        80000000
+npart_pot2              	80000000
+
+# Miyamoto-Nagai disk
+model2			        2
+# scale radius [kpc]
+scale_length2		    	2.6
+# flattening factor [hz = 0.3 kpc]
+flatz2			        0.1153846154
+
+# cutoff radius [kpc]
+cut2			        15.0
+
+mcmc_step2		        0.3
+# GADGET particle type (2 = disk)
+type2		    	    	2
+
+# Epicycle approximation in the Jeans equations
+epicycle2		        1
+stream_fraction2	    	1.00
+
+# Minimal value for the Toomre parameter
+Q_lim2			        1.25
+# Truncate the density function in the Jeans equation integration
+jeans_mass_cut2		    	1
+
+###########################
+# Component 3: Gaseous disk
+###########################
+
+# [0.7e10 Msun gas mass (in disk)]
+mass_frac3		        0.006363636364
+npart3			        1e8
+npart_pot3              	1e8
+
+# 1  = Exponential disk + sech-z profile
+model3			        1
+# scale radius [kpc] (R_n = 3.15 kpc)
+scale_length3		    	3.15
+# flattening factor [hz = 0.15 kpc]
+flatz3			        0.04761904762
+
+# Truncation radius [kpc]
+cut3			        30.0
+
+mcmc_step3		        0.15
+
+# GADGET particle type (0 = gas)
+type3			        0
+
+stream_fraction3	    	1.00
+
+# Metallicity [units of solar]
+metal3                  	1.0
+# Temperature of the gas particles [K] (HI disc)
+t_init3                 	3000.
+
+# Turbulent velocity dispersion [km/s]
+turb_sigma3		        10.0
+# Turbulence injection scale [kpc]
+turb_scale_inj3		        1.0
+# Turbulence dissipation scale [kpc]
+turb_scale_diss3	        0.01
+
+# Compute hydrostatic equilibrium 
+hydro_eq3			1
+
+# Gaussian step for the MCMC Metropolis-Hasting particle postioning algorithm
+# within the hydro equilibrium algorithm
+mcmc_step_hydro3	    	0.3
+
+############################
+# Component 4: Stellar bulge
+############################
+
+# [1.6e10 Msun bulge mass]
+mass_frac4		        0.01454545455
+npart4			        80000000
+npart_pot4              	80000000
+
+# 10 = Einasto profile
+model4			        10
+# Scale radius [kpc]
+scale_length4		    	0.58
+# Flattening parameter (z-axis)
+flatz4			        0.3103448276
+
+# Truncation radius [kpc]
+cut4			        3.0
+
+mcmc_step4		        0.3
+
+# Maximum velocity (units of escape velocity)
+vmax_esc4		        2.0
+# GADGET particle type (3 = bulge)
+type4			        3
+
+stream_fraction4	    	0.5
+
+# Structural parameter specific to the Einasto density profile
+alpha_struct4		        0.80
+Q_lim4			        1.5
+
+
+###########################
+# Component 5: Gaseous halo
+###########################
+
+# [1.3e10 Msun gas mass in hot halo]
+mass_frac5		        0.01181818182
+npart5			        15000000
+npart_pot5              	15000000
+
+# 8  = NFW profile
+model5			        8
+# scale radius r_s [kpc]
+scale_length5			25.0
+
+# Flattening parameter (z-axis)
+flatz5			        1.00
+
+mcmc_step5		        0.50
+
+# GADGET particel type (0 = gas)
+type5			        0
+stream_fraction5	    	1.00
+
+# Metallicity (solar)
+metal5                  	0.01
+
+turb_sigma5		        0.0
+turb_scale_inj5		        1.0
+turb_scale_diss5	        0.01
+
+# Method to compute the streaming velocity of the halo
+# 1: Bullock 2001 - specific angular momentum is proportional to the cumulative mass profile
+# 2: Springel 1999 - vstream is a fixed fraction of the circular velocity
+# 3: Solid body rotation - vstream is proportional to the radius 
+stream_method5 			1
+
+# Compute gas temperature to reach hydrostatic equilibrium
+# [taken from Anderson & Bregman (2010)]
+thermal_eq5		        3.5e6
+
+# Excavate gas according to the specified component
+# (gas disk in component 3 in this example)
+excavate5		        3
