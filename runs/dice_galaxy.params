@@ -118,8 +118,8 @@ jeans_mass_cut2		    	1
 
 # [0.7e10 Msun gas mass (in disk)]
 mass_frac3		        0.006363636364
-npart3			        1e8
-npart_pot3              	1e8
+npart3			        80000000
+npart_pot3              	80000000
 
 # 1  = Exponential disk + sech-z profile
 model3			        1
@@ -227,8 +227,11 @@ turb_scale_diss5	        0.01
 stream_method5 			1
 
 # Compute gas temperature to reach hydrostatic equilibrium
+thermal_eq5    	       	 	0
+
+# Initial gas temperature
 # [taken from Anderson & Bregman (2010)]
-thermal_eq5		        3.5e6
+t_init5	 		        3500000.
 
 # Excavate gas according to the specified component
 # (gas disk in component 3 in this example)
