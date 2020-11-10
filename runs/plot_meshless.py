@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
         ## plotting parameters
         rmax = 15.0 # kpc
-        plot_zslice = True
+        plot_slices = True
         
         rawdata = load_hydro_data(snap)
         rawtemp = compute_temperature(rawdata)
@@ -52,9 +52,10 @@ if __name__ == '__main__':
                                          projection_length=0.5,
                                          vmin=1e-4, vmax=1e2)
 
-        #if not sliceplot_file.exists() and rawtemp is not None:
-        #    save_slice_plot(mesh, temp, sliceplot_file,
-        #                    colorbar_label=r'Temperature (K)', rmax=rmax)
+        if plot_slices:
+            if not sliceplot_file.exists() and rawtemp is not None:
+                save_slice_plot(mesh, temp, sliceplot_file,
+                                colorbar_label=r'Temperature (K)', rmax=rmax)
 
         # load data with yt
         # bbox_lim = 1e5 #kpc
