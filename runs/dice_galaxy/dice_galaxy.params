@@ -116,10 +116,10 @@ jeans_mass_cut2		    	1
 # Component 3: Gaseous disk
 ###########################
 
-# [0.7e10 Msun gas mass (in disk)]
-mass_frac3		        0.006363636364
-npart3			        80000000
-npart_pot3              	80000000
+# [1.2e10 Msun gas mass (in disk)]
+mass_frac3		        0.01090909091
+npart3			        120000000
+npart_pot3              	120000000
 
 # 1  = Exponential disk + sech-z profile
 model3			        1
