@@ -52,6 +52,10 @@ if __name__ == '__main__':
                                          projection_length=0.5,
                                          vmin=1e-4, vmax=1e2)
 
+        #if not sliceplot_file.exists() and rawtemp is not None:
+        #    save_slice_plot(mesh, temp, sliceplot_file,
+        #                    colorbar_label=r'Temperature (K)', rmax=rmax)
+
         # load data with yt
         # bbox_lim = 1e5 #kpc
         # bbox = [[-bbox_lim,bbox_lim],
@@ -87,10 +91,6 @@ if __name__ == '__main__':
         #                     bfield=pdata['MagneticField'],
         #                     vmin=1.0e-9,
         #                     vmax=1.0e-15)
-
-        if not sliceplot_file.exists() and rawtemp is not None:
-            save_slice_plot(mesh, temp, sliceplot_file,
-                            colorbar_label=r'Temperature (K)', rmax=rmax)
         
         # if not zsliceplot_file.exists() and plot_zslice:
         #     save_slice_plot(mesh, mesh.Density()*unitdensity_per_H, zsliceplot_file,

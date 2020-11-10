@@ -161,12 +161,14 @@ def check_if_filename_exists(snapshot_name):
     fname_base = None
     fname_ext = None
     
-    from pathlib import Path
+    from pathlib import Path, PurePosixPath
     mypath = Path(snapshot_name)
 
     if mypath.exists():
         fname = str(snapshot_name)
-        fname_base = str(mypath.stem)
+        fname_base = str(mypath.parent / PurePosixPath(mypath.stem).stem)
         fname_ext = str(mypath.suffix)
+
+    print(f"filename = {fname}; filename base = {fname_base}; extension = {fname_ext}")
 
     return fname, fname_base, fname_ext
