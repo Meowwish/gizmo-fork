@@ -77,7 +77,8 @@ def apply_radius_cut(pdata, T, rmax=40.):
     ndata = {}
     ndata['Coordinates']     = coords[radius_cut]
     ndata['Masses']          = pdata['Masses'][radius_cut]
-    ndata['SmoothingLength'] = pdata['SmoothingLength'][radius_cut]
+    if 'SmoothingLength' in ndata.keys():
+        ndata['SmoothingLength'] = pdata['SmoothingLength'][radius_cut]
     ndata['Velocities']      = pdata['Velocities'][radius_cut]
     ndata['MagneticField']   = pdata['MagneticField'][radius_cut]
     if T is not None:
@@ -262,4 +263,7 @@ def save_zdensity_projection_plot(mesh, filename, star_coords=None,
     plt.close()
 
 def compute_mesh(pdata):
-    return Meshoid(pdata["Coordinates"], pdata["Masses"], pdata["SmoothingLength"])
+    if 'SmoothingLength' in pdata.keys():
+        return Meshoid(pdata["Coordinates"], pdata["Masses"], pdata["SmoothingLength"])
+    else:
+        return Meshoid(pdata["Coordinates"], pdata["Masses"])

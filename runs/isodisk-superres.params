@@ -1,6 +1,6 @@
 
 %----  Relevant files
-InitCondFile   agora_ic_highres_supersampled
+InitCondFile   dice_isodisk_superres
 OutputDir      output_superres
 
 %---- File formats 
