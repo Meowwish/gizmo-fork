@@ -31,6 +31,14 @@ def make_dice_IC(filename, magnetic_fields=True):
     # Mass: 10^10 Msun
     # Length: kpc
 
+    #from readsnap import readsnap
+    #gas_ptype = 0
+    #dm_ptype = 1
+    #disk_ptype = 2
+    #bulge_ptype = 3
+    #header = readsnap('.', 0, dm_ptype, header_only=1, snapshot_name='my_isodisk', extension='.g2', loud=1)
+    #print(f"{header}")
+    
     # dark matter
     dm_xyz = pygadgetreader.readsnap('my_isodisk.g2','pos','dm')
     dm_vel = pygadgetreader.readsnap('my_isodisk.g2','vel','dm')
