@@ -372,23 +372,24 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
     if(local.Hsml<=0) {return 0;} // zero-extent kernel, no particles //
     
     // some units (just used below, but handy to define for clarity) //
-    double h2 = local.Hsml*local.Hsml;
+    const double h2 = local.Hsml*local.Hsml;
     kernel_main(0.0,1.0,1.0,&kernel_zero,&wk,-1); wk=0; // define the kernel zero-point value, needed to prevent some nasty behavior when no neighbors found
     kernel_hinv(local.Hsml, &kernel.hinv, &kernel.hinv3, &kernel.hinv4); // define kernel quantities
-    double unitlength_in_kpc= UNIT_LENGTH_IN_KPC * All.cf_atime;
-    double density_to_n=All.cf_a3inv*UNIT_DENSITY_IN_NHCGS;
-    double unit_egy_SNe = 1.0e51/UNIT_ENERGY_IN_CGS;
+    const double unitlength_in_kpc= UNIT_LENGTH_IN_KPC * All.cf_atime;
+    const double density_to_n=All.cf_a3inv*UNIT_DENSITY_IN_NHCGS;
+    const double unit_egy_SNe = 1.0e51/UNIT_ENERGY_IN_CGS;
     
     // now define quantities that will be used below //
-
     const double v_ejecta_eff=local.SNe_v_ejecta;
-    double wk_norm = 1. / (MIN_REAL_NUMBER + fabs(local.Area_weighted_sum[0])); // normalization for scalar weight sum
-    double pnorm_sum = 1./(MIN_REAL_NUMBER + fabs(local.Area_weighted_sum[10])); // re-normalization after second pass for normalized "pnorm" (should be close to ~1)
+    const double wk_norm = 1. / (MIN_REAL_NUMBER + fabs(local.Area_weighted_sum[0])); // normalization for scalar weight sum
 
 #if 0
     // Appendix E of Hopkins et al. (2018)
+
     double psi_cool=1;
     double psi_egycon=1;
+    const double pnorm_sum = 1./(MIN_REAL_NUMBER + fabs(local.Area_weighted_sum[10])); // re-normalization after second pass for normalized "pnorm" (should be close to ~1)
+
     if((local.Area_weighted_sum[0] > MIN_REAL_NUMBER) && (loop_iteration >= 0))
     {
         double vba_2_eff = wk_norm * local.Area_weighted_sum[7]; // phi term for energy: weighted mass-deposited KE for ejecta neighbors
@@ -487,7 +488,9 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                     if(z0 < 0.01) {z0 = 0.01;}
                     if(z0 < 1.) {z0_term = z0*sqrt(z0);} else {z0_term = z0;}
                     double nz_dep  = pow(n0 * z0_term , (1./7.)); // (1/7)th power scaling of terminal momentum
+                    // v_cooling is only used by the method of Appendix E
                     v_cooling = 210. * DMAX(nz_dep,0.5) / UNIT_VEL_IN_KMS;
+                    // this corresponds to a terminal momentum of 3.1939 x 10^5 km/s
                     m_cooling = 4.56e36 * e0 / (nz_dep*nz_dep * UNIT_MASS_IN_CGS); // (-2/7)th power scaling of cooling mass
                     RsneKPC = pow( 0.238732 * m_cooling/SphP[j].Density , 1./3. );
                 }
@@ -746,14 +749,14 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
 #endif // !defined(SINGLE_STAR_FB_WINDS)
 #endif // 0
 
-                dE_internal /= P[j].Mass; // convert to specific internal energy
+                const double dE_internal_specific = dE_internal / P[j].Mass; // convert to specific internal energy
 
 #ifndef MECHANICAL_FB_MOMENTUM_ONLY
                 if (dE_internal > 0)
                 {
-                    SphP[j].InternalEnergy += dE_internal;
-                    SphP[j].InternalEnergyPred += dE_internal;
-                    E_coupled += dE_internal;
+                    SphP[j].InternalEnergy += dE_internal_specific;
+                    SphP[j].InternalEnergyPred += dE_internal_specific;
+                    E_coupled += dE_internal_specific;
                 }
 #endif
 
