@@ -683,20 +683,17 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 dP_boost_sum += dP * mom_boost_fac;
 
                 /* actually do the injection */
-                const double vel_prefactor =  mom_boost_fac * massratio_ejecta * (All.cf_atime*v_ejecta_eff) / pnorm;
+                const double delta_v =  mom_boost_fac * massratio_ejecta * (All.cf_atime*v_ejecta_eff);
+                const double delta_KE = 0.5 * P[j].Mass * (delta_v*delta_v); // in the star frame
 
-                double KE_initial = 0;
-                double KE_final = 0;
                 for (k = 0; k < 3; k++)
                 {
                     // local.Vel term from extra momentum of moving star;
                     //  P[j].Vel term from going from momentum to velocity boost with added mass
                     // *both* are critical to conserving vector momentum in the simulation frame
-                    double d_vel = vel_prefactor * pvec[k] + massratio_ejecta * (local.Vel[k] - P[j].Vel[k]); 
-                    KE_initial += P[j].Vel[k] * P[j].Vel[k];
+                    double d_vel = delta_v * (pvec[k]/pnorm) + massratio_ejecta * (local.Vel[k] - P[j].Vel[k]); 
                     P[j].Vel[k] += d_vel;
                     SphP[j].VelPred[k] += d_vel;
-                    KE_final += P[j].Vel[k] * P[j].Vel[k];
                 }
 
                 // compute p_j[k] after injecting mass or momentum
@@ -729,7 +726,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 KE_final *= 0.5 * P[j].Mass * All.cf_a2inv;
 
                 const double E_sne_initial = pnorm * Energy_injected_codeunits;   // Eq. 14 of Hopkins et al. (2018)
-                const double dE_internal = E_sne_initial - (KE_final - KE_initial);
+                const double dE_internal = E_sne_initial - delta_KE;
 
 #if 0 // this makes no sense, don't do this
 #if !defined(SINGLE_STAR_FB_WINDS)
