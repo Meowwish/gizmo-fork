@@ -618,7 +618,9 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 // an additional term corrects for the momentum injected by adding mass above
 
                 const double wk_m_cooling = pnorm * m_cooling; // effective cooling mass for this particle
-                const double boost_max = sqrt(1 + wk_m_cooling / dM_ejecta_in); // terminal momentum boost-factor
+                // const double boost_max = sqrt(1 + wk_m_cooling / dM_ejecta_in); // terminal momentum boost-factor (includes initial ejecta momentum)
+                // use the strict limit, do not include the initial ejecta momentum
+                const double boost_max = sqrt(wk_m_cooling / dM_ejecta_in); // terminal momentum boost-factor
                 const double boost_egycon = sqrt(1 + mj_preshock / dM_ejecta_in); // energy-conserving limit for coupling through neighbors
 
                 // avoid the complicated factors entering in Appendix E of Hopkins et al. (2018)
