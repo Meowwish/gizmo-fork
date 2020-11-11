@@ -721,9 +721,8 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 // add to cumulative total dMom
                 out.injected_radial_momentum += dp_j_norm;
 
+
                 /* now calculate the residual energy and add it as thermal */
-                KE_initial *= 0.5 * mj_preshock * All.cf_a2inv;
-                KE_final *= 0.5 * P[j].Mass * All.cf_a2inv;
 
                 const double E_sne_initial = pnorm * Energy_injected_codeunits;   // Eq. 14 of Hopkins et al. (2018)
                 const double dE_internal = E_sne_initial - delta_KE;
