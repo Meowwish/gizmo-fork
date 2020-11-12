@@ -340,8 +340,19 @@ void out2particle_addFB(struct OUTPUT_STRUCT_NAME *out, int i, int mode, int loo
 #endif
         for(k=kmin;k<kmax;k++) {ASSIGN_ADD(P[i].Area_weighted_sum[k], out->Area_weighted_sum[k], mode);}
     } else {
-        P[i].Mass -= out->M_coupled; if((P[i].Mass<0)||(isnan(P[i].Mass))) {P[i].Mass=0;}
+        const double mass_initial = P[i].Mass;
+        P[i].Mass -= out->M_coupled;
 
+	if((P[i].Mass<0)||(isnan(P[i].Mass))) {
+	  P[i].Mass=0;
+	} else {
+	  // adjust velocity to conserve momentum
+	  const double mass_final = P[i].Mass;
+	  for (int k = 0; k < 3; ++k) {
+	      P[i].Vel[k] *= (mass_initial / mass_final);
+	  }	  
+	}
+	
 #ifdef DEBUG_RADIAL_MOMENTUM
 	const double momentum_cgs = out->injected_radial_momentum * UNIT_MASS_IN_CGS * UNIT_VEL_IN_CGS;
 	const double momentum_per_Msun_cgs = (momentum_cgs / SOLAR_MASS); // cm/s
@@ -380,7 +391,10 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
     const double unit_egy_SNe = 1.0e51/UNIT_ENERGY_IN_CGS;
     
     // now define quantities that will be used below //
-    const double v_ejecta_eff=local.SNe_v_ejecta;
+    const double v_ejecta_max = 1.0e4 / UNIT_VEL_IN_KMS; // 10,000 km/s maximum
+    // no relativistic ejecta!
+    const double v_ejecta_eff = DMIN(local.SNe_v_ejecta, v_ejecta_max);
+
     const double wk_norm = 1. / (MIN_REAL_NUMBER + fabs(local.Area_weighted_sum[0])); // normalization for scalar weight sum
 
 #if 0
@@ -490,8 +504,12 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                     double nz_dep  = pow(n0 * z0_term , (1./7.)); // (1/7)th power scaling of terminal momentum
                     // v_cooling is only used by the method of Appendix E
                     v_cooling = 210. * DMAX(nz_dep,0.5) / UNIT_VEL_IN_KMS;
-                    // this corresponds to a terminal momentum of 3.1939 x 10^5 km/s
-                    m_cooling = 4.56e36 * e0 / (nz_dep*nz_dep * UNIT_MASS_IN_CGS); // (-2/7)th power scaling of cooling mass
+                    // this corresponds to a terminal momentum of 3.1939 x 10^5 km/s/Msun
+		    // (-2/7)th power scaling of cooling mass
+                    m_cooling = 4.56e36 * e0 / (nz_dep*nz_dep * UNIT_MASS_IN_CGS);
+		    // limit terminal momentum to 6 x 10^5 km/s/Msun (equal to 5382 Msun cooling mass)
+		    m_cooling = DMIN(m_cooling, (5382. / UNIT_MASS_IN_SOLAR));
+		    
                     RsneKPC = pow( 0.238732 * m_cooling/SphP[j].Density , 1./3. );
                 }
                 RsneKPC_3 = RsneKPC*RsneKPC*RsneKPC;
@@ -577,7 +595,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 // compute p_j[k] before injecting mass or momentum
                 //   (in the frame of the star velocity v_i, i.e. where v_i = 0)
                 double p_j_initial[3] = {0., 0., 0.};
-                const double mass_initial = P[j].Mass; // particle j's mass prior to injecting mass, same as mj_preshock
+                const double mass_initial = P[j].Mass; // particle j's mass prior to injecting mass
                 for (int k = 0; k < 3; ++k)
                 {
                     p_j_initial[k] = mass_initial * (P[j].Vel[k] - local.Vel[k]);
@@ -609,6 +627,13 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 SphP[j].MassTrue += dM_ejecta_in;
 #endif
 
+		// correct velocity to keep momentum fixed
+		const double mass_final = P[j].Mass;
+		for (int k = 0; k < 3; ++k)
+		{
+		  P[j].Vel[k] *= (mass_initial / mass_final);
+		}
+		
 #ifdef METALS
                 /* inject metals */
                 for (k = 0; k < NUM_METAL_SPECIES; k++)
@@ -623,7 +648,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 const double wk_m_cooling = pnorm * m_cooling; // effective cooling mass for this particle
                 // const double boost_max = sqrt(1 + wk_m_cooling / dM_ejecta_in); // terminal momentum boost-factor (includes initial ejecta momentum)
                 // use the strict limit, do not include the initial ejecta momentum
-                const double boost_max = sqrt(wk_m_cooling / dM_ejecta_in); // terminal momentum boost-factor
+                const double boost_max = sqrt(m_cooling / local.Msne); // terminal momentum boost-factor
                 const double boost_egycon = sqrt(1 + mj_preshock / dM_ejecta_in); // energy-conserving limit for coupling through neighbors
 
                 // avoid the complicated factors entering in Appendix E of Hopkins et al. (2018)
@@ -688,12 +713,10 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
 
                 for (k = 0; k < 3; k++)
                 {
-                    // local.Vel term from extra momentum of moving star;
-                    //  P[j].Vel term from going from momentum to velocity boost with added mass
-                    // *both* are critical to conserving vector momentum in the simulation frame
-                    double d_vel = delta_v * (pvec[k]/pnorm) + massratio_ejecta * (local.Vel[k] - P[j].Vel[k]); 
-                    P[j].Vel[k] += d_vel;
-                    SphP[j].VelPred[k] += d_vel;
+		  const double d_vel = delta_v * (pvec[k]/pnorm);
+		  //const double d_vel_star = (dM_ejecta_in/m_star) * local.Vel[k];
+		  P[j].Vel[k] += d_vel;
+		  SphP[j].VelPred[k] += d_vel;
                 }
 
                 // compute p_j[k] after injecting mass or momentum
