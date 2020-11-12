@@ -350,7 +350,7 @@ void out2particle_addFB(struct OUTPUT_STRUCT_NAME *out, int i, int mode, int loo
 	  const double mass_final = P[i].Mass;
 	  for (int k = 0; k < 3; ++k) {
 	      P[i].Vel[k] *= (mass_initial / mass_final);
-	  }	  
+	  }  
 	}
 	
 #ifdef DEBUG_RADIAL_MOMENTUM
@@ -632,6 +632,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
 		for (int k = 0; k < 3; ++k)
 		{
 		  P[j].Vel[k] *= (mass_initial / mass_final);
+		  SphP[j].VelPred[k] *= (mass_initial / mass_final);
 		}
 		
 #ifdef METALS
