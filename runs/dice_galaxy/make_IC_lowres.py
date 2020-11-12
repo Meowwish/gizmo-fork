@@ -39,28 +39,28 @@ def make_dice_IC(filename, magnetic_fields=True):
     #header = readsnap('.', 0, dm_ptype, header_only=1, snapshot_name='my_isodisk', extension='.g2', loud=1)
     #print(f"{header}")
 
-    filename = 'my_isodisk_lowres.g2'
+    input_filename = 'my_isodisk_lowres.g2'
     
     # dark matter
-    dm_xyz = pygadgetreader.readsnap('my_isodisk.g2','pos','dm')
-    dm_vel = pygadgetreader.readsnap('my_isodisk.g2','vel','dm')
-    dm_mass = pygadgetreader.readsnap('my_isodisk.g2','mass','dm')    
+    dm_xyz = pygadgetreader.readsnap(input_filename,'pos','dm')
+    dm_vel = pygadgetreader.readsnap(input_filename,'vel','dm')
+    dm_mass = pygadgetreader.readsnap(input_filename,'mass','dm')    
     
     # bulge stars
-    bulge_xyz = pygadgetreader.readsnap('my_isodisk.g2','pos','bulge')
-    bulge_vel = pygadgetreader.readsnap('my_isodisk.g2','vel','bulge')
-    bulge_mass = pygadgetreader.readsnap('my_isodisk.g2','mass','bulge')
+    bulge_xyz = pygadgetreader.readsnap(input_filename,'pos','bulge')
+    bulge_vel = pygadgetreader.readsnap(input_filename,'vel','bulge')
+    bulge_mass = pygadgetreader.readsnap(input_filename,'mass','bulge')
 
     # disk stars
-    disk_xyz = pygadgetreader.readsnap('my_isodisk.g2','pos','disk')
-    disk_vel = pygadgetreader.readsnap('my_isodisk.g2','vel','disk')
-    disk_mass = pygadgetreader.readsnap('my_isodisk.g2','mass','disk') 
+    disk_xyz = pygadgetreader.readsnap(input_filename,'pos','disk')
+    disk_vel = pygadgetreader.readsnap(input_filename,'vel','disk')
+    disk_mass = pygadgetreader.readsnap(input_filename,'mass','disk') 
 
     # gas particles
-    gas_xyz = pygadgetreader.readsnap('my_isodisk.g2','pos','gas')
-    gas_vel = pygadgetreader.readsnap('my_isodisk.g2','vel','gas')
-    gas_mass = pygadgetreader.readsnap('my_isodisk.g2','mass','gas')
-    gas_u = pygadgetreader.readsnap('my_isodisk.g2','u','gas')
+    gas_xyz = pygadgetreader.readsnap(input_filename,'pos','gas')
+    gas_vel = pygadgetreader.readsnap(input_filename,'vel','gas')
+    gas_mass = pygadgetreader.readsnap(input_filename,'mass','gas')
+    gas_u = pygadgetreader.readsnap(input_filename,'u','gas')
     ngas = len(gas_mass)
     
 
