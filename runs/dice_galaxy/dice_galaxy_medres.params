@@ -37,9 +37,9 @@ hydro_eq_niter			6
 # Fraction of the virial mass in the component 1
 mass_frac1		        0.95
 # Number of particles for the component 1
-npart1			        80000000
+npart1			        8000000
 # Number of particles for the potential computation
-npart_pot1              	80000000
+npart_pot1              	8000000
 
 # Component 1 density model
 # Available models:
@@ -86,8 +86,8 @@ jeans_mass_cut1		    	0
 
 # [3.5e10 Msun stellar mass]
 mass_frac2		        0.03181818182
-npart2			        80000000
-npart_pot2              	80000000
+npart2			        8000000
+npart_pot2              	8000000
 
 # Miyamoto-Nagai disk
 model2			        2
@@ -118,8 +118,8 @@ jeans_mass_cut2		    	1
 
 # [1.2e10 Msun gas mass (in disk)]
 mass_frac3		        0.01090909091
-npart3			        80000000
-npart_pot3              	80000000
+npart3			        8000000
+npart_pot3              	8000000
 
 # 1  = Exponential disk + sech-z profile
 model3			        1
@@ -163,8 +163,8 @@ mcmc_step_hydro3	    	0.3
 
 # [1.6e10 Msun bulge mass]
 mass_frac4		        0.01454545455
-npart4			        80000000
-npart_pot4              	80000000
+npart4			        8000000
+npart_pot4              	8000000
 
 # 10 = Einasto profile
 model4			        10
@@ -196,8 +196,8 @@ Q_lim4			        1.5
 
 # [1.3e10 Msun gas mass in hot halo]
 mass_frac5		        0.01181818182
-npart5			        15000000
-npart_pot5              	15000000
+npart5			        1500000
+npart_pot5              	1500000
 
 # 8  = NFW profile
 model5			        8
