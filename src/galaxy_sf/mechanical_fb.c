@@ -1058,7 +1058,7 @@ void mechanical_fb_calc(int fb_loop_iteration)
         {
             if (P[i].SNe_ThisTimeStep > 0)
             {
-                std::cout << "[SN][particle " i << "] "
+                std::cout << "[SN][particle " << i << "] "
                           << "momentum = "
                           << P[i].SNe_InjectedMomentumThisStep
                           << "; thermal energy = "
