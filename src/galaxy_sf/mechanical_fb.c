@@ -341,19 +341,19 @@ void out2particle_addFB(struct OUTPUT_STRUCT_NAME *out, int i, int mode, int loo
 #endif
         for(k=kmin;k<kmax;k++) {ASSIGN_ADD(P[i].Area_weighted_sum[k], out->Area_weighted_sum[k], mode);}
     } else {
-        P[i].Mass -= out->M_coupled; if((P[i].Mass<0)||(isnan(P[i].Mass))) {P[i].Mass=0;}
+        P[i].Mass -= out->M_coupled;
+        if ((P[i].Mass < 0) || (isnan(P[i].Mass)))
+        {
+            P[i].Mass = 0;
+        }
 
-#ifdef DEBUG_RADIAL_MOMENTUM
-	const double momentum_cgs = out->injected_radial_momentum * UNIT_MASS_IN_CGS * UNIT_VEL_IN_CGS;
-	const double momentum_per_Msun_cgs = (momentum_cgs / SOLAR_MASS); // cm/s
-	const double momentum_per_Msun_kms = momentum_per_Msun_cgs / 1.0e5; // km/s
-    const double energy_cgs = out->injected_thermal_energy * UNIT_ENERGY_IN_CGS;
-	if (momentum_per_Msun_kms > 0.) {
-	  spdlog::get("debug")->info(momentum_per_Msun_kms);
-      std::cout << "[SN] momentum = " << momentum_per_Msun_kms << "; thermal energy = " << energy_cgs << "\n\n";
-	}
-#endif
-	
+        const double momentum_cgs = out->injected_radial_momentum * UNIT_MASS_IN_CGS * UNIT_VEL_IN_CGS;
+        const double momentum_per_Msun_cgs = (momentum_cgs / SOLAR_MASS);   // cm/s
+        const double momentum_per_Msun_kms = momentum_per_Msun_cgs / 1.0e5; // km/s
+        const double energy_cgs = out->injected_thermal_energy * UNIT_ENERGY_IN_CGS;
+
+        P[i].SNe_InjectedMomentumThisStep += momentum_per_Msun_kms;
+        P[i].SNe_InjectedThermalEnergyThisStep += energy_cgs;
     }
 }
 
@@ -501,7 +501,10 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 
                 wk = pnorm; // this (vector norm) is the new 'weight function' for our purposes
                 dM = wk * local.Msne;
-                
+
+                // NOTE: this injection event may actually represent multiple SNe in a single timestep!
+                // see particle2in_addFB_fromstars() in stellar_evolution.c
+
                 /* now, add contribution from relative star-gas particle motion to shock energy */
                 for(k=0;k<3;k++)
                 {
@@ -509,11 +512,11 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                     //v_bw[k] += (local.Vel[k]-P[j].Vel[k])/All.cf_atime;
                     e_shock += v_bw[k]*v_bw[k];
                 }
-                double mj_preshock, dM_ejecta_in, massratio_ejecta, mu_j;
+                double mj_preshock, dM_ejecta_in, massratio_ejecta;
                 mj_preshock = P[j].Mass;
                 dM_ejecta_in = dM;
                 massratio_ejecta = dM_ejecta_in / (dM_ejecta_in + P[j].Mass);
-                // mu_j = P[j].Mass / (dM + P[j].Mass); // this factor doesn't make sense to add below
+                // const double mu_j = P[j].Mass / (dM + P[j].Mass); // this factor doesn't make sense to add below
                 e_shock *= pnorm * 0.5*local.Msne;
                 
                 if((wk <= 0)||(isnan(wk))) continue;
@@ -1035,12 +1038,38 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
 /* master routine which calls the relevant loops */
 void mechanical_fb_calc(int fb_loop_iteration)
 {
+    for (int i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i])
+    {
+        P[i].SNe_InjectedMomentumThisStep = 0.;
+        P[i].SNe_InjectedThermalEnergyThisStep = 0.;
+    }
+
     PRINT_STATUS(" ..mechanical feedback loop: iteration %d",fb_loop_iteration);
     #include "../system/code_block_xchange_perform_ops_malloc.h" /* this calls the large block of code which contains the memory allocations for the MPI/OPENMP/Pthreads parallelization block which must appear below */
     loop_iteration = fb_loop_iteration; /* sets the appropriate feedback type for the calls below */
     #include "../system/code_block_xchange_perform_ops.h" /* this calls the large block of code which actually contains all the loops, MPI/OPENMP/Pthreads parallelization */
     #include "../system/code_block_xchange_perform_ops_demalloc.h" /* this de-allocates the memory for the MPI/OPENMP/Pthreads parallelization block which must appear above */
     CPU_Step[CPU_SNIIHEATING] += measure_time(); /* collect timings and reset clock for next timing */
+
+#ifdef DEBUG_MOMENTUM_INJECTION
+    if (fb_loop_iteration == 0)
+    {
+        for (int i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i])
+        {
+            if (P[i].SNe_ThisTimeStep > 0)
+            {
+                std::cout << "[SN][particle " i << "] "
+                          << "momentum = "
+                          << P[i].SNe_InjectedMomentumThisStep
+                          << "; thermal energy = "
+                          << P[i].SNe_InjectedThermalEnergyThisStep
+                          << "; number of SNe = "
+                          << P[i].SNe_ThisTimeStep
+                          << "\n\n";
+            }
+        }
+    }
+#endif // DEBUG_MOMENTUM_INJECTION
 }
 #include "../system/code_block_xchange_finalize.h" /* de-define the relevant variables and macros to avoid compilation errors and memory leaks */
 

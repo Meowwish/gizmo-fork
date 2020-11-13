@@ -2197,6 +2197,8 @@ extern ALIGN(32) struct particle_data
 #if defined(GALSF_FB_MECHANICAL) || defined(GALSF_FB_THERMAL)
     MyFloat SNe_ThisTimeStep = 0.; /* flag that indicated number of SNe for the particle in the timestep */
     MyFloat SNe_Cumulative = 0.; // cumulative number of SNe from this star particle
+    MyFloat SNe_InjectedMomentumThisStep = 0.; // [km/s/Msun]
+    MyFloat SNe_InjectedThermalEnergyThisStep = 0.; // [ergs]
 #endif
 #ifdef GALSF_FB_MECHANICAL
 #define AREA_WEIGHTED_SUM_ELEMENTS 11 /* number of weights needed for full momentum-and-energy conserving system */
