@@ -1058,6 +1058,8 @@ void mechanical_fb_calc(int fb_loop_iteration)
         {
             if (P[i].SNe_ThisTimeStep > 0)
             {
+                spdlog::get("debug")->info(P[i].SNe_InjectedMomentumThisStep);
+                
                 std::cout << "[SN][particle " << i << "] "
                           << "momentum = "
                           << P[i].SNe_InjectedMomentumThisStep
