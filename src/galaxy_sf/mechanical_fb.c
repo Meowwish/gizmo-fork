@@ -1069,7 +1069,7 @@ void mechanical_fb_calc(int fb_loop_iteration)
                            << P[i].SNe_InjectedThermalEnergyThisStep << " "
                            << P[i].SNe_ThisTimeStep;
                 spdlog::get("debug")->info(outputLine.str());
-
+#if 0
                 std::cout << "[SN] "
                           << "momentum = "
                           << P[i].SNe_InjectedMomentumThisStep
@@ -1078,6 +1078,7 @@ void mechanical_fb_calc(int fb_loop_iteration)
                           << "; number of SNe = "
                           << P[i].SNe_ThisTimeStep
                           << "\n\n";
+#endif
             }
         }
     }
