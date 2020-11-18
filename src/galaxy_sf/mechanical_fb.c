@@ -476,7 +476,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 if((wk <= 0)||(isnan(wk))) continue;
                 
                 /* define initial mass and ejecta velocity in this 'cone' */
-                double v_bw[3]={0};
+                //double v_bw[3]={0};
                 double pnorm = 0;
                 double pvec[3]={0};
                 for(k=0; k<3; k++)
@@ -508,6 +508,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 // NOTE: this injection event may actually represent multiple SNe in a single timestep!
                 // see particle2in_addFB_fromstars() in stellar_evolution.c
 
+#if 0
                 /* now, add contribution from relative star-gas particle motion to shock energy */
                 for(k=0;k<3;k++)
                 {
@@ -515,6 +516,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                     //v_bw[k] += (local.Vel[k]-P[j].Vel[k])/All.cf_atime;
                     //e_shock += v_bw[k]*v_bw[k];
                 }
+#endif
                 double mj_preshock, dM_ejecta_in, massratio_ejecta;
                 mj_preshock = P[j].Mass;
                 dM_ejecta_in = dM;
@@ -636,9 +638,19 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
 
                 for(k=0; k<3; k++)
                 {
-                    double q = q0 * v_bw[k];
-                    P[j].Vel[k] += q;
-                    SphP[j].VelPred[k] += q;
+                    // local.Vel term from extra momentum of moving star,
+                    //   P[j].Vel term from going from momentum to velocity boost with added mass
+
+                    // This term is associated with the mass injection,
+                    //   not the momentum injection from the unresolved Sedov-Taylor phase itself.
+                    //   In principle, this term should also be included in the "thermal-only" feedback
+                    //   routine in order to conserve total vector momentum of the simulation.
+                    //   Therefore, it does *not* affect d_KE as used below.
+                    const double rel_v_term = massratio_ejecta * (local.Vel[k] - P[j].Vel[k]);
+
+                    const double q = delta_v * (pvec[k]/pnorm);
+                    P[j].Vel[k] += (q + rel_v_term);
+                    SphP[j].VelPred[k] += (q + rel_v_term);
                 }
 
 
