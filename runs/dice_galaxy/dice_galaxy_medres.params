@@ -35,11 +35,11 @@ hydro_eq_niter			6
 #######################
 
 # Fraction of the virial mass in the component 1
-mass_frac1		        0.95
+mass_frac1		        0.9309090909
 # Number of particles for the component 1
 npart1			        8000000
 # Number of particles for the potential computation
-npart_pot1              	8000000
+npart_pot1              	24000000
 
 # Component 1 density model
 # Available models:
@@ -141,10 +141,10 @@ stream_fraction3	    	1.00
 # Metallicity [units of solar]
 metal3                  	1.0
 # Temperature of the gas particles [K] (HI disc)
-t_init3                 	3000.
+t_init3                 	10000.
 
 # Turbulent velocity dispersion [km/s]
-turb_sigma3		        10.0
+turb_sigma3		        7.0
 # Turbulence injection scale [kpc]
 turb_scale_inj3		        1.0
 # Turbulence dissipation scale [kpc]
@@ -164,7 +164,7 @@ mcmc_step_hydro3	    	0.3
 # [1.6e10 Msun bulge mass]
 mass_frac4		        0.01454545455
 npart4			        8000000
-npart_pot4              	8000000
+npart_pot4              	24000000
 
 # 10 = Einasto profile
 model4			        10
