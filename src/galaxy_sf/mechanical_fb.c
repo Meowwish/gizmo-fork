@@ -395,7 +395,9 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
     
     
     // now define quantities that will be used below //
-    const double Esne51 = 0.5*local.SNe_v_ejecta*local.SNe_v_ejecta*local.Msne / unit_egy_SNe;
+    // limit maximum SNe energy to 1e51 ergs
+    const double Esne = DMIN( 0.5 * local.Msne * (local.SNe_v_ejecta * local.SNe_v_ejecta), unit_egy_SNe );
+    const double Esne51 = Esne / unit_egy_SNe;
 
 #if 0
     double RsneKPC, RsneKPC_0;//, RsneMAX;
@@ -518,7 +520,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 massratio_ejecta = dM_ejecta_in / (dM_ejecta_in + P[j].Mass);
 
                 // const double mu_j = P[j].Mass / (dM + P[j].Mass); // this factor doesn't make sense to add below
-                const double e_shock = pnorm * 0.5 * local.Msne * (local.SNe_v_ejecta * local.SNe_v_ejecta);
+                const double e_shock = pnorm * Esne;
                 
                 if((wk <= 0)||(isnan(wk))) continue;
                 
@@ -1067,7 +1069,7 @@ void mechanical_fb_calc(int fb_loop_iteration)
                            << P[i].SNe_ThisTimeStep;
                 spdlog::get("debug")->info(outputLine.str());
 
-                std::cout << "[SN][particle " << i << "] "
+                std::cout << "[SN] "
                           << "momentum = "
                           << P[i].SNe_InjectedMomentumThisStep
                           << "; thermal energy = "
