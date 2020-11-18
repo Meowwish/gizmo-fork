@@ -588,10 +588,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 /* inject metals */
                 for(k=0;k<NUM_METAL_SPECIES;k++) {P[j].Metallicity[k]=(1-massratio_ejecta)*P[j].Metallicity[k] + massratio_ejecta*local.yields[k];}
 #endif
-                /* inject the post-shock energy and momentum (convert to specific units as needed first) */
-                // e_shock *= 1 / P[j].Mass;
-                SphP[j].InternalEnergy += (e_shock / P[j].Mass);
-                SphP[j].InternalEnergyPred += (e_shock / P[j].Mass);
+
                 /* inject momentum */
                 double m_ej_input = pnorm * local.Msne;
 
@@ -634,13 +631,32 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 dP_boost_sum += dP * mom_boost_fac;
                 
                 /* actually do the injection */
-                double q0 = All.cf_atime * (pnorm*local.Msne/P[j].Mass) * mom_boost_fac;
+                const double q0 = All.cf_atime * (pnorm*local.Msne / P[j].Mass) * mom_boost_fac;
+                const double delta_v = q0 * SNe_v_ejecta;
+
                 for(k=0; k<3; k++)
                 {
                     double q = q0 * v_bw[k];
                     P[j].Vel[k] += q;
                     SphP[j].VelPred[k] += q;
                 }
+
+
+                /* inject the post-shock energy (convert to specific units as needed) */
+                
+                // compute kinetic energy corresponding to injected momentum
+                const double d_KE = 0.5 * P[j].Mass * (delta_v * delta_v);
+
+                // set minimum injected thermal energy to half of e_shock
+                //   (otherwise hot phase may not exist in low-res sims)
+                const double min_e_inject = 0.;
+                double e_inject = e_shock - d_KE;
+                if (e_inject < min_e_inject) {
+                    e_inject = min_e_inject;
+                }
+
+                SphP[j].InternalEnergy += (e_inject / P[j].Mass);
+                SphP[j].InternalEnergyPred += (e_inject / P[j].Mass);
 
                 apply_pm_hires_region_clipping_selection(j);
 
@@ -671,7 +687,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 const double dp_j_norm = std::sqrt(dp_j_normsq);
                 // add to cumulative total dMom
                 out.injected_radial_momentum += dp_j_norm;
-                out.injected_thermal_energy += e_shock;
+                out.injected_thermal_energy += e_inject;
 
             } // for(n = 0; n < numngb; n++)
         } // while(startnode >= 0)
