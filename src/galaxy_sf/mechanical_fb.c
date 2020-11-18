@@ -397,6 +397,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
     // now define quantities that will be used below //
     // limit maximum SNe energy to 1e51 ergs
     const double Esne = DMIN( 0.5 * local.Msne * (local.SNe_v_ejecta * local.SNe_v_ejecta), unit_egy_SNe );
+    const double SNe_v_ejecta = sqrt( 2.0 * Esne / local.Msne );
     const double Esne51 = Esne / unit_egy_SNe;
 
 #if 0
@@ -510,7 +511,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 /* now, add contribution from relative star-gas particle motion to shock energy */
                 for(k=0;k<3;k++)
                 {
-                    v_bw[k] = local.SNe_v_ejecta * (pvec[k]/pnorm);
+                    v_bw[k] = SNe_v_ejecta * (pvec[k]/pnorm);
                     //v_bw[k] += (local.Vel[k]-P[j].Vel[k])/All.cf_atime;
                     //e_shock += v_bw[k]*v_bw[k];
                 }
