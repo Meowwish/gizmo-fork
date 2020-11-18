@@ -194,6 +194,7 @@ SPDLOG_HOME = $(SRC_DIR)/../spdlog
 BOOST_HOME = $(HOME)/boost_install
 SLUG_INCLUDE = -I$(SLUG_HOME)/src -I$(SPDLOG_HOME)/include -I$(BOOST_HOME)/include
 SLUG_LIBS = -L$(SLUG_HOME)/src -Wl,-rpath=$(SLUG_HOME)/src
+GSL_HOME = $(HOME)/gsl_install
 GSL_INCL = -I$(GSL_HOME)/include
 GSL_LIBS = -L$(GSL_HOME)/lib
 HDF5INCL = -I$(HDF5_HOME)/include -DH5_USE_16_API
