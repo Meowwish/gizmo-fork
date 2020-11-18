@@ -473,7 +473,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 if((wk <= 0)||(isnan(wk))) continue;
                 
                 /* define initial mass and ejecta velocity in this 'cone' */
-                double v_bw[3]={0}, e_shock=0;
+                double v_bw[3]={0};
                 double pnorm = 0;
                 double pvec[3]={0};
                 for(k=0; k<3; k++)
@@ -510,14 +510,15 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 {
                     v_bw[k] = local.SNe_v_ejecta * (pvec[k]/pnorm);
                     //v_bw[k] += (local.Vel[k]-P[j].Vel[k])/All.cf_atime;
-                    e_shock += v_bw[k]*v_bw[k];
+                    //e_shock += v_bw[k]*v_bw[k];
                 }
                 double mj_preshock, dM_ejecta_in, massratio_ejecta;
                 mj_preshock = P[j].Mass;
                 dM_ejecta_in = dM;
                 massratio_ejecta = dM_ejecta_in / (dM_ejecta_in + P[j].Mass);
+
                 // const double mu_j = P[j].Mass / (dM + P[j].Mass); // this factor doesn't make sense to add below
-                e_shock *= pnorm * 0.5*local.Msne;
+                const double e_shock = pnorm * 0.5 * local.Msne * (local.SNe_v_ejecta * local.SNe_v_ejecta);
                 
                 if((wk <= 0)||(isnan(wk))) continue;
                 
@@ -555,6 +556,8 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                  from Thornton et al. thermal energy scales as R^(-6.5) for R>R_cool */
                 double r_eff_ij = sqrt(r2) - Get_Particle_Size(j);
                 if(r_eff_ij > RsneKPC) {e_shock *= RsneKPC*RsneKPC*RsneKPC/(r_eff_ij*r_eff_ij*r_eff_ij);}
+                
+                double m_cooling = 4.18879 * pnorm * SphP[j].Density * RsneKPC * RsneKPC * RsneKPC;
                 #endif
 
                 /* now we have the proper energy to couple */
@@ -584,8 +587,8 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
 #endif
                 /* inject the post-shock energy and momentum (convert to specific units as needed first) */
                 // e_shock *= 1 / P[j].Mass;
-                SphP[j].InternalEnergy += e_shock / P[j].Mass;
-                SphP[j].InternalEnergyPred += e_shock / P[j].Mass;
+                SphP[j].InternalEnergy += (e_shock / P[j].Mass);
+                SphP[j].InternalEnergyPred += (e_shock / P[j].Mass);
                 /* inject momentum */
                 double m_ej_input = pnorm * local.Msne;
 
@@ -613,10 +616,10 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 const double e_dep = pow(Esne51, (6./7.));
                 const double mcool_max = (3582. / UNIT_MASS_IN_SOLAR); // 6e5 km/s/Msun
                 const double m_cooling = pnorm * DMIN(2500. * e_dep * nz_dep / UNIT_MASS_IN_SOLAR, mcool_max);
-                //double m_cooling = 4.18879 * pnorm * SphP[j].Density * RsneKPC * RsneKPC * RsneKPC;
 
                 /* apply limiter for energy conservation */
-                double mom_boost_fac = DMIN(1 + sqrt(mj_preshock / m_ej_input), sqrt(m_cooling / m_ej_input));
+                // (BDW) removed (+ 1) term inside sqrt
+                double mom_boost_fac = DMIN(sqrt(mj_preshock / m_ej_input), sqrt(m_cooling / m_ej_input));
 
 #if (defined(FLAG_NOT_IN_PUBLIC_CODE) && (FLAG_NOT_IN_PUBLIC_CODE > 2)) || defined(SINGLE_STAR_SINK_DYNAMICS) // ??
                 if(loop_iteration > 0) {mom_boost_fac=1;} /* no unresolved PdV component for winds+r-process */
@@ -1058,8 +1061,12 @@ void mechanical_fb_calc(int fb_loop_iteration)
         {
             if (P[i].SNe_ThisTimeStep > 0)
             {
-                spdlog::get("debug")->info(P[i].SNe_InjectedMomentumThisStep);
-                
+                std::ostringstream outputLine;
+                outputLine << P[i].SNe_InjectedMomentumThisStep << " "
+                           << P[i].SNe_InjectedThermalEnergyThisStep << " "
+                           << P[i].SNe_ThisTimeStep;
+                spdlog::get("debug")->info(outputLine.str());
+
                 std::cout << "[SN][particle " << i << "] "
                           << "momentum = "
                           << P[i].SNe_InjectedMomentumThisStep
