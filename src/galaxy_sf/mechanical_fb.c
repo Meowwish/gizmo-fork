@@ -596,31 +596,28 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
 
                 // compute cooling mass
                 double n0 = SphP[j].Density * density_to_n;
+                // density floor
                 if (n0 < 0.001)
                 {
                     n0 = 0.001;
                 }
+                // metallicity floor
                 double z0 = P[j].Metallicity[0] / All.SolarAbundances[0];
-                double z0_term = 1.;
                 if (z0 < 0.01)
                 {
                     z0 = 0.01;
                 }
-                if (z0 < 1.)
-                {
-                    z0_term = z0 * sqrt(z0);
-                }
-                else
-                {
-                    z0_term = z0;
-                }
-                const double nz_dep = pow(n0 * z0_term, (-2./7.));
-                const double e_dep = pow(Esne51, (6./7.));
-                const double mcool_max = (3582. / UNIT_MASS_IN_SOLAR); // 6e5 km/s/Msun
-                const double m_cooling = pnorm * DMIN(2500. * e_dep * nz_dep / UNIT_MASS_IN_SOLAR, mcool_max);
+                // use scalings following Kimm & Cen (2014); Thornton et al. (1998)
+                const double n_dep = pow(n0, -4./17.);
+                const double z_dep = pow(z0, -0.28);
+                const double e_dep = pow(Esne51, 16./17.);
+                // const double mcool_max = (3582. / UNIT_MASS_IN_SOLAR); // 6e5 km/s/Msun
+                // fiducial p_terminal = 3.0e5 km/s per Msun [equiv. to Mcool = 895.5 Msun].
+                //  (as used in Kimm & Cen (2014) following Thornton et al. (1998).)
+                const double m_cooling = pnorm * (895.5 * e_dep * n_dep * z_dep / UNIT_MASS_IN_SOLAR);
 
                 /* apply limiter for energy conservation */
-                // (BDW) removed (+ 1) term inside sqrt
+                // (BDW) removed (+ 1) term inside sqrt, following Kimm & Cen (2014)
                 double mom_boost_fac = DMIN(sqrt(mj_preshock / m_ej_input), sqrt(m_cooling / m_ej_input));
 
 #if (defined(FLAG_NOT_IN_PUBLIC_CODE) && (FLAG_NOT_IN_PUBLIC_CODE > 2)) || defined(SINGLE_STAR_SINK_DYNAMICS) // ??
