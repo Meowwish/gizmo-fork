@@ -144,7 +144,7 @@ metal3                  	1.0
 t_init3                 	10000.
 
 # Turbulent velocity dispersion [km/s]
-turb_sigma3		        7.0
+turb_sigma3		        0.0
 # Turbulence injection scale [kpc]
 turb_scale_inj3		        1.0
 # Turbulence dissipation scale [kpc]
