@@ -616,13 +616,15 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 const double z_dep = pow(z0, -0.28);
                 //const double e_dep = pow(Esne51, 16./17.);
                 const double e_dep = 1.0; // remove dependence on E_sn
-                    // Since all events use a constant 1e51 ergs, this prevents the cooling mass
-                    // from increasing when more than one SN go off per timestep.
+                // Since all events use a constant 1e51 ergs, this prevents the cooling mass
+                // from increasing when more than one SN go off per timestep.
+                
                 // fiducial p_terminal = 3.0e5 km/s per Msun [equiv. to Mcool = 895.5 Msun].
                 //  (as used in Kimm & Cen (2014) following Thornton et al. (1998).)
+		        //   p_terminal = 1.0e5 km/s per Msun [equiv. to Mcool = 99.5 Msun].
 
-		        // We use fiducial p_terminal = 1.0e5 km/s per Msun [equiv. to Mcool = 99.5 Msun].
-                const double m_cooling = pnorm * (99.5 / UNIT_MASS_IN_SOLAR) * (e_dep * n_dep * z_dep);
+         		// We use fiducial p_terminal = 2.0e5 km/s per Msun [equiv. to Mcool = 398 Msun].
+                const double m_cooling = pnorm * (398. / UNIT_MASS_IN_SOLAR) * (e_dep * n_dep * z_dep);
 
                 /* apply limiter for energy conservation */
                 // (BDW) removed (+ 1) term inside sqrt, following Kimm & Cen (2014)
