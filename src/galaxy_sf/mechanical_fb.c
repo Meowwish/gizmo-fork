@@ -308,9 +308,11 @@ struct kernel_addFB {double dp[3], r, wk, dwk, hinv, hinv3, hinv4;};
 
 struct OUTPUT_STRUCT_NAME
 {
-  MyFloat M_coupled, Area_weighted_sum[AREA_WEIGHTED_SUM_ELEMENTS];
+  MyFloat M_coupled;
+  MyFloat Area_weighted_sum[AREA_WEIGHTED_SUM_ELEMENTS];
   MyFloat injected_radial_momentum;
   MyFloat injected_thermal_energy;
+  MyFloat pnorm;
 }
 *DATARESULT_NAME, *DATAOUT_NAME;
 
@@ -354,6 +356,7 @@ void out2particle_addFB(struct OUTPUT_STRUCT_NAME *out, int i, int mode, int loo
 
         P[i].SNe_InjectedMomentumThisStep += momentum_per_Msun_kms;
         P[i].SNe_InjectedThermalEnergyThisStep += energy_cgs;
+        P[i].SNe_pnorm += out->pnorm;
     }
 }
 
@@ -389,14 +392,15 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
     kernel_hinv(local.Hsml, &kernel.hinv, &kernel.hinv3, &kernel.hinv4);
     
     // some units (just used below, but handy to define for clarity) //
-    const double unitlength_in_kpc=UNIT_LENGTH_IN_KPC * All.cf_atime;
-    const double density_to_n=All.cf_a3inv*UNIT_DENSITY_IN_NHCGS;
+    const double unitlength_in_kpc = UNIT_LENGTH_IN_KPC * All.cf_atime;
+    const double density_to_n = All.cf_a3inv*UNIT_DENSITY_IN_NHCGS;
     const double unit_egy_SNe = 1.0e51/UNIT_ENERGY_IN_CGS;
     
     
     // now define quantities that will be used below //
     // limit maximum SNe energy to 1e51 ergs
-    const double Esne = DMIN( 0.5 * local.Msne * (local.SNe_v_ejecta * local.SNe_v_ejecta), unit_egy_SNe );
+    //const double Esne = DMIN( 0.5 * local.Msne * (local.SNe_v_ejecta * local.SNe_v_ejecta), unit_egy_SNe );
+    const double Esne = 0.5 * local.Msne * (local.SNe_v_ejecta * local.SNe_v_ejecta);
     const double SNe_v_ejecta = sqrt( 2.0 * Esne / local.Msne );
     const double Esne51 = Esne / unit_egy_SNe;
 
@@ -610,8 +614,10 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 // use scalings following Kimm & Cen (2014); Thornton et al. (1998)
                 const double n_dep = pow(n0, -4./17.);
                 const double z_dep = pow(z0, -0.28);
-                const double e_dep = pow(Esne51, 16./17.);
-                // const double mcool_max = (3582. / UNIT_MASS_IN_SOLAR); // 6e5 km/s/Msun
+                //const double e_dep = pow(Esne51, 16./17.);
+                const double e_dep = 1.0; // remove dependence on E_sn
+                    // Since all events use a constant 1e51 ergs, this prevents the cooling mass
+                    // from increasing when more than one SN go off per timestep.
                 // fiducial p_terminal = 3.0e5 km/s per Msun [equiv. to Mcool = 895.5 Msun].
                 //  (as used in Kimm & Cen (2014) following Thornton et al. (1998).)
                 const double m_cooling = pnorm * (895.5 * e_dep * n_dep * z_dep / UNIT_MASS_IN_SOLAR);
@@ -697,6 +703,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 // add to cumulative total dMom
                 out.injected_radial_momentum += dp_j_norm;
                 out.injected_thermal_energy += e_inject;
+                out.pnorm += pnorm;
 
             } // for(n = 0; n < numngb; n++)
         } // while(startnode >= 0)
@@ -1073,6 +1080,7 @@ void mechanical_fb_calc(int fb_loop_iteration)
     {
         P[i].SNe_InjectedMomentumThisStep = 0.;
         P[i].SNe_InjectedThermalEnergyThisStep = 0.;
+        P[i].SNe_pnorm = 0.;
     }
 
     PRINT_STATUS(" ..mechanical feedback loop: iteration %d",fb_loop_iteration);
@@ -1092,7 +1100,8 @@ void mechanical_fb_calc(int fb_loop_iteration)
                 std::ostringstream outputLine;
                 outputLine << P[i].SNe_InjectedMomentumThisStep << " "
                            << P[i].SNe_InjectedThermalEnergyThisStep << " "
-                           << P[i].SNe_ThisTimeStep;
+                           << P[i].SNe_ThisTimeStep << " "
+                           << P[i].SNe_pnorm;
                 spdlog::get("debug")->info(outputLine.str());
 #if 0
                 std::cout << "[SN] "

@@ -2199,6 +2199,7 @@ extern ALIGN(32) struct particle_data
     MyFloat SNe_Cumulative = 0.; // cumulative number of SNe from this star particle
     MyFloat SNe_InjectedMomentumThisStep = 0.; // [km/s/Msun]
     MyFloat SNe_InjectedThermalEnergyThisStep = 0.; // [ergs]
+    MyFloat SNe_pnorm = 0.; // dimensionless normalization factor
 #endif
 #ifdef GALSF_FB_MECHANICAL
 #define AREA_WEIGHTED_SUM_ELEMENTS 11 /* number of weights needed for full momentum-and-energy conserving system */
