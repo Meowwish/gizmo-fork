@@ -640,6 +640,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 /* actually do the injection */
                 const double q0 = All.cf_atime * (pnorm*local.Msne / P[j].Mass) * mom_boost_fac;
                 const double delta_v = q0 * SNe_v_ejecta;
+                double dv_sq = 0.;
 
                 for(k=0; k<3; k++)
                 {
@@ -654,6 +655,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                     const double rel_v_term = massratio_ejecta * (local.Vel[k] - P[j].Vel[k]);
 
                     const double q = delta_v * (pvec[k]/pnorm);
+                    dv_sq += (q*q);
                     P[j].Vel[k] += (q + rel_v_term);
                     SphP[j].VelPred[k] += (q + rel_v_term);
                 }
@@ -662,7 +664,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 /* inject the post-shock energy (convert to specific units as needed) */
                 
                 // compute kinetic energy corresponding to injected momentum
-                const double d_KE = 0.5 * P[j].Mass * (delta_v * delta_v);
+                const double d_KE = 0.5 * P[j].Mass * dv_sq;
 
                 // set minimum injected thermal energy to half of e_shock
                 //   (otherwise hot phase may not exist in low-res sims)
