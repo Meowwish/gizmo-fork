@@ -672,8 +672,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 // compute kinetic energy corresponding to injected momentum
                 const double d_KE = 0.5 * P[j].Mass * dv_sq;
 
-                // set minimum injected thermal energy to half of e_shock
-                //   (otherwise hot phase may not exist in low-res sims)
+                // ensure we are injecting a positive amount of thermal energy
                 const double min_e_inject = 0.;
                 double e_inject = e_shock - d_KE;
                 if (e_inject < min_e_inject) {
@@ -715,9 +714,9 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 out.injected_thermal_energy += e_inject;
                 out.pnorm += pnorm;
                 for(int k=0; k<3; ++k) {
-                    out.pvec[k] += pvec[k];
+                    // out.pvec[k] += (pvec[k]/pnorm); // does NOT sum to zero!
+                    out.pvec[k] += pvec[k]; // sums to zero
                 }
-
             } // for(n = 0; n < numngb; n++)
         } // while(startnode >= 0)
         
@@ -860,17 +859,33 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 /* calculate cooling radius given density and metallicity in this annulus into which the ejecta propagate */
                 if(loop_iteration < 2)
                 {
-                    double e0 = Esne51;
-                    if(loop_iteration < 0) {e0=1;}
-                    if(feedback_type_is_SNe == 1) {e0+=1;}
-                    double n0 = SphP[j].Density*density_to_n;
-                    if(n0 < 0.001) {n0=0.001;}
-                    double z0 = P[j].Metallicity[0]/All.SolarAbundances[0], z0_term = 1.;
-                    if(z0 < 0.01) {z0 = 0.01;}
-                    if(z0 < 1.) {z0_term = z0*sqrt(z0);} else {z0_term = z0;}
-                    double nz_dep  = pow(n0 * z0_term , 0.14);;
-                    v_cooling = 210. * DMAX(nz_dep,0.5) / UNIT_VEL_IN_KMS;
-                    m_cooling = 4.56e36 * e0 / (nz_dep*nz_dep * UNIT_MASS_IN_CGS);
+                    // density floor
+                    double n0 = SphP[j].Density * density_to_n;
+                    if (n0 < 0.001)
+                    {
+                        n0 = 0.001;
+                    }
+
+                    // metallicity floor
+                    double z0 = P[j].Metallicity[0] / All.SolarAbundances[0];
+                    if (z0 < 0.01)
+                    {
+                        z0 = 0.01;
+                    }
+
+                    // use scalings following Kimm & Cen (2014); Thornton et al. (1998)
+                    const double n_dep = pow(n0, -4./17.);
+                    const double z_dep = pow(z0, -0.28);
+                    //const double e_dep = pow(Esne51, 16./17.);
+                    const double e_dep = 1.0; // remove dependence on E_sn
+                    // Since all events use a constant 1e51 ergs, this prevents the cooling mass
+                    // from increasing when more than one SN go off per timestep.
+                    
+                    // [Thornton 1998: p_terminal = 3.0e5 km/s per Msun [equiv. to Mcool = 895.5 Msun].
+                    //  (as used in Kimm & Cen (2014) following Thornton et al. (1998).)]
+                    // We use fiducial p_terminal = 2.0e5 km/s per Msun [equiv. to Mcool = 398 Msun].
+                    m_cooling = (398. / UNIT_MASS_IN_SOLAR) * (e_dep * n_dep * z_dep);
+
                     RsneKPC = pow( 0.238732 * m_cooling/SphP[j].Density , 1./3. );
                 }
                 RsneKPC_3 = RsneKPC*RsneKPC*RsneKPC;
@@ -948,17 +963,25 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                     pnorm += pvec[k]*pvec[k];
                 }
                 pnorm = sqrt(pnorm); // this (vector norm) is the new 'weight function' for our purposes
+
+                // (In the original GIZMO implementation, the boost factor is effectively
+                //  particle configuration-dependent, since pnorm is not guaranteed to sum to unity,
+                //  due to the approximate quadrature over face elements.)
+                // CRITICAL: Ensure that over all faces, pnorm sums to unity
+                //pnorm = (pnorm/pnorm_sum);
+
                 dM_ejecta_in = pnorm * local.Msne;
                 double mj_preshock, massratio_ejecta;
                 mj_preshock = P[j].Mass;
                 massratio_ejecta = dM_ejecta_in / (dM_ejecta_in + P[j].Mass);
 
-		// compute p_j[k] before injecting mass or momentum
-		//   (in the frame of the star velocity v_i, i.e. where v_i = 0)
-		double p_j_initial[3] = {0., 0., 0.};
-		for (int k = 0; k < 3; ++k) {
-		  p_j_initial[k] = P[j].Mass * (P[j].Vel[k] - local.Vel[k]);
-		}
+                // Accounting for initial momentum before injection:
+                // compute p_j[k] before injecting mass or momentum
+                //   (in the frame of the star velocity v_i, i.e. where v_i = 0)
+                double p_j_initial[3] = {0., 0., 0.};
+                for (int k = 0; k < 3; ++k) {
+                    p_j_initial[k] = P[j].Mass * (P[j].Vel[k] - local.Vel[k]);
+                }
 		
                 /* inject actual mass from mass return */
                 if(P[j].Hsml<=0) {if(SphP[j].Density>0){SphP[j].Density*=(1+dM_ejecta_in/P[j].Mass);} else {SphP[j].Density=dM_ejecta_in*kernel.hinv3;}} else {SphP[j].Density+=kernel_zero*dM_ejecta_in*hinv3_j;}
@@ -968,101 +991,133 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
 #ifdef HYDRO_MESHLESS_FINITE_VOLUME
                 SphP[j].MassTrue += dM_ejecta_in;
 #endif
+
 #ifdef METALS
                 /* inject metals */
                 for(k=0;k<NUM_METAL_SPECIES;k++) {P[j].Metallicity[k]=(1-massratio_ejecta)*P[j].Metallicity[k] + massratio_ejecta*local.yields[k];}
 #endif
+
                 /* inject momentum: account for ejecta being energy-conserving inside the cooling radius (or Hsml, if thats smaller) */
                 double wk_m_cooling = pnorm * m_cooling; // effective cooling mass for this particle
-                double boost_max = sqrt(1 + wk_m_cooling / dM_ejecta_in); // terminal momentum boost-factor
-                double boost_egycon = sqrt(1 + mj_preshock / dM_ejecta_in); // energy-conserving limit for coupling through neighbors
+                //double boost_max = sqrt(1 + wk_m_cooling / dM_ejecta_in); // terminal momentum boost-factor
+                double boost_max = sqrt(wk_m_cooling / dM_ejecta_in); // terminal momentum boost-factor
+                //double boost_egycon = sqrt(1 + mj_preshock / dM_ejecta_in); // energy-conserving limit for coupling through neighbors
+                double boost_egycon = sqrt(mj_preshock / dM_ejecta_in); // energy-conserving limit for coupling through neighbors
+
                 double mom_boost_fac = 1;
                 if(feedback_type_is_SNe == 1)
                 {
-                    double psi0 = 1; // factor to use below for velocity-limiter
+                    //double psi0 = 1; // factor to use below for velocity-limiter
                     boost_max *= psi_cool; // appropriately re-weight boost to avoid energy conservation errors [cooling-limit]
                     boost_egycon *= psi_egycon; // appropriately re-weight boost to avoid energy conservation errors [energy-conserving-limit]
-                    if((wk_m_cooling < mj_preshock) || (boost_max < boost_egycon)) {mom_boost_fac=boost_max; psi0=DMAX(psi0,psi_cool);} else {mom_boost_fac=boost_egycon; psi0=DMAX(psi0,psi_egycon);} // limit to cooling case if egy-conserving exceeds terminal boost, or coupled mass short of cooling mass
-                    if(mom_boost_fac < 1) {mom_boost_fac=1;} // impose lower limit of initial ejecta momentum
+                    // limit to cooling case if egy-conserving exceeds terminal boost,
+                    // or coupled mass short of cooling mass
+                    if((wk_m_cooling < mj_preshock) || (boost_max < boost_egycon)) {
+                        mom_boost_fac=boost_max;
+                        //psi0=DMAX(psi0,psi_cool);
+                    } else {
+                        mom_boost_fac=boost_egycon;
+                        //psi0=DMAX(psi0,psi_egycon);
+                    }
+
+                    //if(mom_boost_fac < 1) {mom_boost_fac=1;} // impose lower limit of initial ejecta momentum
+
                     // finally account for simple physical limiter: if particle moving away faster than cooling terminal velocity, can't reach that velocity //
-                    double vcool = DMIN(v_cooling/psi0 , v_ejecta_eff/mom_boost_fac); // effective velocity at stalling/cooling radius
-                    double dv_dp_phys = 0; for(k=0;k<3;k++) {dv_dp_phys += (1-massratio_ejecta) * (kernel.dp[k]/kernel.r) * ((local.Vel[k] - P[j].Vel[k])/All.cf_atime);} // recession velocity of particle from SNe
-                    double v_cooling_lim = DMAX( vcool , dv_dp_phys ); // cooling vel can't be smaller than actual vel (note: negative dvdp here automatically returns vcool, as desired)
-                    double boostfac_max = DMIN(1000. , v_ejecta_eff/v_cooling_lim); // boost factor cant exceed velocity limiter - if recession vel large, limits boost
-                    if(mom_boost_fac > boostfac_max) {mom_boost_fac = boostfac_max;} // apply limiter
+                    //double vcool = DMIN(v_cooling/psi0 , v_ejecta_eff/mom_boost_fac); // effective velocity at stalling/cooling radius
+                    //double dv_dp_phys = 0; for(k=0;k<3;k++) {dv_dp_phys += (1-massratio_ejecta) * (kernel.dp[k]/kernel.r) * ((local.Vel[k] - P[j].Vel[k])/All.cf_atime);} // recession velocity of particle from SNe
+                    //double v_cooling_lim = DMAX( vcool , dv_dp_phys ); // cooling vel can't be smaller than actual vel (note: negative dvdp here automatically returns vcool, as desired)
+                    //double boostfac_max = DMIN(1000. , v_ejecta_eff/v_cooling_lim); // boost factor cant exceed velocity limiter - if recession vel large, limits boost
+                    //if(mom_boost_fac > boostfac_max) {mom_boost_fac = boostfac_max;} // apply limiter
                 } else {
 #if !defined(SINGLE_STAR_FB_WINDS)
                     mom_boost_fac = DMIN(boost_egycon , boost_max); // simply take minimum - nothing fancy for winds
 #endif
                 }
-                
+
                 /* save summation values for outputs */
                 dP = local.unit_mom_SNe / P[j].Mass * pnorm;
                 dP_sum += dP; dP_boost_sum += dP * mom_boost_fac;
                 
                 /* actually do the injection */
-                double mom_prefactor =  mom_boost_fac * massratio_ejecta * (All.cf_atime*v_ejecta_eff) / pnorm; // this gives the appropriately-normalized tap-able momentum from the energy-conserving solution
+                double vel_prefactor =  mom_boost_fac * massratio_ejecta * (All.cf_atime*v_ejecta_eff) / pnorm; // this gives the appropriately-normalized tap-able momentum from the energy-conserving solution
+                //const double radial_mom = (P[j].Mass * vel_prefactor);
 
-#ifdef ARTIFICIALLY_REDUCE_MOM_INJECTION
-		// artifically reduce momentum prefactor by 0.1 for debugging exploding galaxies
-		mom_prefactor *= 0.1;
-#endif // ARTIFICIALLY_REDUCE_MOM_INJECTION
+                // limit the maximum injected radial momentum (not exact due to \sum_j pnorm_j ~ 1)
+                const double max_radial_mom = 6.0e5 / (UNIT_VEL_IN_KMS * UNIT_MASS_IN_SOLAR); // 6.0e5 Msun km/s in code units
+                const double max_vel_prefactor = max_radial_mom / P[j].Mass;
+                vel_prefactor = DMIN(vel_prefactor, max_vel_prefactor);
 		
                 double KE_initial = 0, KE_final = 0;
                 for(k=0; k<3; k++)
                 {
-                    double d_vel = mom_prefactor * pvec[k] + massratio_ejecta*(local.Vel[k] - P[j].Vel[k]); // local.Vel term from extra momentum of moving star, P[j].Vel term from going from momentum to velocity boost with added mass
+                    double d_vel = vel_prefactor * pvec[k] + massratio_ejecta*(local.Vel[k] - P[j].Vel[k]); // local.Vel term from extra momentum of moving star, P[j].Vel term from going from momentum to velocity boost with added mass
                     KE_initial += P[j].Vel[k]*P[j].Vel[k];
-		    P[j].Vel[k] += d_vel;
-		    SphP[j].VelPred[k] += d_vel;
-		    KE_final += P[j].Vel[k]*P[j].Vel[k];
+                    P[j].Vel[k] += d_vel;
+                    SphP[j].VelPred[k] += d_vel;
+                    KE_final += P[j].Vel[k]*P[j].Vel[k];
                 }
-
-		// compute p_j[k] after injecting mass or momentum
-		//   (in the frame of the star velocity v_i, i.e. where v_i = 0)
-		double p_j_final[3] = {0., 0., 0.};
-		for (int k = 0; k < 3; ++k) {
-		  p_j_final[k] = P[j].Mass * (P[j].Vel[k] - local.Vel[k]);
-		}
-
-		// compute dMomentum for particle j
-		double dp_j[3] = {0., 0., 0.};
-		for (int k = 0; k < 3; ++k) {
-		  dp_j[k] = p_j_final[k] - p_j_initial[k];
-		}
-
-		// compute ||dMomentum|| == dmom_radial and add to cumulative total dMom
-		double dp_j_normsq = 0.;
-		for (int k = 0; k < 3; ++k) {
-		  dp_j_normsq += dp_j[k]*dp_j[k];
-		}
-		const double dp_j_norm = std::sqrt(dp_j_normsq);
-		// add to cumulative total dMom
-		out.injected_radial_momentum += dp_j_norm;
-		
 		
                 /* now calculate the residual energy and add it as thermal */
                 KE_initial *= 0.5 * mj_preshock * All.cf_a2inv;
                 KE_final *= 0.5 * P[j].Mass * All.cf_a2inv;
                 double E_sne_initial = pnorm * Energy_injected_codeunits;
                 double d_Egy_internal = KE_initial + E_sne_initial - KE_final;
+
 #if !defined(SINGLE_STAR_FB_WINDS)
                 /* if coupling radius > R_cooling, account for thermal energy loss in the post-shock medium: from Thornton et al. thermal energy scales as R^(-6.5) for R>R_cool */
                 if(d_Egy_internal < 0.5*E_sne_initial) {d_Egy_internal = 0.5*E_sne_initial;}  /* (for stellar wind module we ignore this b/c assume always trying to resolve R_cool */
                 double r_eff_ij = kernel.r - Get_Particle_Size(j);
                 if(r_eff_ij > RsneKPC) {d_Egy_internal *= RsneKPC_3 / (r_eff_ij*r_eff_ij*r_eff_ij);}
 #endif          
+
                 d_Egy_internal /= P[j].Mass; // convert to specific internal energy, finally //
+
 #ifndef MECHANICAL_FB_MOMENTUM_ONLY
-                if(d_Egy_internal > 0)
+                if (d_Egy_internal > 0)
                 {
-                    SphP[j].InternalEnergy += d_Egy_internal; SphP[j].InternalEnergyPred += d_Egy_internal; E_coupled += d_Egy_internal;
+                    SphP[j].InternalEnergy += d_Egy_internal;
+                    SphP[j].InternalEnergyPred += d_Egy_internal;
+                    E_coupled += d_Egy_internal;
                 }
-#endif                 
+#endif
+
                 apply_pm_hires_region_clipping_selection(j);
+
 #ifdef SINGLE_STAR_FB_WINDS
                 SphP[j].wakeup = 1; NeedToWakeupParticles_local = 1;
 #endif          
+
+                // Take care of accounting for injected mass, momentum, and energy:
+
+                // compute p_j[k] after injecting mass or momentum
+                //   (in the frame of the star velocity v_i, i.e. where v_i = 0)
+                double p_j_final[3] = {0., 0., 0.};
+                for (int k = 0; k < 3; ++k) {
+                    p_j_final[k] = P[j].Mass * (P[j].Vel[k] - local.Vel[k]);
+                }
+
+                // compute dMomentum for particle j
+                double dp_j[3] = {0., 0., 0.};
+                for (int k = 0; k < 3; ++k) {
+                    dp_j[k] = p_j_final[k] - p_j_initial[k];
+                }
+
+                // compute ||dMomentum|| == dmom_radial and add to cumulative total dMom
+                double dp_j_normsq = 0.;
+                for (int k = 0; k < 3; ++k) {
+                    dp_j_normsq += dp_j[k]*dp_j[k];
+                }
+                const double dp_j_norm = std::sqrt(dp_j_normsq);
+
+                // add to cumulative total dMom
+                out.injected_radial_momentum += dp_j_norm;
+                out.injected_thermal_energy += (d_Egy_internal * P[j].Mass);
+                out.pnorm += pnorm;
+                for(int k=0; k<3; ++k) {
+                    // out.pvec[k] += (pvec[k]/pnorm); // does NOT sum to zero!
+                    out.pvec[k] += pvec[k]; // sums to zero
+                }
+                // end accounting
             } // for(n = 0; n < numngb; n++)
         } // while(startnode >= 0)
         
@@ -1117,7 +1172,12 @@ void mechanical_fb_calc(int fb_loop_iteration)
                 outputLine << P[i].SNe_InjectedMomentumThisStep << " "
                            << P[i].SNe_InjectedThermalEnergyThisStep << " "
                            << P[i].SNe_ThisTimeStep << " "
-                           << P[i].SNe_pnorm;
+                           << P[i].SNe_pnorm << " ";
+
+                for(int k = 0; k < 3; ++k) {
+                    outputLine << P[i].SNe_pvec[k] << " ";
+                }
+
                 spdlog::get("debug")->info(outputLine.str());
 #if 0
                 std::cout << "[SN] "
