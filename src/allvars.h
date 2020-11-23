@@ -2200,6 +2200,7 @@ extern ALIGN(32) struct particle_data
     MyFloat SNe_InjectedMomentumThisStep = 0.; // [km/s/Msun]
     MyFloat SNe_InjectedThermalEnergyThisStep = 0.; // [ergs]
     MyFloat SNe_pnorm = 0.; // dimensionless normalization factor
+    MyFloat SNe_pvec[3] = {0., 0., 0.}; // sum of face area vectors (to test conservation)
 #endif
 #ifdef GALSF_FB_MECHANICAL
 #define AREA_WEIGHTED_SUM_ELEMENTS 11 /* number of weights needed for full momentum-and-energy conserving system */

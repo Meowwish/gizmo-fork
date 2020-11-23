@@ -313,6 +313,7 @@ struct OUTPUT_STRUCT_NAME
   MyFloat injected_radial_momentum;
   MyFloat injected_thermal_energy;
   MyFloat pnorm;
+  MyFloat pvec[3]; // face vectors
 }
 *DATARESULT_NAME, *DATAOUT_NAME;
 
@@ -357,6 +358,9 @@ void out2particle_addFB(struct OUTPUT_STRUCT_NAME *out, int i, int mode, int loo
         P[i].SNe_InjectedMomentumThisStep += momentum_per_Msun_kms;
         P[i].SNe_InjectedThermalEnergyThisStep += energy_cgs;
         P[i].SNe_pnorm += out->pnorm;
+        for(int k=0; k<3; ++k) {
+            P[i].SNe_pvec[k] += out->pvec[k];
+        }
     }
 }
 
@@ -710,6 +714,9 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 out.injected_radial_momentum += dp_j_norm;
                 out.injected_thermal_energy += e_inject;
                 out.pnorm += pnorm;
+                for(int k=0; k<3; ++k) {
+                    out.pvec[k] += pvec[k];
+                }
 
             } // for(n = 0; n < numngb; n++)
         } // while(startnode >= 0)
@@ -1087,6 +1094,9 @@ void mechanical_fb_calc(int fb_loop_iteration)
         P[i].SNe_InjectedMomentumThisStep = 0.;
         P[i].SNe_InjectedThermalEnergyThisStep = 0.;
         P[i].SNe_pnorm = 0.;
+        for(int k = 0; k < 3; ++k) {
+            P[i].SNe_pvec[k] = 0.;
+        }
     }
 
     PRINT_STATUS(" ..mechanical feedback loop: iteration %d",fb_loop_iteration);
