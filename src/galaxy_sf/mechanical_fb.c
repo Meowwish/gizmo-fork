@@ -910,6 +910,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                                 double rr2 = rr * rr;
                                 if(wk_vec[i1] != 0)
                                 {
+                                    // Eq. 10 of Hopkins+ 2018
                                     q += wk_norm * wk_vec[i1] * sqrt(0.5*(1.0+rr2));
                                 } else {
                                     q += wk_norm * wk_vec[i2] * sqrt(0.5*(1.0+1.0/rr2));
@@ -970,7 +971,11 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 //  particle configuration-dependent, since pnorm is not guaranteed to sum to unity,
                 //  due to the approximate quadrature over face elements.)
                 // CRITICAL: Ensure that over all faces, pnorm sums to unity
-                //pnorm = (pnorm/pnorm_sum);
+                for(int k=0; k<3; ++k) {
+                    pvec[k] *= pnorm_sum; // Eq. 9 of Hopkins+ 2018
+                }
+                pnorm *= pnorm_sum; // implied by above
+
 
                 dM_ejecta_in = pnorm * local.Msne;
                 double mj_preshock, massratio_ejecta;
