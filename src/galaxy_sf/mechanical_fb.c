@@ -1122,7 +1122,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 out.pnorm += pnorm;
                 for(int k=0; k<3; ++k) {
                     // out.pvec[k] += (pvec[k]/pnorm); // does NOT sum to zero!
-                    out.pvec[k] += pvec[k]; // sums to zero
+                    out.pvec[k] += pvec[k]; // sums to zero (convex hull closes, i.e. \sum_j A_j = 0)
                 }
                 // end accounting
             } // for(n = 0; n < numngb; n++)
