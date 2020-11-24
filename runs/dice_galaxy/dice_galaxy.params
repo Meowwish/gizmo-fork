@@ -35,7 +35,7 @@ hydro_eq_niter			6
 #######################
 
 # Fraction of the virial mass in the component 1
-mass_frac1		        0.9309090909
+mass_frac1		        0.94272727272
 # Number of particles for the component 1
 npart1			        80000000
 # Number of particles for the potential computation
@@ -189,50 +189,3 @@ stream_fraction4	    	0.5
 alpha_struct4		        0.80
 Q_lim4			        1.5
 
-
-###########################
-# Component 5: Gaseous halo
-###########################
-
-# [1.3e10 Msun gas mass in hot halo]
-mass_frac5		        0.01181818182
-npart5			        15000000
-npart_pot5              	15000000
-
-# 8  = NFW profile
-model5			        8
-# scale radius r_s [kpc]
-scale_length5			25.0
-
-# Flattening parameter (z-axis)
-flatz5			        1.00
-
-mcmc_step5		        0.50
-
-# GADGET particel type (0 = gas)
-type5			        0
-stream_fraction5	    	1.00
-
-# Metallicity (solar)
-metal5                  	0.01
-
-turb_sigma5		        0.0
-turb_scale_inj5		        1.0
-turb_scale_diss5	        0.01
-
-# Method to compute the streaming velocity of the halo
-# 1: Bullock 2001 - specific angular momentum is proportional to the cumulative mass profile
-# 2: Springel 1999 - vstream is a fixed fraction of the circular velocity
-# 3: Solid body rotation - vstream is proportional to the radius 
-stream_method5 			1
-
-# Compute gas temperature to reach hydrostatic equilibrium
-thermal_eq5    	       	 	0
-
-# Initial gas temperature
-# [taken from Anderson & Bregman (2010)]
-t_init5	 		        3500000.
-
-# Excavate gas according to the specified component
-# (gas disk in component 3 in this example)
-excavate5		        3
