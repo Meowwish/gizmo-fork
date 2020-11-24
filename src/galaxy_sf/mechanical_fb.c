@@ -622,6 +622,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 const double e_dep = 1.0; // remove dependence on E_sn
                 // Since all events use a constant 1e51 ergs, this prevents the cooling mass
                 // from increasing when more than one SN go off per timestep.
+                // Therefore, the terminal momentum scales as the square root of N_SNe.
                 
                 // fiducial p_terminal = 3.0e5 km/s per Msun [equiv. to Mcool = 895.5 Msun].
                 //  (as used in Kimm & Cen (2014) following Thornton et al. (1998).)
@@ -878,12 +879,13 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                     const double z_dep = pow(z0, -0.28);
                     //const double e_dep = pow(Esne51, 16./17.);
                     const double e_dep = 1.0; // remove dependence on E_sn
-                    // Since all events use a constant 1e51 ergs, this prevents the cooling mass
+                    // Since all SN use a constant energy, this prevents the cooling mass
                     // from increasing when more than one SN go off per timestep.
                     
-                    // [Thornton 1998: p_terminal = 3.0e5 km/s per Msun [equiv. to Mcool = 895.5 Msun].
-                    //  (as used in Kimm & Cen (2014) following Thornton et al. (1998).)]
-                    // We use fiducial p_terminal = 2.0e5 km/s per Msun [equiv. to Mcool = 398 Msun].
+                    // (Thornton+ 1998: p_terminal = 3.0e5 km/s per Msun [equiv. to Mcool = 895.5 Msun].)
+                    // We use fiducial p_terminal = 2.0e5 km/s per Msun [equiv. to Mcool = 398 Msun],
+                    // since Sukhbold et al. (2016) find that the average explosion energy for low-mass
+                    // progenitors is 0.6-0.8 x 10^51 ergs.
                     m_cooling = (398. / UNIT_MASS_IN_SOLAR) * (e_dep * n_dep * z_dep);
 
                     RsneKPC = pow( 0.238732 * m_cooling/SphP[j].Density , 1./3. );

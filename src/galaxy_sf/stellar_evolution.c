@@ -140,14 +140,15 @@ void particle2in_addFB_fromstars(struct addFB_evaluate_data_in_ *in, int i, int 
     if (P[i].SNe_ThisTimeStep <= 0) { in->Msne=0; return; } // no event
 
 #ifdef SLUG_COMPUTE_EJECTA_MASS
-    // - Assume 1e51 erg kinetic energy per SN
+    // - Assume 0.7e51 erg kinetic energy per SN (Sukhbold+ 2016)
     // - Compute ejecta mass by summing the yields (including the yield from hydrogen).
     //   [The mechanical feedback algorithm distributes the mass to neighboring particles
     //      and subtracts it from the star particle, with a floor to prevent negative mass.]
 
-//#error "For testing this option (SLUG_COMPUTE_EJECTA_MASS) should be disabled!"
-    
-    const double energyPerSN = 1.0e51 / UNIT_ENERGY_IN_CGS; // code units
+    // Sukhbold+ (2016) find explosion energies of 0.6-0.8 x 10^51 ergs for low-mass
+    // progenitors.
+    const double energyPerSN = 0.7e51 / UNIT_ENERGY_IN_CGS; // code units
+
     const double ejectaMass = P[i].EjectaMass_ThisTimestep / UNIT_MASS_IN_SOLAR; // code units
     in->Msne = ejectaMass;
 
