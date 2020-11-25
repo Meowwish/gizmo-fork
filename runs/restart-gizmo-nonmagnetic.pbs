@@ -21,7 +21,7 @@ cd /g/data/jh2/bw0729/gizmo-fork/runs
 
 
 # --- set MPI options ---
-MPI_OPTIONS=""
+MPI_OPTIONS="-mca hwloc_base_mem_alloc_policy none"
 
 
 ## --- restart GIZMO from restartfiles ---

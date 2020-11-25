@@ -8,7 +8,7 @@
 #PBS -m aeb
 #PBS -M ben.wibking@anu.edu.au
 #PBS -l wd
-#PBS -l walltime=12:00:00
+#PBS -l walltime=24:00:00
 #PBS -l storage=scratch/jh2+gdata/jh2
 #PBS -l jobfs=400GB
 
@@ -22,7 +22,7 @@ cd /g/data/jh2/bw0729/gizmo-fork/runs
 
 
 # --- set MPI options ---
-MPI_OPTIONS=""
+MPI_OPTIONS="-mca hwloc_base_mem_alloc_policy none"
 
 
 ## --- restart GIZMO from restartfiles ---
