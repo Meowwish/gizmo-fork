@@ -681,7 +681,8 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 const double max_vel_prefactor = max_radial_mom / P[j].Mass;
                 vel_prefactor = DMIN(vel_prefactor, max_vel_prefactor);
 
-                // limit delta_v to < 5% of speed of light (in case something has gone badly wrong)
+                // limit delta_v to < 5% of speed of light
+                // (in case something has gone badly wrong, such as injecting momentum into a particle with very small mass)
                 const double max_delta_v = 0.05 * C_LIGHT_CODE; // ~15,000 km/s
                 vel_prefactor = DMIN(vel_prefactor, max_delta_v);
 		
