@@ -14,6 +14,7 @@
 * This version of the code is only tested with the included versions of Grackle and SLUG. Use other versions at your own risk.
 * yt does not compute the temperature from GIZMO snapshots correctly. Use the pseudocode given in the GIZMO User's Guide to compute the temperature instead.
 * The cooling function included in GIZMO (in cooling.c) is incorrect for temperatures below 10^4 K. It does not have an unstable phase between WNM/CNM. Use Grackle instead.
+* GALSF_SFR_MOLECULAR_CRITERION is not compatible with Grackle cooling!
 
 ## original readme
 This is **GIZMO**: a flexible, multi-method multi-physics code. The code solves the fluid using Lagrangian mesh-free finite-volume Godunov methods (or SPH, or fixed-grid Eulerian methods), and self-gravity with fast hybrid PM-Tree methods and fully-adaptive resolution. Other physics include: magnetic fields (ideal and non-ideal), radiation-hydrodynamics, anisotropic conduction and viscosity, sub-grid turbulent diffusion, radiative cooling, cosmological integration, sink particles, dust-gas mixtures, cosmic rays, degenerate equations of state, galaxy/star/black hole formation and feedback, self-interacting and scalar-field dark matter, on-the-fly structure finding, and more. 
