@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#PBS -N gizmo_MHD_AGORA_highres_4nodes
+#PBS -N gizmo_isodisk_lowres
 #PBS -P jh2
 #PBS -q normal
 #PBS -l ncpus=48
