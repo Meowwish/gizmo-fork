@@ -676,10 +676,14 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 double vel_prefactor =  mom_boost_fac * massratio_ejecta * (All.cf_atime*v_ejecta_eff) / pnorm; // this gives the appropriately-normalized tap-able momentum from the energy-conserving solution
                 //const double radial_mom = (P[j].Mass * vel_prefactor);
 
-                // limit the maximum injected radial momentum (not exact due to \sum_j pnorm_j ~ 1)
+                // limit the maximum injected radial momentum
                 const double max_radial_mom = 6.0e5 / (UNIT_VEL_IN_KMS * UNIT_MASS_IN_SOLAR); // 6.0e5 Msun km/s in code units
                 const double max_vel_prefactor = max_radial_mom / P[j].Mass;
                 vel_prefactor = DMIN(vel_prefactor, max_vel_prefactor);
+
+                // limit delta_v to < 5% of speed of light (in case something has gone badly wrong)
+                const double max_delta_v = 0.05 * C_LIGHT_CODE; // ~15,000 km/s
+                vel_prefactor = DMIN(vel_prefactor, max_delta_v);
 		
                 double KE_initial = 0, KE_final = 0;
                 for(k=0; k<3; k++)

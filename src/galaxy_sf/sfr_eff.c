@@ -218,11 +218,14 @@ double get_starformation_rate(int i)
 #endif
     tsfr = sqrt(All.PhysDensThresh / (SphP[i].Density * All.cf_a3inv)) * All.MaxSfrTimescale; /* set default SFR timescale to scale appropriately with the gas dynamical time */
 
+#ifdef SF_TRUNCATE_HIGH_DENSITIES
+#error "This should only be used for debugging!"
      /* if gas is exceedingly dense (more than 100x the star formation threshold),
         then increase star formation efficiency to unity. */
     if(SphP[i].Density*All.cf_a3inv > (100.0*All.PhysDensThresh)) {
         tsfr *= All.SfEffPerFreeFall; // should be <= 1, undoing the division when computing MaxSfrTimescale
     }
+#endif // SF_TRUNCATE_HIGH_DENSITIES
 
     rateOfSF = P[i].Mass / tsfr; /* 'normal' sfr from density law above */
     if(tsfr<=0 || rateOfSF <= 0) {return 0;} /* nonsense here, return 0 */
