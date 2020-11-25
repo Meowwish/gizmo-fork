@@ -29,13 +29,13 @@ ResubmitCommand         none   % change this to a shell script if needed
 
 
 %----- Memory allocation 
-MaxMemSize          3800    % sets maximum MPI process memory use, in MiByte
+MaxMemSize          3200    % sets maximum MPI process memory use, in MiByte
 		    	    %   (NOTE: only sets a limit for heap allocations that use "mymalloc()"!
 			    %	 Application binary image size, any other
 			    %	 static allocations, and internal MPI library allocations are NOT included!)
 PartAllocFactor     1.5     % maximum relative memory imbalance allowed for particle buffers
 		    	    %   (AGORA disc appears not to require large values for this.)
-BufferSize          100     % in MiByte
+BufferSize          30     % in MiByte
 		    	    %   (NOTE: this is only the *send* buffer!
 		    	    %   This can actually be set too large, causing
 			    %   memory problems at the receiving end.)
