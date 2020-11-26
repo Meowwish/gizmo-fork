@@ -1,6 +1,6 @@
 
 %----  Relevant files
-InitCondFile   agora_ic_highres
+InitCondFile   dice_isodisk_medres
 OutputDir      output
 
 %---- File formats 
@@ -12,8 +12,8 @@ RestartFile                 restart
 SnapshotFileBase            snapshot 
 OutputListOn                0  % =1 to use list in "OutputListFilename" 
 OutputListFilename          output_times.txt  % list of times for snaps 
-NumFilesPerSnapshot         1 
-NumFilesWrittenInParallel   1  % must be < N_processors & power of 2
+NumFilesPerSnapshot         8 
+NumFilesWrittenInParallel   8  % must be < N_processors & power of 2
 
 %---- Output frequency 
 TimeOfFirstSnapshot     0.0
@@ -33,7 +33,7 @@ MaxMemSize          3200    % sets maximum MPI process memory use, in MiByte
 		    	    %   (NOTE: only sets a limit for heap allocations that use "mymalloc()"!
 			    %	 Application binary image size, any other
 			    %	 static allocations, and internal MPI library allocations are NOT included!)
-PartAllocFactor     1.5     % maximum relative memory imbalance allowed for particle buffers
+PartAllocFactor     3.5     % maximum relative memory imbalance allowed for particle buffers
 		    	    %   (AGORA disc appears not to require large values for this.)
 BufferSize          30     % in MiByte
 		    	    %   (NOTE: this is only the *send* buffer!
