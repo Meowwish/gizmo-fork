@@ -12,8 +12,11 @@ lambda		 	        0.04
 
 # Refinement level of the potential grid 
 level_coarse		    	8
+# Refinement level of the density grid
+level_grid_mid_dens   	  	9
 # Refinement level of the turbulence grid 
-level_grid_turb		    	7
+level_grid_turb		    	9
+
 # Size of the potential grid [kpc]
 boxsize1	 	        100.0
 boxsize2	 	        50.0
@@ -144,11 +147,11 @@ metal3                  	1.0
 t_init3                 	10000.
 
 # Turbulent velocity dispersion [km/s]
-turb_sigma3		        0.0
+turb_sigma3		        8.0
 # Turbulence injection scale [kpc]
-turb_scale_inj3		        1.0
+turb_scale_inj3		        2.5
 # Turbulence dissipation scale [kpc]
-turb_scale_diss3	        0.01
+turb_scale_diss3	        0.25
 
 # Compute hydrostatic equilibrium 
 hydro_eq3			1
