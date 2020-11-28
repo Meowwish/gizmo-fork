@@ -1,8 +1,8 @@
 # gizmo-slug
 
 ## notes
-* enabling SLUG adds a ~20% memory overhead to the particle data allocations but should have ~1% runtime overhead or less
-* when SLUG is enabled, the mechanical feedback routine injects too much radial momentum (directly to nearest neighbor particles). For example, in a 10^5 Msun test run, ~19% of events have momenta greater than 3e5 km/s, 12% of events have momenta greater than 5e5 km/s, and 3.7% of events have momenta higher than 1e6 km/s (per unit solar mass). It is recommended to use the pure thermal feedback instead and resolve the cooling radius (100 Msun gas resolution or better).
+* enabling SLUG adds a ~20% memory overhead to the particle data allocations but should have ~1% runtime overhead or less for production resolution runs.
+* The fiducial radial momentum used by GIZMO for SN feedback is 679,000 Msun km/s. This is 2.26 times greater than the commonly-used estimate from Thornton et al. (1998) (3e5 Msun km/s). There is also a normalization bug in the injected mass, momentum, and energy, leading to a factor ~2 overestimate in the worst case. In this version of the code, I have adjusted the normalization to match that of Thornton et al., and also fixed the normalization.
 * NO_ISEND_IRECV_IN_DOMAIN should *always* be enabled; otherwise the code will randomly hang in an MPI call during the domain decomposition
 * USE_MPI_IN_PLACE should *almost always* be enabled (required if using OpenMPI); if it is not but it should be, the code will crash during MPI calls with aliased pointers
 * STOP_WHEN_BELOW_MINTIMESTEP is always recommended (to avoid burning through a compute allocation due to infinitesimal timesteps as a result of a misconfiguration or some other problem)
