@@ -504,16 +504,12 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                     // use scalings following Kimm & Cen (2014); Thornton et al. (1998)
                     const double n_dep = pow(n0, -4./17.);
                     const double z_dep = pow(z0, -0.28);
-                    //const double e_dep = pow(Esne51, 16./17.);
-                    const double e_dep = 1.0; // remove dependence on E_sn
-                    // Since all SN use a constant energy, this prevents the cooling mass
-                    // from increasing when more than one SN go off per timestep.
+                    const double e_dep = pow(Esne51, 16./17.);
                     
                     // (Thornton+ 1998: p_terminal = 3.0e5 km/s per Msun [equiv. to Mcool = 895.5 Msun].)
-                    // We use fiducial p_terminal = 2.0e5 km/s per Msun [equiv. to Mcool = 398 Msun],
-                    // since Sukhbold et al. (2016) find that the average explosion energy for low-mass
+                    // Note that Sukhbold et al. (2016) find that the average explosion energy for low-mass
                     // progenitors is 0.6-0.8 x 10^51 ergs.
-                    m_cooling = (398. / UNIT_MASS_IN_SOLAR) * (e_dep * n_dep * z_dep);
+                    m_cooling = (895.5 / UNIT_MASS_IN_SOLAR) * (e_dep * n_dep * z_dep);
 
                     RsneKPC = pow( 0.238732 * m_cooling/SphP[j].Density , 1./3. );
                 }
@@ -641,11 +637,11 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 double mom_boost_fac = 1;
                 if(feedback_type_is_SNe == 1)
                 {
-                    //double psi0 = 1; // factor to use below for velocity-limiter
                     boost_max *= psi_cool; // appropriately re-weight boost to avoid energy conservation errors [cooling-limit]
                     boost_egycon *= psi_egycon; // appropriately re-weight boost to avoid energy conservation errors [energy-conserving-limit]
                     // limit to cooling case if egy-conserving exceeds terminal boost,
                     // or coupled mass short of cooling mass
+                    //double psi0 = 1; // factor to use below for velocity-limiter
                     if((wk_m_cooling < mj_preshock) || (boost_max < boost_egycon)) {
                         mom_boost_fac=boost_max;
                         //psi0=DMAX(psi0,psi_cool);
@@ -673,13 +669,13 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 dP_sum += dP; dP_boost_sum += dP * mom_boost_fac;
                 
                 /* actually do the injection */
-                double vel_prefactor =  mom_boost_fac * massratio_ejecta * (All.cf_atime*v_ejecta_eff) / pnorm; // this gives the appropriately-normalized tap-able momentum from the energy-conserving solution
-                //const double radial_mom = (P[j].Mass * vel_prefactor);
+		// this gives the appropriately-normalized tap-able momentum from the energy-conserving solution
+                double vel_prefactor =  mom_boost_fac * massratio_ejecta * (All.cf_atime*v_ejecta_eff) / pnorm;
 
-                // limit the maximum injected radial momentum
-                const double max_radial_mom = 6.0e5 / (UNIT_VEL_IN_KMS * UNIT_MASS_IN_SOLAR); // 6.0e5 Msun km/s in code units
-                const double max_vel_prefactor = max_radial_mom / P[j].Mass;
-                vel_prefactor = DMIN(vel_prefactor, max_vel_prefactor);
+                // limit the maximum injected radial momentum to 6.0e5 Msun km/s in code units
+                //const double max_radial_mom = 6.0e5 / (UNIT_VEL_IN_KMS * UNIT_MASS_IN_SOLAR);
+                //const double max_vel_prefactor = max_radial_mom / P[j].Mass;
+                //vel_prefactor = DMIN(vel_prefactor, max_vel_prefactor);
 
                 // limit delta_v to < 5% of speed of light
                 // (in case something has gone badly wrong, such as injecting momentum into a particle with very small mass)
