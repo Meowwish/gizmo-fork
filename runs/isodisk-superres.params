@@ -22,7 +22,7 @@ TimeBetStatistics       0.001   % Gyr
 
 
 %---- CPU-time limits 
-TimeLimitCPU            86400 % seconds [= 24 hours]
+TimeLimitCPU            36000 % seconds [= 10 hours]
 CpuTimeBetRestartFile   3600   % seconds
 ResubmitOn              0
 ResubmitCommand         none   % change this to a shell script if needed
@@ -134,7 +134,7 @@ TurbDiffusionCoefficient 1.0    % Normalizes diffusion rates relative to Smagori
 
 
 %---- Star Formation parameters (GALSF on)
-CritPhysDensity     100.     %  critical physical density for star formation (cm^(-3))
+CritPhysDensity     10.     %  critical physical density for star formation (cm^(-3))
 SfEffPerFreeFall    0.01     %  SFR/(Mgas/tfreefall) for gas which meets SF criteria
 
 

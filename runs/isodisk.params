@@ -1,7 +1,7 @@
 
 %----  Relevant files
 InitCondFile   dice_isodisk_medres
-OutputDir      output
+OutputDir      output_medres
 
 %---- File formats 
 ICFormat    3  % 1=binary, 3=hdf5 
@@ -133,7 +133,7 @@ TurbDiffusionCoefficient 1.0    % Normalizes diffusion rates relative to Smagori
 
 
 %---- Star Formation parameters (GALSF on)
-CritPhysDensity     100.     %  critical physical density for star formation (cm^(-3))
+CritPhysDensity     10.     %  critical physical density for star formation (cm^(-3))
 SfEffPerFreeFall    0.01     %  SFR/(Mgas/tfreefall) for gas which meets SF criteria
 
 
