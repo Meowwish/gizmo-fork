@@ -1,7 +1,7 @@
 #!/bin/bash
 
-MAXPROCS=8
+MAXPROCS=4
 OUTPUT_DIR=output_lowres
 
-find $OUTPUT_DIR -name '*.hdf5' | parallel --bar --max-procs $MAXPROCS python3 plot_meshless.py 
+find $OUTPUT_DIR -name '*.0.hdf5' | parallel --bar --max-procs $MAXPROCS python3 plot_meshless.py 
 
