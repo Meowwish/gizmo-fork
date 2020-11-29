@@ -1,7 +1,7 @@
 
 %----  Relevant files
-InitCondFile   dice_isodisk_medres
-OutputDir      output_medres
+InitCondFile   agora_ic_highres
+OutputDir      output_agora_hires
 
 %---- File formats 
 ICFormat    3  % 1=binary, 3=hdf5 
@@ -66,7 +66,6 @@ MaxSizeTimestep         0.001	 % for this problem, time unit is Gyr
 %ErrTolForceAcc          0.002       % 0.0025=standard
 
 %TreeDomainUpdateFrequency   0.05	% 0.0005-0.05, dept on core+particle number  
-TreeDomainUpdateFrequency   0.1 	% 0.0005-0.05, dept on core+particle number  
 
 %---- System of units 
 UnitLength_in_cm            3.085678e21     % 1.0 kpc/h
@@ -81,8 +80,9 @@ MinGasTemp      10.	    % don't set <10 in explicit feedback runs, otherwise 0
 
 %---- Density/volume estimation (kernel) 
 DesNumNgb               32      % 32 for standard kernel, 60-114 for quintic 
-MaxHsml                 1.e4    % minimum gas kernel length (some very large value to prevent errors)
-MinGasHsmlFractional    0.01    % minimum kernel length relative to gas force softening (<= 1)
+MaxHsml                 1.e2    % minimum gas kernel length (some very large value to prevent errors)
+MinGasHsmlFractional    0.      % DANGER: bad things may happen if this is nonzero!
+
 %---- Convergence error for evaluating particle volumes
 MaxNumNgbDeviation      0.05    % <<DesNumNgb (values<1 are fine)
 
@@ -96,6 +96,7 @@ SofteningDisk   0.020    % collisionless particles (type=2)
 SofteningBulge  0.020    % collisionless particles (type=3)
 SofteningStars  0.005    % stars spawned from gas (type=4)
 SofteningBndry  0.005    % black holes (if active), or collisionless (type=5)
+
 %----- parameters for adaptive gravitational softening 
 % (currently unused in runs)
 %AGS_DesNumNgb           32  % neighbor number for calculating adaptive gravsoft
@@ -120,11 +121,11 @@ InitStellarAge  1000.0     % Gyr
 %---- Magneto-Hydrodynamics Parameters (MAGNETIC on)
 
 %--- Dedner Divergence-cleaning Parameters (for MHD)
-DivBcleaningParabolicSigma      0.2  % <1, ~0.2-0.5 needed for stability
-DivBcleaningHyperbolicSigma     1.0  % ~1
+%DivBcleaningParabolicSigma      0.2  % <1, ~0.2-0.5 needed for stability
+%DivBcleaningHyperbolicSigma     1.0  % ~1
 
 %---- Turbulent Diffusion Master Switch (TURB_DIFFUSION on)
-TurbDiffusionCoefficient 1.0    % Normalizes diffusion rates relative to Smagorinsky-Lilly theory (~0.5-2)
+%TurbDiffusionCoefficient 1.0    % Normalizes diffusion rates relative to Smagorinsky-Lilly theory (~0.5-2)
 
 
 %-------------------------------------------------------------------------

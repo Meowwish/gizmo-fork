@@ -25,7 +25,7 @@ MPI_OPTIONS="-mca hwloc_base_mem_alloc_policy none"
 
 # --- initialize GIZMO ---
 
-mpirun $MPI_OPTIONS ./GIZMO isodisk.params > isolated_disk_medres.log 2>&1
+mpirun $MPI_OPTIONS ./GIZMO isodisk.params > isolated_disk_highres.log 2>&1
 
 
 
