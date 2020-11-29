@@ -65,7 +65,7 @@ MaxSizeTimestep         0.001	 % for this problem, time unit is Gyr
 %ErrTolTheta             0.5         % 0.7=standard
 %ErrTolForceAcc          0.002       % 0.0025=standard
 
-%TreeDomainUpdateFrequency   0.05	% 0.0005-0.05, dept on core+particle number  
+TreeDomainUpdateFrequency   0.05	% 0.0005-0.05, dept on core+particle number  
 
 %---- System of units 
 UnitLength_in_cm            3.085678e21     % 1.0 kpc/h
