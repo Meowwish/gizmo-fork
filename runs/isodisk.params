@@ -134,8 +134,8 @@ InitStellarAge  1000.0     % Gyr
 
 
 %---- Star Formation parameters (GALSF on)
-CritPhysDensity     10.     %  critical physical density for star formation (cm^(-3))
-SfEffPerFreeFall    0.01     %  SFR/(Mgas/tfreefall) for gas which meets SF criteria
+CritPhysDensity     300.    %  critical physical density for star formation (cm^(-3))
+SfEffPerFreeFall    1.0     %  SFR/(Mgas/tfreefall) for gas which meets SF criteria
 
 
 %-------------- Grackle UVB file (GRACKLE on)
