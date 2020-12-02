@@ -1,10 +1,10 @@
 #!/bin/bash
 
-#PBS -N gizmo_MHD_AGORA_highres_4nodes
+#PBS -N gizmo_MHD_highres_8nodes
 #PBS -P jh2
 #PBS -q normal
-#PBS -l ncpus=192
-#PBS -l mem=760GB
+#PBS -l ncpus=384
+#PBS -l mem=1520GB
 #PBS -m aeb
 #PBS -M ben.wibking@anu.edu.au
 #PBS -l wd
@@ -29,4 +29,4 @@ MPI_OPTIONS="-mca hwloc_base_mem_alloc_policy none"
 ##          this will likely fail!  [This can even fail for trivial
 ##          changes, such as extending the MaxTime of the simulation.]
 
-mpirun $MPI_OPTIONS ./GIZMO isodisk.params 1 > gizmo_isolated_disk.log 2>&1
+mpirun $MPI_OPTIONS ./GIZMO isodisk.params 1 > isolated_disk_highres.log 2>&1

@@ -31,7 +31,7 @@ def make_agora_IC(filename, magnetic_fields=True, snapshot_zero=None):
     # Mass: 10^9 Msun
     # Length: kpc
 
-    agora_dir = Path("../../agora_highres")
+    agora_dir = Path("../../agora_medres")
     
     # dark matter
     dm = pd.read_csv(agora_dir / "halo.dat", delimiter=' ', skipinitialspace=True,
@@ -47,37 +47,50 @@ def make_agora_IC(filename, magnetic_fields=True, snapshot_zero=None):
                         names=['x','y','z','vx','vy','vz','mass','u_gas'])
 
 
-    ## super-sample gas particles
-    supersample_factor = 8
+    if snapshot_zero is not None:
+        ## super-sample gas particles
+        supersample_factor = 8
 
-    snapshot_t0 = h5py.File(snapshot_zero, 'r')
-    hsml = snapshot_t0['/PartType0/SmoothingLength'][:]
+        snapshot_t0 = h5py.File(snapshot_zero, 'r')
+        hsml = snapshot_t0['/PartType0/SmoothingLength'][:]
 
-    # compute random unit vectors
-    ngas_old = len(gas)
-    ngas = supersample_factor * ngas_old
-    mu  = np.random.uniform(low=-1.0, high=1.0, size=ngas)  # == cos(theta)
-    phi = np.random.uniform(low=0., high=2.0*np.pi, size=ngas)
+        # compute random unit vectors
+        ngas_old = len(gas)
+        ngas = supersample_factor * ngas_old
+        mu  = np.random.uniform(low=-1.0, high=1.0, size=ngas)  # == cos(theta)
+        phi = np.random.uniform(low=0., high=2.0*np.pi, size=ngas)
 
-    xhat = np.sqrt(1-(mu*mu)) * np.cos(phi)
-    yhat = np.sqrt(1-(mu*mu)) * np.sin(phi)
-    zhat = mu
+        xhat = np.sqrt(1-(mu*mu)) * np.cos(phi)
+        yhat = np.sqrt(1-(mu*mu)) * np.sin(phi)
+        zhat = mu
 
-    gas_oldx = np.repeat(gas['x'].to_numpy(), supersample_factor)
-    gas_oldy = np.repeat(gas['y'].to_numpy(), supersample_factor)
-    gas_oldz = np.repeat(gas['z'].to_numpy(), supersample_factor)
-    gas_oldhsml = np.repeat(hsml[:], supersample_factor)
+        gas_oldx = np.repeat(gas['x'].to_numpy(), supersample_factor)
+        gas_oldy = np.repeat(gas['y'].to_numpy(), supersample_factor)
+        gas_oldz = np.repeat(gas['z'].to_numpy(), supersample_factor)
+        gas_oldhsml = np.repeat(hsml[:], supersample_factor)
 
-    gas_x = gas_oldx + 0.2*gas_oldhsml*xhat
-    gas_y = gas_oldy + 0.2*gas_oldhsml*yhat
-    gas_z = gas_oldz + 0.2*gas_oldhsml*zhat
+        gas_x = gas_oldx + 0.2*gas_oldhsml*xhat
+        gas_y = gas_oldy + 0.2*gas_oldhsml*yhat
+        gas_z = gas_oldz + 0.2*gas_oldhsml*zhat
 
-    gas_vx = np.repeat(gas['vx'].to_numpy(), supersample_factor)
-    gas_vy = np.repeat(gas['vy'].to_numpy(), supersample_factor)
-    gas_vz = np.repeat(gas['vz'].to_numpy(), supersample_factor)
+        gas_vx = np.repeat(gas['vx'].to_numpy(), supersample_factor)
+        gas_vy = np.repeat(gas['vy'].to_numpy(), supersample_factor)
+        gas_vz = np.repeat(gas['vz'].to_numpy(), supersample_factor)
 
-    gas_mass = np.repeat(gas['mass'].to_numpy(), supersample_factor) / float(supersample_factor)
+        gas_mass = np.repeat(gas['mass'].to_numpy(), supersample_factor) / float(supersample_factor)
 
+    else:
+        ngas = len(gas)
+
+        gas_x = gas['x']
+        gas_y = gas['y']
+        gas_z = gas['z']
+        
+        gas_vx = gas['vx']
+        gas_vy = gas['vy']
+        gas_vz = gas['vz']
+
+        gas_mass = gas['mass']
 
     #%---- System of units used in GIZMO parameterfile
     #UnitLength_in_cm            3.085678e21    % 1.0 kpc
@@ -335,11 +348,13 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('filename', help='output hdf5 filename')
-    parser.add_argument('snapshot_zero_filename', help='snapshot at time zero (to read in hsml)')
+    parser.add_argument('--snapshot_zero_filename', help='snapshot at time zero (to read in hsml)')
+
     feature_parser = parser.add_mutually_exclusive_group(required=False)
     feature_parser.add_argument('--magnetic-fields', dest='magnetic_fields', action='store_true')
     feature_parser.add_argument('--no-magnetic-fields', dest='magnetic_fields', action='store_false')
     parser.set_defaults(magnetic_fields=True)
+
     args = parser.parse_args()
 
     print(f"Magnetic fields: {args.magnetic_fields}")

@@ -1,7 +1,7 @@
 
 %----  Relevant files
 InitCondFile   agora_ic_medres
-OutputDir      output_agora_medres
+OutputDir      output_agora_medres_virial
 
 %---- File formats 
 ICFormat    3  % 1=binary, 3=hdf5 
@@ -132,7 +132,7 @@ TurbDiffusionCoefficient 1.0    % Normalizes diffusion rates relative to Smagori
 
 %---- Star Formation parameters (GALSF on)
 CritPhysDensity     100.     %  critical physical density for star formation (cm^(-3))
-SfEffPerFreeFall    0.01     %  SFR/(Mgas/tfreefall) for gas which meets SF criteria
+SfEffPerFreeFall    1.0      %  SFR/(Mgas/tfreefall) for gas which meets SF criteria
 
 
 %-------------- Grackle UVB file (GRACKLE on)
