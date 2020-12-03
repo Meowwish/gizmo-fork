@@ -309,6 +309,7 @@ double get_starformation_rate(int i)
     if(exceeds_force_softening_threshold==0) {for(k=0;k<3;k++) {if(P[i].tidal_tensorps[k][k] >= 0) {rateOfSF=0;}}} /* we've already diagonized this in gravtree.c, so this is a straightforward check. again should only be applied where force calculation is fully-reliable */
 #endif
 
+#ifndef NO_JEANS_CRITERION
 #if (SINGLE_STAR_SINK_FORMATION & 64) || (GALSF_SFR_VIRIAL_SF_CRITERION >= 3) /* check if Jeans mass is low enough for conceivable formation of 'stars' */
     double cs_touse=cs_eff, MJ_crit=DMAX(DMIN(1.e4, 10.*P[i].Mass*UNIT_MASS_IN_SOLAR), 100.); /* for galaxy-scale SF, default to large ~1000 Msun threshold */
 #ifdef SINGLE_STAR_SINK_FORMATION
@@ -317,6 +318,7 @@ double get_starformation_rate(int i)
     double MJ_solar = 2.*pow(cs_touse*UNIT_VEL_IN_KMS/0.2,3)/sqrt(SphP[i].Density*All.cf_a3inv*UNIT_DENSITY_IN_NHCGS / (HYDROGEN_MASSFRAC*1.0e3));
     if(MJ_solar > MJ_crit) {rateOfSF=0;} /* if too massive Jeans mass, go no further */
 #endif
+#endif // NO_JEANS_CRITERION
 
 #if (SINGLE_STAR_SINK_FORMATION & 4) /* restrict to local density/potential maxima */
     if(SphP[i].Density_Relative_Maximum_in_Kernel > 0) {rateOfSF=0;}
