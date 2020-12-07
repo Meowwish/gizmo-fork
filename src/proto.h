@@ -14,7 +14,7 @@
 /*
  * This file was originally part of the GADGET3 code developed by
  * Volker Springel. The code has been modified
- * in part (adding/removing routines as necessary) 
+ * in part (adding/removing routines as necessary)
  * by Phil Hopkins (phopkins@caltech.edu) for GIZMO.
  */
 
@@ -48,14 +48,18 @@ int does_particle_need_to_be_split(int i);
 double target_mass_renormalization_factor_for_mergesplit(int i);
 void merge_particles_ij(int i, int j);
 //void split_particle_i(int i, int n_particles_split, int i_nearest, double r2_nearest);
-void split_particle_i(int i, int n_particles_split, int i_nearest); 
+void split_particle_i(int i, int n_particles_split, int i_nearest);
 double gamma_eos(int i);
 void do_first_halfstep_kick(void);
 void do_second_halfstep_kick(void);
+double matrix_invert_ndims(double T[3][3], double Tinv[3][3]);
 #ifdef HERMITE_INTEGRATION
 int eligible_for_hermite(int i);
 void do_hermite_prediction(void);
 void do_hermite_correction(void);
+#endif
+#ifdef ADAPTIVE_TREEFORCE_UPDATE
+int needs_new_treeforce(int i);
 #endif
 void find_timesteps(void);
 #ifdef GALSF
@@ -79,7 +83,7 @@ double sub_turb_enclosed_mass(double r, double msub, double vmax, double radvmax
 
 void interpolate_fluxes_opacities_gasgrains(void);
 #if defined(RT_OPACITY_FROM_EXPLICIT_GRAINS)
-double return_grain_absorption_efficiency_Q(int i, int k_freq);
+double return_grain_extinction_efficiency_Q(int i, int k_freq);
 #endif
 int powerspec_turb_find_nearest_evaluate(int target, int mode, int *nexport, int *nsend_local);
 void powerspec_turb_calc_dispersion(void);
@@ -110,10 +114,8 @@ static inline double WRAP_POSITION_UNIFORM_BOX(double x)
 
 static inline double DMAX(double a, double b) { return (a > b) ? a : b; }
 static inline double DMIN(double a, double b) { return (a < b) ? a : b; }
-static inline int IMAX(int a, int b) { return (a > b) ? a : b; } 
+static inline int IMAX(int a, int b) { return (a > b) ? a : b; }
 static inline int IMIN(int a, int b) { return (a < b) ? a : b; }
-static inline integertime TIMAX(integertime a, integertime b) { return (a > b) ? a : b; }
-static inline integertime TIMIN(integertime a, integertime b) { return (a < b) ? a : b; }
 static inline double MINMOD(double a, double b) {return (a>0) ? ((b<0) ? 0 : DMIN(a,b)) : ((b>=0) ? 0 : DMAX(a,b));}
 /* special version of MINMOD below: a is always the "preferred" choice, b the stability-required one. here we allow overshoot, just not opposite signage */
 static inline double MINMOD_G(double a, double b) {return a;}
@@ -224,22 +226,13 @@ void parallel_sort_comm(void *base, size_t nmemb, size_t size, int (*compar) (co
 int compare_IDs(const void *a, const void *b);
 void test_id_uniqueness(void);
 int compare_densities_for_sort(const void *a, const void *b);
-
-
 int io_compare_P_ID(const void *a, const void *b);
 int io_compare_P_GrNr_SubNr(const void *a, const void *b);
-
-
 void drift_particle(int i, integertime time1);
-int ShouldWeDoDynamicUpdate(void);
-
 void put_symbol(double t0, double t1, char c);
 void write_cpu_log(void);
-
 int get_timestep_bin(integertime ti_step);
-
 const char* svn_version(void);
-
 void find_particles_and_save_them(int num);
 void lineofsight_output(void);
 void sum_over_processors_and_normalize(void);
@@ -249,8 +242,6 @@ integertime find_next_lineofsighttime(integertime time0);
 integertime find_next_gridoutputtime(integertime ti_curr);
 void add_along_lines_of_sight(void);
 void do_the_kick(int i, integertime tstart, integertime tend, integertime tcurrent, int mode);
-
-
 void x86_fix(void) ;
 
 void *mymalloc_fullinfo(const char *varname, size_t n, const char *func, const char *file, int linenr);
@@ -285,17 +276,23 @@ int fof_find_dmparticles_evaluate(int target, int mode, int *nexport, int *nsend
 double INLINE_FUNC Get_Particle_Size(int i);
 double INLINE_FUNC Get_Gas_density_for_energy_i(int i);
 double INLINE_FUNC Get_Particle_Expected_Area(double h);
+double get_cell_Bfield_in_microGauss(int i);
 double Get_Gas_Ionized_Fraction(int i);
 #ifdef EOS_ELASTIC
 void elastic_body_update_driftkick(int i, double dt_entr, int mode);
+#endif
+#if defined(EOS_ELASTIC) || defined(EOS_TILLOTSON)
+double get_negative_pressure_tensilecorrfac(double r, double h_i, double h_j);
 #endif
 double INLINE_FUNC convert_internalenergy_soundspeed2(int i, double u);
 double INLINE_FUNC Get_Gas_effective_soundspeed_i(int i);
 double INLINE_FUNC Get_Gas_thermal_soundspeed_i(int i);
 double Get_Gas_Alfven_speed_i(int i);
+double Get_Gas_Fast_MHD_wavespeed_i(int i);
 double Get_Gas_Mean_Molecular_Weight_mu(double T_guess, double rho, double *xH0, double *ne_guess, double urad_from_uvb_in_G0, int target);
+void update_explicit_molecular_fraction(int i, double dtime_cgs);
 double yhelium(int target);
-double Get_Gas_Molecular_Mass_Fraction(int i, double temperature, double neutral_fraction, double urad_from_uvb_in_G0, double clumping_factor);
+double Get_Gas_Molecular_Mass_Fraction(int i, double temperature, double neutral_fraction, double free_electron_ratio, double urad_from_uvb_in_G0);
 double INLINE_FUNC Get_Gas_BField(int i_particle_id, int k_vector_component);
 #ifdef MAGNETIC
 double Get_DtB_FaceArea_Limiter(int i);
@@ -359,8 +356,7 @@ int io_compare_P_GrNr_ID(const void *a, const void *b);
 
 void write_file(char *fname, int readTask, int lastTask);
 
-void distribute_file(int nfiles, int firstfile, int firsttask, int lasttask, int *filenr, int *master,
-		     int *last);
+void distribute_file(int nfiles, int firstfile, int firsttask, int lasttask, int *filenr, int *primary_taskID, int *last);
 
 int get_values_per_blockelement(enum iofields blocknr);
 
@@ -417,11 +413,14 @@ void set_injection_accel(void);
 int density_isactive(int n);
 int GasGrad_isactive(int i);
 
+#ifdef HYDRO_VOLUME_CORRECTIONS
+void cellcorrections_calc(void);
+void cellcorrections_final_operations_and_cleanup(void);
+#endif
+
 size_t sizemax(size_t a, size_t b);
 
-
 void reconstruct_timebins(void);
-
 void init_peano_map(void);
 peanokey peano_hilbert_key(int x, int y, int z, int bits);
 peanokey peano_and_morton_key(int x, int y, int z, int bits, peanokey *morton);
@@ -432,28 +431,19 @@ void catch_fatal(int sig);
 void terminate_processes(void);
 void enable_core_dumps_and_fpu_exceptions(void);
 void write_pid_file(void);
-
 #ifdef PAUSE_RUN_TO_ATTACH_DEBUGGER
 void pause_run_to_attach_debugger();
 #endif
-
 void pm_init_periodic_allocate(void);
-
 void pm_init_periodic_free(void);
-
 void move_particles(integertime time1);
-
-
 void find_next_sync_point_and_drift(void);
 void find_dt_displacement_constraint(double hfac);
 #ifdef WAKEUP
 void process_wake_ups(void);
 #endif
-
 void set_units_sfr(void);
-
 void gravity_forcetest(void);
-
 void allocate_commbuffers(void);
 void allocate_memory(void);
 void begrun(void);
@@ -463,12 +453,17 @@ void compute_global_quantities_of_system(void);
 void compute_potential(void);
 void construct_timetree(void);
 void star_formation_parent_routine(void);
-
 #if defined(TURB_DRIVING)
 void do_turb_driving_step_first_half(void);
 void do_turb_driving_step_second_half(void);
+double st_return_dt_between_updates(void);
+double st_return_mode_correlation_time(void);
+double st_return_rms_acceleration(void);
+double st_turbdrive_get_gaussian_random_variable(void);
+void st_turbdrive_init_ouseq(void);
+void st_turbdrive_calc_phases(void);
+double st_return_driving_scale(void);
 #endif
-
 double evaluate_NH_from_GradRho(MyFloat gradrho[3], double hsml, double rho, double numngb_ndim, double include_h, int target);
 
 
@@ -499,8 +494,14 @@ extern struct addFB_evaluate_data_in_ *addFB_evaluate_DataIn_, *addFB_evaluate_D
 
 void particle2in_addFB_fromstars(struct addFB_evaluate_data_in_ *in, int i, int fb_loop_iteration);
 double mechanical_fb_calculate_eventrates(int i, double dt);
+#ifdef METALS
+void get_jet_yields(double *yields, int i);
+#endif
 #endif
 
+#ifdef SINGLE_STAR_FB_TIMESTEPLIMIT
+double single_star_feedback_velocity_fortimestep(int n);
+#endif
 
 #ifdef GRAIN_FLUID
 void apply_grain_dragforce(void);
@@ -514,7 +515,6 @@ double get_rt_ir_lambdadust_effective(double T, double rho, double *nH0_guess, d
 #if defined(FLAG_NOT_IN_PUBLIC_CODE) || (defined(RT_CHEM_PHOTOION) && defined(GALSF))
 double particle_ionizing_luminosity_in_cgs(long i);
 #endif
-
 
 
 
@@ -577,10 +577,8 @@ void ensure_neighbours(void);
 
 void output_log_messages(void);
 void ewald_corr(double dx, double dy, double dz, double *fper);
-
 void ewald_force(int ii, int jj, int kk, double x[3], double force[3]);
 void ewald_force_ni(int iii, int jjj, int kkk, double x[3], double force[3]);
-
 void ewald_init(void);
 double ewald_psi(double x[3]);
 double ewald_pot_corr(double dx, double dy, double dz);
@@ -597,7 +595,7 @@ void gravity_tree(void);
 void hydro_force(void);
 void init(void);
 void do_the_cooling_for_particle(int i);
-double get_equilibrium_dust_temperature_estimate(int i);
+double get_equilibrium_dust_temperature_estimate(int i, double shielding_factor_for_exgalbg);
 void apply_pm_hires_region_clipping_selection(int i);
 double get_starformation_rate(int i);
 void update_internalenergy_for_galsf_effective_eos(int i, double tcool, double tsfr, double cloudmass_fraction, double rateOfSF);
@@ -643,7 +641,7 @@ void statistics(void);
 double timediff(double t0, double t1);
 void veldisp(void);
 void veldisp_ensure_neighbours(int mode);
-
+int binarySearch(const double * arr, const double x, const int l, const int r, const int total);
 
 double get_gravkick_factor(integertime time0, integertime time1);
 double drift_integ(double a, void *param);
@@ -679,16 +677,20 @@ void pm_setup_nonperiodic_kernel(void);
 
 
 #if defined(RADTRANSFER) || defined(RT_USE_GRAVTREE)
-#ifdef CHIMES_STELLAR_FLUXES 
-double chimes_G0_luminosity(double stellar_age, double stellar_mass); 
-double chimes_ion_luminosity(double stellar_age, double stellar_mass); 
-int rt_get_source_luminosity(int i, int mode, double *lum, double *chimes_lum_G0, double *chimes_lum_ion);
-#else 
-int rt_get_source_luminosity(int i, int mode, double *lum);
+#ifdef CHIMES_STELLAR_FLUXES
+double chimes_G0_luminosity(double stellar_age, double stellar_mass);
+double chimes_ion_luminosity(double stellar_age, double stellar_mass);
+int rt_get_source_luminosity_chimes(int i, int mode, double *lum, double *chimes_lum_G0, double *chimes_lum_ion);
 #endif
+int rt_get_source_luminosity(int i, int mode, double *lum);
+int rt_get_donation_target_bin(int bin);
+int rt_get_lum_band_stellarpopulation(int i, int mode, double *lum);
+int rt_get_lum_band_agn(int i, int mode, double *lum);
+int rt_get_lum_band_singlestar(int i, int mode, double *lum);
 void eddington_tensor_dot_vector(double ET[6], double vec_in[3], double vec_out[3]);
 double return_flux_limiter(int target, int k_freq);
 double rt_kappa(int j, int k_freq);
+int check_if_absorbed_photons_can_be_reemitted_into_same_band(int kfreq);
 double rt_absorb_frac_albedo(int j, int k_freq);
 double rt_absorption_rate(int i, int k_freq);
 double rt_diffusion_coefficient(int i, int k_freq);
@@ -706,6 +708,8 @@ void rt_init_intensity_directions(void);
 #endif
 void rt_get_lum_gas(int target, double *je);
 double slab_averaging_function(double x);
+double blackbody_lum_frac(double E_lower, double E_upper, double T_eff);
+double stellar_lum_in_band(int i, double E_lower, double E_upper);
 
 #ifdef RT_DIFFUSION_CG
 void rt_diffusion_cg_solve(void);
@@ -718,8 +722,8 @@ void rt_update_chemistry(void);
 void rt_get_sigma(void);
 double rt_GetCoolingTime(int i, double u, double rho);
 double rt_cooling_photoheating(int i, double dt);
-double rt_DoCooling(int i, double dt_internal);
-double rt_DoHeating(int i, double dt_internal);
+double rt_DoCooling(int i, double dt);
+double rt_DoHeating(int i, double dt);
 double rt_get_cooling_rate(int i, double internal_energy);
 void rt_write_chemistry_stats(void);
 #endif
@@ -809,7 +813,7 @@ void apply_excision();
 #endif
 
 #ifdef DM_SIDM
-double prob_of_interaction(double mass, double r, double h_si, double dV[3], integertime dt_step);
+double prob_of_interaction(double mass, double r, double h_si, double dV[3], double dt);
 double g_geo(double r);
 void calculate_interact_kick(double dV[3], double kick[3], double m);
 void init_geofactor_table(void);
@@ -818,7 +822,7 @@ double geofactor_angle_integ(double u, void * params);
 void init_self_interactions();
 #ifdef GRAIN_COLLISIONS
 double return_grain_cross_section_per_unit_mass(int i);
-double prob_of_grain_interaction(double cx_per_unitmass, double mass, double r, double h_si, double dV[3], integertime dt_step, int j_ngb);
+double prob_of_grain_interaction(double cx_per_unitmass, double mass, double r, double h_si, double dV[3], double dt, int j_ngb);
 #endif
 #endif
 
@@ -858,4 +862,3 @@ double gravfac2(double r, double mass);
 void grav_accel_jerk(double mass, double dx[3], double dv[3], double accel[3], double jerk[3]);
 double eccentric_anomaly(double mean_anomaly, double ecc);
 #endif
-

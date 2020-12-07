@@ -119,12 +119,6 @@ double TimeBin_BH_Mdot[TIMEBINS];
 double TimeBin_BH_Medd[TIMEBINS];
 #endif
 
-#ifdef RT_CHEM_PHOTOION
-double nu[N_RT_FREQ_BINS];
-double rt_sigma_HI[N_RT_FREQ_BINS];
-double rt_sigma_HeI[N_RT_FREQ_BINS];
-double rt_sigma_HeII[N_RT_FREQ_BINS];
-#endif
 
 
 char DumpFlag = 1;
@@ -242,10 +236,10 @@ FILE *FdSneIIHeating;	/*!< file handle for SNIIheating.txt log-file */
 
 #ifdef BLACK_HOLES
 FILE *FdBlackHoles;		/*!< file handle for blackholes.txt log-file. */
-#ifdef BH_OUTPUT_GASSWALLOW
+#ifdef OUTPUT_SINK_ACCRETION_HIST
 FILE *FdBhSwallowDetails;
 #endif
-#ifdef BH_OUTPUT_FORMATION_PROPERTIES
+#ifdef OUTPUT_SINK_FORMATION_PROPS
 FILE *FdBhFormationDetails;
 #endif
 #if !defined(IO_REDUCED_MODE) || defined(BH_OUTPUT_MOREINFO)
@@ -376,5 +370,3 @@ int maxThreads = 1;
 #if defined(DM_SIDM)
 MyDouble GeoFactorTable[GEOFACTOR_TABLE_LENGTH];
 #endif
-
-

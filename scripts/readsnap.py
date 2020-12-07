@@ -115,8 +115,8 @@ def readsnap(sdir,snum,ptype,
     nL = 0 # initial particle point to start at 
     if(fname_ext=='.hdf5'):
         file = h5py.File(fname,'r') # Open hdf5 snapshot file
-        header_master = file["Header"] # Load header dictionary (to parse below)
-        header_toparse = header_master.attrs
+        header_topdict = file["Header"] # Load header dictionary (to parse below)
+        header_toparse = header_topdict.attrs
     else:
         file = open(fname) # Open binary snapshot file
         header_toparse = load_gadget_format_binary_header(file)
@@ -131,8 +131,6 @@ def readsnap(sdir,snum,ptype,
     flag_cooling = header_toparse["Flag_Cooling"]
     numfiles = header_toparse["NumFilesPerSnapshot"]
     boxsize = header_toparse["BoxSize"]
-    omega_matter = header_toparse["Omega0"]
-    omega_lambda = header_toparse["OmegaLambda"]
     hubble = header_toparse["HubbleParam"]
     flag_stellarage = header_toparse["Flag_StellarAge"]
     flag_metals = header_toparse["Flag_Metals"]
@@ -169,11 +167,11 @@ def readsnap(sdir,snum,ptype,
         #if (flag_sfr>0): 
         sfr=np.copy(mass)
         metal=np.copy(mass)
-    if (ptype==0 or ptype==4) and (flag_metals > 0):
+    if (ptype == 0 or ptype == 4) and (flag_metals > 0):
         metal=np.zeros([npartTotal[ptype],flag_metals],dtype=np.float64)
-    if (ptype==4) and (flag_sfr>0) and (flag_stellarage>0):
+    if (ptype == 4) and (flag_sfr > 0) and (flag_stellarage > 0):
         stellage=np.copy(mass)
-    if (ptype==5) and (skip_bh==0):
+    if (ptype == 5) and (skip_bh == 0):
         bhmass=np.copy(mass)
         bhmdot=np.copy(mass)
 
@@ -216,7 +214,7 @@ def readsnap(sdir,snum,ptype,
                     numh[nL:nR]=input_struct[bname+"NeutralHydrogenAbundance"]
                 if (flag_sfr > 0):
                     sfr[nL:nR]=input_struct[bname+"StarFormationRate"]
-            if (ptype==0 or ptype==4) and (flag_metals > 0):
+            if (ptype == 0 or ptype == 4) and (flag_metals > 0):
                 metal_t=input_struct[bname+"Metallicity"]
                 if (flag_metals > 1):
                     if (metal_t.shape[0] != npart[ptype]): 
@@ -224,9 +222,9 @@ def readsnap(sdir,snum,ptype,
                 else:
                     metal_t=np.reshape(np.array(metal_t),(np.array(metal_t).size,1))
                 metal[nL:nR,:]=metal_t
-            if (ptype==4) and (flag_sfr>0) and (flag_stellarage>0):
+            if (ptype == 4) and (flag_sfr > 0) and (flag_stellarage > 0):
                 stellage[nL:nR]=input_struct[bname+"StellarFormationTime"]
-            if (ptype==5) and (skip_bh==0):
+            if (ptype == 5) and (skip_bh == 0):
                 bhmass[nL:nR]=input_struct[bname+"BH_Mass"]
                 bhmdot[nL:nR]=input_struct[bname+"BH_Mdot"]
             nL = nR # sets it for the next iteration	
@@ -240,20 +238,20 @@ def readsnap(sdir,snum,ptype,
     pos *= hinv*ascale # snapshot units are comoving
     mass *= hinv
     vel *= np.sqrt(ascale) # remember gizmo's (and gadget's) weird velocity units!
-    if (ptype==0):
+    if (ptype == 0):
         rho *= (hinv/((ascale*hinv)**3))
         hsml *= hinv*ascale
-    if (ptype==4) and (flag_sfr>0) and (flag_stellarage>0) and (cosmological==0):
+    if (ptype == 4) and (flag_sfr > 0) and (flag_stellarage > 0) and (cosmological == 0):
         stellage *= hinv
-    if (ptype==5) and (skip_bh==0):
+    if (ptype == 5) and (skip_bh == 0):
         bhmass *= hinv
 
     file.close();
-    if (ptype==0):
+    if (ptype == 0):
         return {'k':1,'p':pos,'v':vel,'m':mass,'id':ids,'u':ugas,'rho':rho,'h':hsml,'ne':nume,'nh':numh,'sfr':sfr,'z':metal};
-    if (ptype==4):
+    if (ptype == 4):
         return {'k':1,'p':pos,'v':vel,'m':mass,'id':ids,'z':metal,'age':stellage}
-    if (ptype==5) and (skip_bh==0):
+    if (ptype == 5) and (skip_bh == 0):
         return {'k':1,'p':pos,'v':vel,'m':mass,'id':ids,'mbh':bhmass,'mdot':bhmdot}
     return {'k':1,'p':pos,'v':vel,'m':mass,'id':ids}
 
@@ -354,11 +352,11 @@ def load_gadget_format_binary_header(f):
     BoxSize = array.array('d')
     BoxSize.fromfile(f, 1)
     # Matter density at z=0 in units of the critical density. 1*double.
-    Omega0 = array.array('d')
-    Omega0.fromfile(f, 1)
+    Omega_Matter = array.array('d')
+    Omega_Matter.fromfile(f, 1)
     # Vacuum energy density at z=0 in units of the critical density. 1*double.
-    OmegaLambda = array.array('d')
-    OmegaLambda.fromfile(f, 1)
+    Omega_Lambda = array.array('d')
+    Omega_Lambda.fromfile(f, 1)
     # Hubble parameter h in units of 100 km s^-1 Mpc^-1. 1*double.
     h = array.array('d')
     h.fromfile(f, 1)
@@ -386,7 +384,7 @@ def load_gadget_format_binary_header(f):
     return {'NumPart_ThisFile':Npart, 'MassTable':Massarr, 'Time':a, 'Redshift':z, \
     'Flag_Sfr':FlagSfr[0], 'Flag_Feedback':FlagFeedback[0], 'NumPart_Total':Nall, \
     'Flag_Cooling':FlagCooling[0], 'NumFilesPerSnapshot':NumFiles[0], 'BoxSize':BoxSize[0], \
-    'Omega0':Omega0[0], 'OmegaLambda':OmegaLambda[0], 'HubbleParam':h, \
+    'Omega_Matter':OmegaMatter[0], 'Omega_Lambda':OmegaLambda[0], 'HubbleParam':h, \
     'Flag_StellarAge':FlagAge[0], 'Flag_Metals':FlagMetals[0], 'Nall_HW':NallHW, \
     'Flag_EntrICs':flag_entr_ics[0]}
 
@@ -433,7 +431,7 @@ def load_gadget_format_binary_particledat(f, header, ptype, skip_bh=0):
         Npart_MassCode_Tot = np.cumsum(Npart_MassCode)
         mm = mass[Npart_MassCode_Tot[ptype]-Npart_MassCode[ptype]:Npart_MassCode_Tot[ptype]]
 
-    if ((ptype==0) | (ptype==4) | (ptype==5)):
+    if ((ptype == 0) | (ptype == 4) | (ptype == 5)):
         if (Npart[0]>0):
             ### Internal energy of gas particles ((km/s)^2).
             gas_u = array.array('f')

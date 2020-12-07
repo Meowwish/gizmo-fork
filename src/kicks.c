@@ -14,12 +14,11 @@
  *  and updates to additional fluid variables as needed)
  */
 
-void apply_long_range_kick(integertime, integertime);
+void apply_long_range_kick(integertime tstart, integertime tend);
 
 void do_first_halfstep_kick(void)
 {
-    int i;
-    integertime ti_step, tstart=0, tend=0;
+    int i; integertime ti_step, tstart=0, tend=0;
     
 #ifdef TURB_DRIVING
     do_turb_driving_step_first_half();
@@ -46,7 +45,7 @@ void do_first_halfstep_kick(void)
         {
             if(P[i].Mass > 0)
             {
-                ti_step = P[i].TimeBin ? (((integertime) 1) << P[i].TimeBin) : 0;
+                ti_step = GET_PARTICLE_INTEGERTIME(i);
                 tstart = P[i].Ti_begstep;	/* beginning of step */
                 tend = P[i].Ti_begstep + ti_step / 2;	/* midpoint of step */
                 do_the_kick(i, tstart, tend, P[i].Ti_current, 0);
@@ -57,8 +56,7 @@ void do_first_halfstep_kick(void)
 
 void do_second_halfstep_kick(void)
 {
-    int i;
-    integertime ti_step, tstart=0, tend=0;
+    int i; integertime ti_step, tstart=0, tend=0;
     
 #ifdef PMGRID
     if(All.PM_Ti_endstep == All.Ti_Current)	/* need to do long-range kick */
@@ -80,7 +78,7 @@ void do_second_halfstep_kick(void)
         {
             if(P[i].Mass > 0)
             {
-                ti_step = P[i].TimeBin ? (((integertime) 1) << P[i].TimeBin) : 0;
+                ti_step = GET_PARTICLE_INTEGERTIME(i);
                 tstart = P[i].Ti_begstep + ti_step / 2;	/* midpoint of step */
                 tend = P[i].Ti_begstep + ti_step;	/* end of step */
                 do_the_kick(i, tstart, tend, P[i].Ti_current, 1);
@@ -99,7 +97,7 @@ int eligible_for_hermite(int i)
 {
     if(!(HERMITE_INTEGRATION & (1<<P[i].Type))) return 0;
 #if defined(BLACK_HOLES) || defined(GALSF)    
-    if(P[i].StellarAge >= DMAX(All.Time - 2*(P[i].dt_step * All.Timebase_interval), 0)) return 0; // if we were literally born yesterday then let things settle down a bit with the less-accurate, but more-robust regular integration
+    if(P[i].StellarAge >= DMAX(All.Time - 2*(GET_PARTICLE_TIMESTEP_IN_PHYSICAL(i)*All.cf_hubble_a), 0)) return 0; // if we were literally born yesterday then let things settle down a bit with the less-accurate, but more-robust regular integration
     if(P[i].AccretedThisTimestep) return 0;
 #endif
 #if (SINGLE_STAR_TIMESTEPPING > 0)
@@ -116,7 +114,7 @@ void do_hermite_prediction(void)
     for(i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i]) {
 	if(eligible_for_hermite(i)) { /* check if we're actually eligible */	    
 	    if(P[i].Mass > 0) { /* skip massless particles scheduled for deletion */
-		ti_step = P[i].TimeBin ? (((integertime) 1) << P[i].TimeBin) : 0;
+		ti_step = GET_PARTICLE_INTEGERTIME(i);
 		tstart = P[i].Ti_begstep;    /* beginning of step */
 		tend = P[i].Ti_begstep + ti_step;    /* end of step */
 		double dt_grav = (tend - tstart) * All.Timebase_interval;
@@ -132,7 +130,7 @@ void do_hermite_correction(void) // corrector step
     for(i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i]) {	
 	if(eligible_for_hermite(i)){
                 if(P[i].Mass > 0) {
-                    ti_step = P[i].TimeBin ? (((integertime) 1) << P[i].TimeBin) : 0;
+                    ti_step = GET_PARTICLE_INTEGERTIME(i);
                     tstart = P[i].Ti_begstep;    /* beginning of step */
                     tend = P[i].Ti_begstep + ti_step;    /* end of step */
                     double dt_grav = (tend - tstart) * All.Timebase_interval;
@@ -150,10 +148,8 @@ void apply_long_range_kick(integertime tstart, integertime tend)
     int i, j;
     double dt_gravkick, dvel[3];
     
-    if(All.ComovingIntegrationOn)
-        dt_gravkick = get_gravkick_factor(tstart, tend);
-    else
-        dt_gravkick = (tend - tstart) * All.Timebase_interval;
+    if(All.ComovingIntegrationOn) {dt_gravkick = get_gravkick_factor(tstart, tend);}
+        else {dt_gravkick = (tend - tstart) * All.Timebase_interval;}
     
     for(i = 0; i < NumPart; i++)
     {
@@ -188,7 +184,7 @@ void do_the_kick(int i, integertime tstart, integertime tend, integertime tcurre
             double dMass=0; // fraction of delta_conserved to couple per kick step (each 'kick' is 1/2-timestep) // double dv[3], v_old[3], dMass, ent_old=0, d_inc = 0.5;
             if(mode != 0) // update the --conserved-- variables of each particle //
             {
-                dMass = (tend - tstart) * All.Timebase_interval / All.cf_hubble_a * SphP[i].DtMass; if(dMass * SphP[i].dMass < 0) {dMass = 0;} // slope-limit: no opposite reconstruction! //
+                dMass = ((tend - tstart) * UNIT_INTEGERTIME_IN_PHYSICAL) * SphP[i].DtMass; if(dMass * SphP[i].dMass < 0) {dMass = 0;} // slope-limit: no opposite reconstruction! //
                 if((fabs(dMass) > fabs(SphP[i].dMass))) {dMass = SphP[i].dMass;} // try to get close to what the time-integration scheme would give //
                 SphP[i].dMass -= dMass;
             } else {dMass = SphP[i].dMass;}
@@ -215,15 +211,8 @@ void do_the_kick(int i, integertime tstart, integertime tend, integertime tcurre
     if(TimeBinActive[P[i].TimeBin])
     {
         /* get the timestep (physical units for dt_entr and dt_hydrokick) */
-        if(All.ComovingIntegrationOn)
-        {
-            dt_entr = dt_hydrokick = (tend - tstart) * All.Timebase_interval / All.cf_hubble_a;
-            dt_gravkick = get_gravkick_factor(tstart, tend);
-        }
-        else
-        {
-            dt_entr = dt_gravkick = dt_hydrokick = (tend - tstart) * All.Timebase_interval;
-        }
+        dt_entr = dt_hydrokick = (tend - tstart) * UNIT_INTEGERTIME_IN_PHYSICAL;
+        if(All.ComovingIntegrationOn) {dt_gravkick = get_gravkick_factor(tstart, tend);} else {dt_gravkick = dt_hydrokick;}
         
         if(P[i].Type==0)
         {
@@ -289,7 +278,7 @@ void do_the_kick(int i, integertime tstart, integertime tend, integertime tcurre
                 SphP[i].DtPhi = (1./3.) * (SphP[i].Phi*All.cf_a3inv) * P[i].Particle_DivVel*All.cf_a2inv; // cf_a3inv from mass-based phi-fluxes
 #endif
 #endif
-                if(All.ComovingIntegrationOn) SphP[i].DtInternalEnergy -= 3*(GAMMA(i)-1) * SphP[i].InternalEnergyPred * All.cf_hubble_a;
+                if(All.ComovingIntegrationOn) {SphP[i].DtInternalEnergy -= 3*(GAMMA(i)-1) * SphP[i].InternalEnergyPred * All.cf_hubble_a;}
                 dEnt = SphP[i].InternalEnergy + SphP[i].DtInternalEnergy * dt_hydrokick; /* gravity term not included here, as it makes this unstable */
 #ifdef HYDRO_MESHLESS_FINITE_VOLUME
                 SphP[i].dMass = SphP[i].DtMass = 0;
@@ -297,14 +286,26 @@ void do_the_kick(int i, integertime tstart, integertime tend, integertime tcurre
             }
 #endif // closes ENERGY_ENTROPY_SWITCH_IS_ACTIVE
             
-#ifdef RADTRANSFER /* block here to deal with tricky cases where radiation energy density is -much- larger than thermal */
-            int kfreq; double erad_tot=0,emin=0,enew=0,demin=0,dErad=0; for(kfreq=0;kfreq<N_RT_FREQ_BINS;kfreq++) {erad_tot+=SphP[i].Rad_E_gamma[kfreq];}
-            if(erad_tot > 0)
+#ifdef HYDRO_EXPLICITLY_INTEGRATE_VOLUME
+            SphP[i].Density_ExplicitInt *= exp(-DMIN(1.5,DMAX(-1.5,P[i].Particle_DivVel*All.cf_a2inv * dt_hydrokick))); /*!< explicitly integrated volume/density variable to be used if integrating the SPH-like form of the continuity directly */
+            if(SphP[i].FaceClosureError > 0) {double drho2=0; int k; for(k=0;k<3;k++) {drho2+=SphP[i].Gradients.Density[k]*SphP[i].Gradients.Density[k];} /* the evolved density evolves back to the explicit density on a relaxation time of order the sound-crossing or tension wave-crossing time across the density gradient length */
+                if(drho2>0 && SphP[i].Density_ExplicitInt>0 && SphP[i].Density>0) {
+                    double Lgrad = SphP[i].Density / sqrt(drho2); Lgrad=DMAX(Lgrad,PPP[i].Hsml); double cs_eff_forrestoringforce=Get_Gas_effective_soundspeed_i(i); /* gradient scale length and sound speed */
+#if defined(EOS_TILLOTSON)
+                    cs_eff_forrestoringforce=DMIN(cs_eff_forrestoringforce , sqrt(All.Tillotson_EOS_params[SphP[i].CompositionType][10] / SphP[i].Density)); /* speed of deviatoric waves, which is most relevant, if defined */
+#endif
+                    double delta = 0.1 * dt_hydrokick * cs_eff_forrestoringforce / Lgrad, q0=log(SphP[i].Density_ExplicitInt), q1=log(P[i].Mass/SphP[i].FaceClosureError), qn=0; if(delta > 0.005) {qn=q0*exp(-delta) + q1*(1.-exp(-delta));} else {qn=q0 + (q1-q0)*delta*(1.-0.5*delta);} /* evolves in log-space across this span */
+                    SphP[i].Density_ExplicitInt = exp(q0); /* set final density */
+                }}
+#endif
+
+#ifdef RADTRANSFER /* block here to deal with tricky cases where radiation energy density is -much- larger than thermal, re-distribute the energy that would have taken us negative in gas back into radiation */
+            int kfreq; double erad_tot=0,emin=0,enew=0,demin=0,dErad=0,rsol_fac=C_LIGHT_CODE_REDUCED/C_LIGHT_CODE;  for(kfreq=0;kfreq<N_RT_FREQ_BINS;kfreq++) {erad_tot+=SphP[i].Rad_E_gamma[kfreq];}
+            if(erad_tot > 0) // do some checks if this helps or hurts (identical setup in predict) - seems relatively ok for now, in new form
             {
-                demin=0.025*SphP[i].InternalEnergy; emin=0.025*(erad_tot+SphP[i].InternalEnergy*P[i].Mass); enew=DMAX(erad_tot+dEnt*P[i].Mass,emin);
-                dEnt=(enew-erad_tot)/P[i].Mass; if(dEnt<demin) {dErad=dEnt-demin; dEnt=demin;}
-                if(dErad<-0.975*erad_tot) {dErad=-0.975*erad_tot;}
-                SphP[i].InternalEnergy = dEnt; for(kfreq=0;kfreq<N_RT_FREQ_BINS;kfreq++) {SphP[i].Rad_E_gamma[kfreq] *= 1 + dErad/erad_tot;}
+                demin=0.025*SphP[i].InternalEnergy; emin=0.025*(erad_tot/rsol_fac + SphP[i].InternalEnergy*P[i].Mass); enew=DMAX(erad_tot/rsol_fac + dEnt*P[i].Mass, emin);
+                dEnt=(enew - erad_tot/rsol_fac) / P[i].Mass; if(dEnt < demin) {dErad=rsol_fac*(dEnt-demin); dEnt=demin;}
+                if(dErad<-0.975*erad_tot) {dErad=-0.975*erad_tot;} SphP[i].InternalEnergy = dEnt; for(kfreq=0;kfreq<N_RT_FREQ_BINS;kfreq++) {SphP[i].Rad_E_gamma[kfreq] *= 1 + dErad/erad_tot;}
             } else {
                 if(dEnt < 0.5*SphP[i].InternalEnergy) {SphP[i].InternalEnergy *= 0.5;} else {SphP[i].InternalEnergy = dEnt;}
             }
@@ -378,6 +379,9 @@ void do_the_kick(int i, integertime tstart, integertime tend, integertime tcurre
                 P[i].Mass = SphP[i].MassTrue; //mass_old + SphP[i].DtMass * dt_hydrokick;
 #endif
                 SphP[i].InternalEnergyPred = SphP[i].InternalEnergy; //ent_old + SphP[i].DtInternalEnergy * dt_entr;
+#ifdef HYDRO_EXPLICITLY_INTEGRATE_VOLUME
+                SphP[i].Density = SphP[i].Density_ExplicitInt; /*!< explicitly integrated volume/density variable to be used if integrating the SPH-like form of the continuity directly */
+#endif
             }
         }
         
@@ -502,7 +506,7 @@ void do_sph_kick_for_extra_physics(int i, integertime tstart, integertime tend, 
 #ifdef RADTRANSFER
     rt_update_driftkick(i,dt_entr,0);
 #ifdef GRAIN_RDI_TESTPROBLEM_LIVE_RADIATION_INJECTION
-    if(P[i].Pos[2] > DMIN(14. + (All.Vertical_Grain_Accel*All.Dust_to_Gas_Mass_Ratio - All.Vertical_Gravity_Strength)*All.Time*All.Time/2., 18.)) {for(j=0;j<N_RT_FREQ_BINS;j++) {SphP[i].Rad_E_gamma[j]*=0.5; SphP[i].Rad_E_gamma_Pred[j]*=0.5;
+    if(P[i].Pos[2] > DMIN(18., DMAX(1.1*All.Time*C_LIGHT_CODE_REDUCED, DMIN(14.*boxSize_X + (All.Vertical_Grain_Accel*All.Dust_to_Gas_Mass_Ratio - All.Vertical_Gravity_Strength)*All.Time*All.Time/2., 18.)))) {for(j=0;j<N_RT_FREQ_BINS;j++) {SphP[i].Rad_E_gamma[j]*=0.5; SphP[i].Rad_E_gamma_Pred[j]*=0.5;
 #ifdef RT_EVOLVE_FLUX
         if(SphP[i].Rad_Flux[j][2] < 0) {SphP[i].Rad_Flux[j][2]=-SphP[i].Rad_Flux[j][2]; SphP[i].Rad_Flux_Pred[j][2]=SphP[i].Rad_Flux[j][2];}
 #endif
@@ -531,7 +535,7 @@ void apply_special_boundary_conditions(int i, double mass_for_dp, int mode)
                 if(P[i].Vel[j]<0) {P[i].Vel[j]=-P[i].Vel[j]; if(P[i].Type==0) {SphP[i].VelPred[j]=P[i].Vel[j]; SphP[i].HydroAccel[j]=0;} if(mode==1) {P[i].dp[j]+=2*P[i].Vel[j]*mass_for_dp;}}
                 P[i].Pos[j]=(0.+((double)P[i].ID)*1.e-9)*box_upper[j];
 #ifdef GRAIN_RDI_TESTPROBLEM_LIVE_RADIATION_INJECTION
-                P[i].Pos[j]+=3.e-3; /* special because of our wierd boundary condition for this problem, sorry to have so many hacks for this! */
+                P[i].Pos[j]+=3.e-3*boxSize_X; /* special because of our wierd boundary condition for this problem, sorry to have so many hacks for this! */
 #endif
 #ifdef RT_EVOLVE_FLUX
                 if(P[i].Type==0) {int kf; for(kf=0;kf<N_RT_FREQ_BINS;kf++) {if(SphP[i].Rad_Flux[kf][j]<0) {SphP[i].Rad_Flux[kf][j]=-SphP[i].Rad_Flux[kf][j]; SphP[i].Rad_Flux_Pred[kf][j]=SphP[i].Rad_Flux[kf][j];}}}

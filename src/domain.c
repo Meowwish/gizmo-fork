@@ -114,17 +114,11 @@ static long long totpartcount;
 
 static int UseAllParticles;
 
-/*! This is the main routine for the domain decomposition.  It acts as a
- *  driver routine that allocates various temporary buffers, maps the
- *  particles back onto the periodic box if needed, and then does the
- *  domain decomposition, and a final Peano-Hilbert order of all particles
- *  as a tuning measure.
- */
+/*! This is the main routine for the domain decomposition.  It acts as a driver routine that allocates various temporary buffers, maps the
+ *  particles back onto the periodic box if needed, and then does the domain decomposition, and a final Peano-Hilbert order of all particles as a tuning measure. */
 void domain_Decomposition(int UseAllTimeBins, int SaveKeys, int do_particle_mergesplit_key)
 {
-    int i, ret, retsum, diff, highest_bin_to_include;
-    size_t bytes, all_bytes;
-    double t0, t1;
+    int i, ret, retsum, diff, highest_bin_to_include; size_t bytes, all_bytes; double t0, t1;
     
     /* call first -before- a merge-split, to be sure particles are in the correct order in the tree */
     // TO: we don't have to call this before merge_and_split particles() 
@@ -132,62 +126,37 @@ void domain_Decomposition(int UseAllTimeBins, int SaveKeys, int do_particle_merg
     //rearrange_particle_sequence(); 
     if((All.Ti_Current > All.TimeBegin)&&(do_particle_mergesplit_key==1))
     {
-        merge_and_split_particles();
-        /* do the particle split/merge operations: only do this on tree-building super-steps */
+        merge_and_split_particles(); /* do the particle split/merge operations: only do this on tree-building super-steps */
     }
-    rearrange_particle_sequence();
-    /* must be called after merge_and_split_particles, and should always be called before new domains are built */
+    rearrange_particle_sequence(); /* must be called after merge_and_split_particles, and should always be called before new domains are built */
 
     UseAllParticles = UseAllTimeBins;
     
-    CPU_Step[CPU_MISC] += measure_time();
-    
-    for(i = 0; i < NumPart; i++)
-        if(P[i].Ti_current != All.Ti_Current)
-            drift_particle(i, All.Ti_Current);
+    for(i = 0; i < NumPart; i++) {if(P[i].Ti_current != All.Ti_Current) {drift_particle(i, All.Ti_Current);}}
     
     force_treefree();
     domain_free();
     
-    if(old_MaxPart)
-    {
-        All.MaxPart = new_MaxPart;
-        old_MaxPart = 0;
-    }
+    if(old_MaxPart) {All.MaxPart = new_MaxPart; old_MaxPart = 0;}
     
 #ifdef BOX_PERIODIC
     do_box_wrapping();		/* map the particles back onto the box */
 #endif
     
-    for(i = 0; i < NumPart; i++)
-    {
-        if(P[i].Type > 5 || P[i].Type < 0)
-        {
-            printf("task=%d:  P[i=%d].Type=%d\n", ThisTask, i, P[i].Type);
-            endrun(112411);
-        }
-    }
+    //for(i = 0; i < NumPart; i++) {if(P[i].Type > 5 || P[i].Type < 0) {printf("task=%d:  P[i=%d].Type=%d\n", ThisTask, i, P[i].Type); endrun(112411);}} // this is pure de-bugging, doesn't need to be active in normal circumstances //
 
+    MPI_Barrier(MPI_COMM_WORLD); CPU_Step[CPU_DRIFT] += measure_time(); // sync everything after merge-split and rearrange //
+    
     TreeReconstructFlag = 1;	/* ensures that new tree will be constructed */
 #ifdef SINGLE_STAR_SINK_DYNAMICS
     All.NumForcesSinceLastDomainDecomp = 0;
 #endif
     
     /* we take the closest cost factor */
-    if(UseAllParticles)
-        highest_bin_to_include = All.HighestOccupiedTimeBin;
-    else
-        highest_bin_to_include = All.HighestActiveTimeBin;
+    if(UseAllParticles) {highest_bin_to_include = All.HighestOccupiedTimeBin;} else {highest_bin_to_include = All.HighestActiveTimeBin;}
     
-    for(i = 1, TakeLevel = 0, diff = abs(All.LevelToTimeBin[0] - highest_bin_to_include); i < GRAVCOSTLEVELS;
-        i++)
-    {
-        if(diff > abs(All.LevelToTimeBin[i] - highest_bin_to_include))
-        {
-            TakeLevel = i;
-            diff = abs(All.LevelToTimeBin[i] - highest_bin_to_include);
-        }
-    }
+    for(i = 1, TakeLevel = 0, diff = abs(All.LevelToTimeBin[0] - highest_bin_to_include); i < GRAVCOSTLEVELS; i++)
+        {if(diff > abs(All.LevelToTimeBin[i] - highest_bin_to_include)) {TakeLevel = i; diff = abs(All.LevelToTimeBin[i] - highest_bin_to_include);}}
     
     PRINT_STATUS("Domain decomposition building... LevelToTimeBin[TakeLevel=%d]=%d  (presently allocated=%g MB)", TakeLevel, All.LevelToTimeBin[TakeLevel], AllocatedBytes / (1024.0 * 1024.0));
     t0 = my_second();
@@ -1285,25 +1254,17 @@ struct tasklist_data
 
 int domain_sort_task(const void *a, const void *b)
 {
-  if(((struct domain_segments_data *) a)->task < (((struct domain_segments_data *) b)->task))
-    return -1;
-
-  if(((struct domain_segments_data *) a)->task > (((struct domain_segments_data *) b)->task))
-    return +1;
-
+  if(((struct domain_segments_data *) a)->task < (((struct domain_segments_data *) b)->task)) {return -1;}
+  if(((struct domain_segments_data *) a)->task > (((struct domain_segments_data *) b)->task)) {return +1;}
   return 0;
 }
 
 int domain_sort_load(const void *a, const void *b)
 {
   if(((struct domain_segments_data *) a)->normalized_load >
-     (((struct domain_segments_data *) b)->normalized_load))
-    return -1;
-
+     (((struct domain_segments_data *) b)->normalized_load)) {return -1;}
   if(((struct domain_segments_data *) a)->normalized_load <
-     (((struct domain_segments_data *) b)->normalized_load))
-    return +1;
-
+     (((struct domain_segments_data *) b)->normalized_load)) {return +1;}
   return 0;
 }
 
@@ -2037,12 +1998,8 @@ void domain_walktoptree(int no)
 
 int domain_compare_key(const void *a, const void *b)
 {
-  if(((struct peano_hilbert_data *) a)->key < (((struct peano_hilbert_data *) b)->key))
-    return -1;
-
-  if(((struct peano_hilbert_data *) a)->key > (((struct peano_hilbert_data *) b)->key))
-    return +1;
-
+  if(((struct peano_hilbert_data *) a)->key < (((struct peano_hilbert_data *) b)->key)) {return -1;}
+  if(((struct peano_hilbert_data *) a)->key > (((struct peano_hilbert_data *) b)->key)) {return +1;}
   return 0;
 }
 
@@ -2120,7 +2077,7 @@ int domain_recursively_combine_topTree(int start, int ncpu)
 {
   int i, nleft, nright, errflag = 0;
   int recvTask, ntopnodes_import;
-  int master_left, master_right;
+  int domainkey_top_left, domainkey_top_right;
   struct local_topnode_data *topNodes_import = 0, *topNodes_temp;
 
   nleft = ncpu / 2;
@@ -2134,17 +2091,17 @@ int domain_recursively_combine_topTree(int start, int ncpu)
 
   if(ncpu >= 2)
     {
-      master_left = start;
-      master_right = start + nleft;
-      if(master_left == master_right)
+      domainkey_top_left = start;
+      domainkey_top_right = start + nleft;
+      if(domainkey_top_left == domainkey_top_right)
 	endrun(123);
 
-      if(ThisTask == master_left || ThisTask == master_right)
+      if(ThisTask == domainkey_top_left || ThisTask == domainkey_top_right)
 	{
-	  if(ThisTask == master_left)
-	    recvTask = master_right;
+	  if(ThisTask == domainkey_top_left)
+	    recvTask = domainkey_top_right;
 	  else
-	    recvTask = master_left;
+	    recvTask = domainkey_top_left;
 
 	  /* inform each other about the length of the trees */
 	  MPI_Sendrecv(&NTopnodes, 1, MPI_INT, recvTask, TAG_GRAV_A,
@@ -2166,9 +2123,9 @@ int domain_recursively_combine_topTree(int start, int ncpu)
 		       recvTask, TAG_GRAV_B, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	}
 
-      if(ThisTask == master_left)
+      if(ThisTask == domainkey_top_left)
 	{
-	  for(recvTask = master_left + 1; recvTask < master_left + nleft; recvTask++)
+	  for(recvTask = domainkey_top_left + 1; recvTask < domainkey_top_left + nleft; recvTask++)
 	    {
 	      MPI_Send(&ntopnodes_import, 1, MPI_INT, recvTask, TAG_GRAV_A, MPI_COMM_WORLD);
 	      MPI_Send(topNodes_import,
@@ -2177,9 +2134,9 @@ int domain_recursively_combine_topTree(int start, int ncpu)
 	    }
 	}
 
-      if(ThisTask == master_right)
+      if(ThisTask == domainkey_top_right)
 	{
-	  for(recvTask = master_right + 1; recvTask < master_right + nright; recvTask++)
+	  for(recvTask = domainkey_top_right + 1; recvTask < domainkey_top_right + nright; recvTask++)
 	    {
 	      MPI_Send(&ntopnodes_import, 1, MPI_INT, recvTask, TAG_GRAV_A, MPI_COMM_WORLD);
 	      MPI_Send(topNodes_import,
@@ -2188,9 +2145,9 @@ int domain_recursively_combine_topTree(int start, int ncpu)
 	    }
 	}
 
-      if(ThisTask > master_left && ThisTask < master_left + nleft)
+      if(ThisTask > domainkey_top_left && ThisTask < domainkey_top_left + nleft)
 	{
-	  MPI_Recv(&ntopnodes_import, 1, MPI_INT, master_left, TAG_GRAV_A, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	  MPI_Recv(&ntopnodes_import, 1, MPI_INT, domainkey_top_left, TAG_GRAV_A, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
 	  topNodes_import =
 	    (struct local_topnode_data *) mymalloc("topNodes_import",
@@ -2199,14 +2156,14 @@ int domain_recursively_combine_topTree(int start, int ncpu)
 
 	  MPI_Recv(topNodes_import,
 		   ntopnodes_import * sizeof(struct local_topnode_data), MPI_BYTE,
-		   master_left, TAG_GRAV_B, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		   domainkey_top_left, TAG_GRAV_B, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
 	}
 
 
-      if(ThisTask > master_right && ThisTask < master_right + nright)
+      if(ThisTask > domainkey_top_right && ThisTask < domainkey_top_right + nright)
 	{
-	  MPI_Recv(&ntopnodes_import, 1, MPI_INT, master_right, TAG_GRAV_A, MPI_COMM_WORLD,
+	  MPI_Recv(&ntopnodes_import, 1, MPI_INT, domainkey_top_right, TAG_GRAV_A, MPI_COMM_WORLD,
 		   MPI_STATUS_IGNORE);
 
 	  topNodes_import =
@@ -2216,10 +2173,10 @@ int domain_recursively_combine_topTree(int start, int ncpu)
 
 	  MPI_Recv(topNodes_import,
 		   ntopnodes_import * sizeof(struct local_topnode_data), MPI_BYTE,
-		   master_right, TAG_GRAV_B, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		   domainkey_top_right, TAG_GRAV_B, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	}
 
-      if(ThisTask >= master_left && ThisTask < master_left + nleft)
+      if(ThisTask >= domainkey_top_left && ThisTask < domainkey_top_left + nleft)
 	{
 	  /* swap the two trees so that result will be equal on all cpus */
 

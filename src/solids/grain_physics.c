@@ -10,16 +10,16 @@
 #include "../kernel.h"
 
 /*
- 
+
  This module contains the self-contained sub-routines needed for
  grain-specific physics in proto-planetary/proto-stellar/planetary cases,
  GMC and ISM/CGM/IGM dust dynamics, dust dynamics in cool-star atmospheres,
  winds, and SNe remnants, as well as terrestrial turbulence and
  particulate-laden turbulence. Anywhere where particles coupled to gas
  via coulomb, aerodynamic, or lorentz forces are interesting.
-  
+
  This file was written by Phil Hopkins (phopkins@caltech.edu) for GIZMO.
- 
+
  */
 
 
@@ -46,7 +46,7 @@ void apply_grain_dragforce(void)
 #if defined(GRAIN_BACKREACTION)
             for(k=0;k<3;k++) {P[i].Grain_DeltaMomentum[k]=0;} /* reset momentum to couple back to gas (or else would diverge) */
 #endif
-            double dt = (P[i].TimeBin ? (((integertime) 1) << P[i].TimeBin) : 0) * All.Timebase_interval / All.cf_hubble_a;
+            double dt = GET_PARTICLE_TIMESTEP_IN_PHYSICAL(i);
             double vgas_mag = 0.0; for(k=0;k<3;k++) {vgas_mag+=(P[i].Gas_Velocity[k]-P[i].Vel[k])*(P[i].Gas_Velocity[k]-P[i].Vel[k]);}
             vgas_mag = sqrt(vgas_mag) / All.cf_atime; /* convert to physical units */
             int grain_subtype = 1; /* default assumption about particulate sub-type for operations below */
@@ -99,7 +99,7 @@ void apply_grain_dragforce(void)
                 }
 #endif // LORENTZ + EPSTEIN/STOKES force (Coulomb computation)
 
-                
+
                 /* this external_forcing parameter includes additional grain-specific forces. note that -anything- which imparts an
                  identical acceleration onto gas and dust will cancel in the terms in t_stop, and just act like a 'normal' acceleration
                  on the dust. for this reason the gravitational acceleration doesn't need to enter our 'external_forcing' parameter */
@@ -153,7 +153,7 @@ void apply_grain_dragforce(void)
                     if(tstop_inv > 0) {vdrift = external_forcing[k] / (tstop_inv * sqrt(1+x0*x0));}
                     dv[k] = slow_fac * (v_gas_i - v_init + vdrift);
                     if(isnan(vdrift)||isnan(slow_fac)) {dv[k] = 0;}
-                    
+
                     vel_new = v_init + dv[k];
                     delta_mom[k] = P[i].Mass * (vel_new - v_init);
                     delta_egy += 0.5*P[i].Mass * (vel_new*vel_new - v_init*v_init);
@@ -167,7 +167,7 @@ void apply_grain_dragforce(void)
                 }
             } // closes check for gas density, dt, vmag > 0, subtype valid
 
-                
+
 #ifdef PIC_MHD
 #ifndef PIC_SPEEDOFLIGHT_REDUCTION
 #define PIC_SPEEDOFLIGHT_REDUCTION (1)
@@ -176,7 +176,7 @@ void apply_grain_dragforce(void)
             {
                 double reduced_C = PIC_SPEEDOFLIGHT_REDUCTION * C_LIGHT_CODE; /* effective speed of light for this part of the code */
                 double charge_to_mass_ratio_dimensionless = All.PIC_Charge_to_Mass_Ratio; /* dimensionless q/m in units of e/mp */
-                
+
                 double lorentz_units = UNIT_B_IN_GAUSS; // code B to Gauss
                 lorentz_units *= UNIT_VEL_IN_CGS * (ELECTRONCHARGE/(PROTONMASS*C_LIGHT)); // code velocity to CGS, times base units e/(mp*c)
                 lorentz_units /= UNIT_VEL_IN_CGS / UNIT_TIME_IN_CGS; // convert 'back' to code-units acceleration
@@ -188,7 +188,7 @@ void apply_grain_dragforce(void)
                 double v_0[3],v0[3],vf[3],v2=0; for(k=0;k<3;k++) {v0[k]=P[i].Vel[k]/All.cf_atime; v2+=v0[k]*v0[k];}
                 if(v2 >= reduced_C*reduced_C) {PRINT_WARNING("VELOCITY HAS EXCEEDED THE SPEED OF LIGHT. BAD.");}
                 double gamma_0=1/sqrt(1-v2/(reduced_C*reduced_C)); for(k=0;k<3;k++) {v_0[k]=v0[k]*gamma_0/reduced_C;} // convert to the momentum term ~gamma*v
-                
+
                 /* now apply the boris integrator */
                 double v_m[3]={0}, v_t[3]={0}, v_p[3]={0}, vcrosst[3]={0}, lorentz_coeff=efield_coeff;
                 for(k=0;k<3;k++) {v_m[k] = v_0[k] + efield_coeff*efield[k];} // first half-step from E-field
@@ -213,7 +213,7 @@ void apply_grain_dragforce(void)
         } // closes check for particle type, id
     } // closes main particle loop (loop over active particles)
 #if defined(GRAIN_BACKREACTION)
-    grain_backrx(); /* call master routine to assign the back-reaction force among neighbors */
+    grain_backrx(); /* call parent routine to assign the back-reaction force among neighbors */
 #endif
     PRINT_STATUS(" ..particulate/grain/PIC force evaluation done.");
     CPU_Step[CPU_DRAGFORCE] += measure_time();
@@ -229,7 +229,7 @@ void apply_grain_dragforce(void)
  'work' between neighbors, but all of the parallelization, looping, communication blocks,
  etc, are all handled for you. */
 
-#define MASTER_FUNCTION_NAME grain_backrx_evaluate /* name of the 'core' function doing the actual inter-neighbor operations. this MUST be defined somewhere as "int MASTER_FUNCTION_NAME(int target, int mode, int *exportflag, int *exportnodecount, int *exportindex, int *ngblist, int loop_iteration)" */
+#define CORE_FUNCTION_NAME grain_backrx_evaluate /* name of the 'core' function doing the actual inter-neighbor operations. this MUST be defined somewhere as "int CORE_FUNCTION_NAME(int target, int mode, int *exportflag, int *exportnodecount, int *exportindex, int *ngblist, int loop_iteration)" */
 #define CONDITIONFUNCTION_FOR_EVALUATION if(((1 << P[i].Type) & (GRAIN_PTYPES))&&(P[i].TimeBin>=0)&&(P[i].Mass>0)) /* function for which elements will be 'active' and allowed to undergo operations. can be a function call, e.g. 'density_is_active(i)', or a direct function call like 'if(P[i].Mass>0)' */
 #include "../system/code_block_xchange_initialize.h" /* pre-define all the ALL_CAPS variables we will use below, so their naming conventions are consistent and they compile together, as well as defining some of the function calls needed */
 
@@ -271,23 +271,25 @@ static inline void OUTPUTFUNCTION_NAME(struct OUTPUT_STRUCT_NAME *out, int i, in
 
 
 /* this subroutine does the actual neighbor-element calculations (this is the 'core' of the loop, essentially) */
+/*!   -- this subroutine writes to shared memory [updating the neighbor values]: need to protect these writes for openmp below. modified values for the minimum timestep are read, so both read and write need to be protected. */
 int grain_backrx_evaluate(int target, int mode, int *exportflag, int *exportnodecount, int *exportindex, int *ngblist, int loop_iteration)
 {
     int startnode, numngb_inbox, listindex = 0, j, n; struct INPUT_STRUCT_NAME local; struct OUTPUT_STRUCT_NAME out; memset(&out, 0, sizeof(struct OUTPUT_STRUCT_NAME)); /* define variables and zero memory and import data for local target*/
     if(mode == 0) {INPUTFUNCTION_NAME(&local, target, loop_iteration);} else {local = DATAGET_NAME[target];} /* imports the data to the correct place and names */
-    
+
     if(local.Hsml <= 0) {return 0;} /* don't bother doing a loop if this isnt going to do anything */
     int kernel_shared_BITFLAG = 1; /* grains 'see' gas in this loop */
-    
+
     /* Now start the actual neighbor computation for this particle */
     if(mode == 0) {startnode = All.MaxPart; /* root node */} else {startnode = DATAGET_NAME[target].NodeList[0]; startnode = Nodes[startnode].u.d.nextnode;    /* open it */}
     while(startnode >= 0) {
         while(startnode >= 0) {
             numngb_inbox = ngb_treefind_variable_threads_targeted(local.Pos, local.Hsml, target, &startnode, mode, exportflag, exportnodecount, exportindex, ngblist, kernel_shared_BITFLAG);
-            if(numngb_inbox < 0) {return -1;} /* no neighbors! */
+            if(numngb_inbox < 0) {return -2;} /* no neighbors! */
             for(n = 0; n < numngb_inbox; n++) /* neighbor loop */
             {
-                j = ngblist[n]; if((P[j].Mass <= 0)||(P[j].Hsml <= 0)) {continue;} /* make sure neighbor is valid */
+                j = ngblist[n]; /* since we use the -threaded- version above of ngb-finding, its super-important this is the lower-case ngblist here! */
+                if((P[j].Mass <= 0)||(P[j].Hsml <= 0)) {continue;} /* make sure neighbor is valid */
                 int k; double dp[3]; for(k=0;k<3;k++) {dp[k]=local.Pos[k]-P[j].Pos[k];} /* position offset */
                 NEAREST_XYZ(dp[0],dp[1],dp[2],1); double r2=dp[0]*dp[0]+dp[1]*dp[1]+dp[2]*dp[2]; /* box-wrap appropriately and calculate distance */
 #ifdef BOX_BND_PARTICLES
@@ -299,9 +301,25 @@ int grain_backrx_evaluate(int target, int mode, int *exportflag, int *exportnode
                     kernel_main(r*hinv, hinv3, hinv4, &wk_i, &dwk_i, 0); /* kernel quantities that may be needed */
 #if defined(GRAIN_BACKREACTION)
                     double wt = -wk_i / local.Gas_Density, dv2=0; /* degy=wt*delta_egy; */
-                    for(k=0;k<3;k++) {double dv=wt*local.Grain_DeltaMomentum[k]; P[j].Vel[k]+=dv; SphP[j].VelPred[k]+=dv; dv2+=dv*dv;}
-                    P[j].Grain_AccelTimeMin=DMIN(DMIN(2.*All.ErrTolIntAccuracy*Get_Particle_Size(j)*All.cf_atime*All.cf_atime/sqrt(dv2+MIN_REAL_NUMBER) , 4.*local.Grain_AccelTimeMin), P[j].Grain_AccelTimeMin);
-                    /* for(k=0;k<3;k++) {degy-=P[j].Mass*dv*(VelPred_j[k]+0.5*dv);} SphP[j].InternalEnergy += degy; */
+                    for(k=0;k<3;k++) {
+                        double dv = wt*local.Grain_DeltaMomentum[k]; // momentum to be sent to this neighbor element
+                        dv2+=dv*dv; // save squared sum
+                        #pragma omp atomic
+                        P[j].Vel[k] += dv; // add the velocity (checking for thread safety in doing so!)
+                        #pragma omp atomic
+                        SphP[j].VelPred[k] += dv; // add the velocity (checking for thread safety in doing so!)
+                    }
+                    
+                    double taccel_min_prev = 0, taccel_min_new = 0;
+                    #pragma omp atomic read
+                    taccel_min_prev = P[j].Grain_AccelTimeMin; // this can be modified below so needs to be done in a thread-safe manner here //
+                    taccel_min_new = DMIN(DMIN(2.*All.ErrTolIntAccuracy*Get_Particle_Size(j)*All.cf_atime*All.cf_atime/sqrt(dv2+MIN_REAL_NUMBER) , 4.*local.Grain_AccelTimeMin), taccel_min_prev);
+                    if(taccel_min_new < taccel_min_prev)
+                    {
+                        #pragma omp atomic write
+                        P[j].Grain_AccelTimeMin = taccel_min_new;
+                    }
+                    /* for(k=0;k<3;k++) {degy-=P[j].Mass*dv*(VelPred_j[k]+0.5*dv);} SphP[j].InternalEnergy += degy; */ // ignoring these terms -- if re-add them be sure to do so thread-safely //
 #endif
                 }
             } // numngb_inbox loop
@@ -345,10 +363,9 @@ double return_grain_cross_section_per_unit_mass(int i)
     where here 'All.DM_InteractionCrossSection' is the cross-section read in from the params file, and other params like DM_InteractionVelocityScale
     allow the user to control the collision velocity dependence. This function should be appropriately modified to the actual grain physics being represented.
     Here, the default assumption is simple hard-sphere scattering with a constant cross section per unit grain mass, set by the grain size */
-double prob_of_grain_interaction(double cx_per_unitmass, double mass, double r, double h_si, double dV[3], integertime dt_step, int j_ngb)
+double prob_of_grain_interaction(double cx_per_unitmass, double mass, double r, double h_si, double dV[3], double dt, int j_ngb)
 {
     double dVmag = sqrt(dV[0]*dV[0]+dV[1]*dV[1]+dV[2]*dV[2]) / All.cf_atime; // velocity in physical
-    double dt = dt_step * All.Timebase_interval / All.cf_hubble_a; // time in physical
     double rho_eff = 0.5*(mass + P[j_ngb].Mass) / (h_si*h_si*h_si) * All.cf_a3inv; // density in physical
     double cx_eff = g_geo(r/h_si) * (mass*cx_per_unitmass + P[j_ngb].Mass*return_grain_cross_section_per_unit_mass(j_ngb)) / (mass + P[j_ngb].Mass); // mass-weighted effective cross section (physical) scaled to cgs
     double units = UNIT_SURFDEN_IN_CGS; // needed to convert everything to cgs
@@ -383,7 +400,7 @@ void calculate_interact_kick(double dV[3], double kick[3], double m)
 #define GRAIN_RDI_TESTPROBLEM_Q_AT_GRAIN_MAX 1 /* needed for radiation problems below, default to unity */
 #endif
 
-#define MASTER_FUNCTION_NAME interpolate_fluxes_opacities_gasgrains_evaluate /* name of the 'core' function doing the actual inter-neighbor operations. this MUST be defined somewhere as "int MASTER_FUNCTION_NAME(int target, int mode, int *exportflag, int *exportnodecount, int *exportindex, int *ngblist, int loop_iteration)" */
+#define CORE_FUNCTION_NAME interpolate_fluxes_opacities_gasgrains_evaluate /* name of the 'core' function doing the actual inter-neighbor operations. this MUST be defined somewhere as "int CORE_FUNCTION_NAME(int target, int mode, int *exportflag, int *exportnodecount, int *exportindex, int *ngblist, int loop_iteration)" */
 #define CONDITIONFUNCTION_FOR_EVALUATION if(((1 << P[i].Type) & (GRAIN_PTYPES+1))&&(P[i].TimeBin>=0)&&(P[i].Mass>0)) /* function for which elements will be 'active' and allowed to undergo operations. can be a function call, e.g. 'density_is_active(i)', or a direct function call like 'if(P[i].Mass>0)' */
 #include "../system/code_block_xchange_initialize.h" /* pre-define all the ALL_CAPS variables we will use below, so their naming conventions are consistent and they compile together, as well as defining some of the function calls needed */
 
@@ -401,7 +418,7 @@ static inline void INPUTFUNCTION_NAME(struct INPUT_STRUCT_NAME *in, int i, int l
         double R_grain_code=P[i].Grain_Size/UNIT_LENGTH_IN_CGS, rho_grain_code=All.Grain_Internal_Density/UNIT_DENSITY_IN_CGS, rho_gas_code=P[i].Gas_Density*All.cf_a3inv; /* internal grain density in code units */
         for(k_freq=0;k_freq<N_RT_FREQ_BINS;k_freq++)
         {
-            double Q_abs_eff = return_grain_absorption_efficiency_Q(i, k_freq); /* need this to calculate the absorption efficiency in each band */
+            double Q_abs_eff = return_grain_extinction_efficiency_Q(i, k_freq); /* need this to calculate the absorption efficiency in each band */
             in->Grain_Abs_Coeff[k_freq] = Q_abs_eff * 3. / (4. * C_LIGHT_CODE_REDUCED * rho_grain_code * R_grain_code * rho_gas_code);
         }
     }
@@ -425,7 +442,7 @@ int interpolate_fluxes_opacities_gasgrains_evaluate(int target, int mode, int *e
 {
     int startnode, numngb_inbox, listindex = 0, j, n; struct INPUT_STRUCT_NAME local; struct OUTPUT_STRUCT_NAME out; memset(&out, 0, sizeof(struct OUTPUT_STRUCT_NAME)); /* define variables and zero memory and import data for local target*/
     if(mode == 0) {INPUTFUNCTION_NAME(&local, target, loop_iteration);} else {local = DATAGET_NAME[target];} /* imports the data to the correct place and names */
-    
+
     /* Now start the actual neighbor computation for this particle */
     if(mode == 0) {startnode = All.MaxPart; /* root node */} else {startnode = DATAGET_NAME[target].NodeList[0]; startnode = Nodes[startnode].u.d.nextnode;    /* open it */}
     while(startnode >= 0) {
@@ -436,10 +453,11 @@ int interpolate_fluxes_opacities_gasgrains_evaluate(int target, int mode, int *e
             } else {
                 numngb_inbox = ngb_treefind_variable_threads(local.Pos, local.Hsml, target, &startnode, mode, exportflag, exportnodecount, exportindex, ngblist); /* grains search for gas -they- can see */
             }
-            if(numngb_inbox < 0) {return -1;} /* no neighbors! */
+            if(numngb_inbox < 0) {return -2;} /* no neighbors! */
             for(n = 0; n < numngb_inbox; n++) /* neighbor loop */
             {
-                j = ngblist[n]; if((P[j].Mass <= 0)||(PPP[j].Hsml <= 0)) {continue;} /* make sure neighbor is valid */
+                j = ngblist[n]; /* since we use the -threaded- version above of ngb-finding, its super-important this is the lower-case ngblist here! */
+                if((P[j].Mass <= 0)||(PPP[j].Hsml <= 0)) {continue;} /* make sure neighbor is valid */
                 int k,k_freq; double dp[3],h_to_use; for(k=0;k<3;k++) {dp[k]=local.Pos[k]-P[j].Pos[k];} /* position offset */
                 NEAREST_XYZ(dp[0],dp[1],dp[2],1); double r2=dp[0]*dp[0]+dp[1]*dp[1]+dp[2]*dp[2]; /* box-wrap appropriately and calculate distance */
                 if(local.Type == 0) {h_to_use = PPP[j].Hsml;} else {h_to_use = local.Hsml;}
@@ -447,19 +465,19 @@ int interpolate_fluxes_opacities_gasgrains_evaluate(int target, int mode, int *e
                 {
                     double wt=0,hinv,hinv3,hinv4,wk_i=0,dwk_i=0,r=sqrt(r2); kernel_hinv(h_to_use,&hinv,&hinv3,&hinv4);
                     kernel_main(r*hinv, hinv3, hinv4, &wk_i, &dwk_i, 0); /* kernel quantities that may be needed */
-                    
+
                     if(local.Type==0) /* sitting on a -gas- element, want to interpolate opacity to it */
                     {
                         wt = P[j].Mass * (wk_i / P[j].Gas_Density); /* dimensionless weight of this gas element as 'seen' by the grain: = (grain_part_mass/gas_part_mass) * (gas_part_mass * Wk / gas_density [=sum gas_part_mass * Wk]) */
                         double R_grain_code=P[j].Grain_Size/UNIT_LENGTH_IN_CGS, rho_grain_code=All.Grain_Internal_Density/UNIT_DENSITY_IN_CGS; /* internal grain density in code units */
                         for(k_freq=0;k_freq<N_RT_FREQ_BINS;k_freq++)
                         {
-                            double Q_abs_eff = return_grain_absorption_efficiency_Q(j, k_freq); /* need this to calculate the absorption efficiency in each band */
+                            double Q_abs_eff = return_grain_extinction_efficiency_Q(j, k_freq); /* need this to calculate the absorption efficiency in each band */
                             out.Interpolated_Opacity[k_freq] += wt * Q_abs_eff * 3. / (4. * rho_grain_code * R_grain_code);
                         }
                     } else { /* sitting on a -grain- element, want to interpolate flux to it and calculate radiation pressure force */
                         wt = SphP[j].Density*All.cf_a3inv * wk_i; /* weight of element to 'i, with appropriate coefficient from above */
-                        double radacc[3]={0},vel_i[3]={0},dtEgamma_work_done=0; for(k=0;k<3;k++) {vel_i[k]=local.Vel[k]/All.cf_atime;} /* velocity of interest here is the grain velocity (radiation in lab frame) */
+                        double radacc[3]={0},vel_i[3]={0},dtEgamma_work_done=0; for(k=0;k<3;k++) {vel_i[k]=(C_LIGHT_CODE_REDUCED/C_LIGHT_CODE)*local.Vel[k]/All.cf_atime;} /* velocity of interest here is the grain velocity (radiation in lab frame) */
                         for(k_freq=0;k_freq<N_RT_FREQ_BINS;k_freq++)
                         {
                             double f_kappa_abs=0.5,vdot_h[3]={0},flux_i[3]={0},flux_mag=0,erad_i=0,flux_corr=1;
@@ -470,7 +488,7 @@ int interpolate_fluxes_opacities_gasgrains_evaluate(int target, int mode, int *e
                             for(k=0;k<3;k++) {flux_i[k]=SphP[j].Rad_Flux_Pred[k_freq][k]; flux_mag+=flux_i[k]*flux_i[k];}
                             if(flux_mag>0 && isfinite(flux_mag)) {flux_mag=sqrt(flux_mag);} else {flux_mag=MIN_REAL_NUMBER; flux_i[0]=flux_i[1]=0; flux_i[2]=flux_mag;}
 #elif (defined(RT_OTVET) || defined(RT_FLUXLIMITEDDIFFUSION))
-                            erad_i = SphP[j].Rad_E_gamma_Pred[k_freq]; //for(k=0;k<3;k++) {flux_i[k] = SphP[j].Rad_Flux_Limiter[k_freq] * (-SphP[j].Gradients.Rad_E_gamma_ET[k_freq][k]*All.cf_a3inv/All.cf_atime) * C_LIGHT_CODE_REDUCED / (SphP[j].Density*All.cf_a3inv * SphP[j].Rad_Kappa[k_freq]); flux_mag+=flux_i[k]*flux_i[k];} // can't use this because kappa isn't calculated yet
+                            erad_i = SphP[j].Rad_E_gamma_Pred[k_freq];
                             for(k=0;k<3;k++) {flux_i[k] = -SphP[j].Gradients.Rad_E_gamma_ET[k_freq][k]; flux_mag+=flux_i[k]*flux_i[k];}
                             if(flux_mag>0) {for(k=0;k<3;k++) {flux_i[k]/=sqrt(flux_mag);}} else {flux_i[0]=0;flux_i[1]=0;flux_i[2]=1;}
                             flux_mag = erad_i*C_LIGHT_CODE_REDUCED; for(k=0;k<3;k++) {flux_i[k]*=flux_mag;}
@@ -507,7 +525,7 @@ void interpolate_fluxes_opacities_gasgrains(void)
 
 
 
-double return_grain_absorption_efficiency_Q(int i, int k_freq)
+double return_grain_extinction_efficiency_Q(int i, int k_freq)
 {
     double Q = 1; /* default to geometric opacity */
 #if defined(GRAIN_RDI_TESTPROBLEM)
@@ -517,7 +535,7 @@ double return_grain_absorption_efficiency_Q(int i, int k_freq)
 #endif
 #else
     /* INSERT PHYSICS HERE -- this is where you want to specify the optical properties of grains relative to the frequency bins being evolved. could code up something for -ALL- the bins we do, but that's a lot, so we'll do these as-needed, for runs with different frequencies */
-    if(ThisTask==0) {PRINT_WARNING("Code does not have entered grain absorption efficiency/optical properties for your specific wavelength being evolved. Please enter that information in the routine 'return_grain_absorption_efficiency_Q'. For now will assume geometric absorption (Q=1). \n");}
+    if(ThisTask==0) {PRINT_WARNING("Code does not have entered grain absorption efficiency/optical properties for your specific wavelength being evolved. Please enter that information in the routine 'return_grain_extinction_efficiency_Q'. For now will assume geometric absorption (Q=1). \n");}
 #endif
     return Q;
 }
@@ -530,5 +548,3 @@ double return_grain_absorption_efficiency_Q(int i, int k_freq)
 
 
 #endif
-
-

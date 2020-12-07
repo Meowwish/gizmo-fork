@@ -46,7 +46,7 @@ void restart(int modus)
 {
     char buf[200], buf_bak[200], buf_mv[500];
     double save_PartAllocFactor;
-    int nprocgroup, masterTask, groupTask;
+    int nprocgroup, primaryTask, groupTask;
     struct global_data_all_processes all_task0;
     int nmulti = MULTIPLEDOMAINS, regular_restarts_are_valid = 1, backup_restarts_are_valid = 1;
     
@@ -111,11 +111,11 @@ void restart(int modus)
         nprocgroup++;
     }
 
-  masterTask = (ThisTask / nprocgroup) * nprocgroup;
+  primaryTask = (ThisTask / nprocgroup) * nprocgroup;
 
   for(groupTask = 0; groupTask < nprocgroup; groupTask++)
     {
-      if(ThisTask == (masterTask + groupTask))	/* ok, it's this processor's turn */
+      if(ThisTask == (primaryTask + groupTask))	/* ok, it's this processor's turn */
 	{
 	  if(modus)
 	    {
@@ -242,23 +242,13 @@ void restart(int modus)
 
 #ifdef TURB_DRIVING
       byten(gsl_rng_state(StRng), gsl_rng_size(StRng), modus);
- 
 	  byten(&StNModes, sizeof(StNModes), modus);
-
-	  byten(&StOUVar, sizeof(StOUVar),modus);
 	  byten(StOUPhases, StNModes*6*sizeof(double),modus);
-
 	  byten(StAmpl, StNModes*3*sizeof(double),modus);
 	  byten(StAka, StNModes*3*sizeof(double),modus);
 	  byten(StAkb, StNModes*3*sizeof(double),modus);
 	  byten(StMode, StNModes*3*sizeof(double),modus);
-
 	  byten(&StTPrev, sizeof(StTPrev),modus);
-	  byten(&StSolWeightNorm, sizeof(StSolWeightNorm),modus);
-
-          /*byten(&StEnergyAcc, sizeof(double),modus);
-          byten(&StEnergyDeacc, sizeof(double),modus);
-          byten(&StLastStatTime, sizeof(double),modus);*/
 #endif
 
 	  /* write flags for active timebins */
@@ -340,8 +330,7 @@ void restart(int modus)
 
   if(modus != 0 && nmulti != MULTIPLEDOMAINS)	/* in this case we must force a domain decomposition */
     {
-      if(ThisTask == 0)
-	printf("Doing extra domain decomposition because you changed MULTIPLEDOMAINS\n");
+        if(ThisTask == 0) {printf("Doing extra domain decomposition because you changed MULTIPLEDOMAINS\n"); fflush(stdout);}
 
       domain_Decomposition(0, 0, 0);
     }

@@ -6,12 +6,8 @@
 * see notes in blackhole.c for details on code history.
 */
 
-#ifdef BLACK_HOLES // master flag [needs to be here to prevent compiler breaking when this is not active] //
+#ifdef BLACK_HOLES // top-level flag [needs to be here to prevent compiler breaking when this is not active] //
 
-
-#ifndef BH_CSND_FRAC_BH_MERGE
-#define BH_CSND_FRAC_BH_MERGE 1.0 /* Relative velocity fraction (in units of soundspeed) for merging blackholes, default=1.0 */
-#endif
 
 #define BHPOTVALUEINIT 1.0e30
 extern int N_active_loc_BHs;    /*!< number of active black holes on the LOCAL processor */
@@ -84,6 +80,7 @@ double bh_lum_bol(double mdot, double mass, long id);
 
 /* blackholes.c */
 void blackhole_final_operations(void);
+int bhsink_isactive(int i);
 
 /* blackhole_environment.c */
 void blackhole_environment_loop(void);
@@ -109,4 +106,4 @@ void set_blackhole_long_range_rp(int i, int n);
 
 
 
-#endif // master flag
+#endif // top-level flag

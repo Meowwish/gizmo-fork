@@ -358,10 +358,10 @@ static inline double kernel_gravity(double u, double hinv, double hinv3, int mod
     /* here everything is newtonian, add this as a check just in case */
     if(u >= 1)
     {
-        if(mode ==  0) return 0;
-        if(mode ==  1) return hinv3/(u*u*u);
-        if(mode == -1) return -hinv/u;
-        if(mode ==  2) return 3.*hinv3*hinv*hinv/(u*u*u*u*u);
+        if(mode ==  0) {return 0;}
+        if(mode ==  1) {return hinv3/(u*u*u);}
+        if(mode == -1) {return -hinv/u;}
+        if(mode ==  2) {return 3.*hinv3*hinv*hinv/(u*u*u*u*u);}
     }
     double wk;
 
@@ -642,4 +642,7 @@ static inline double kernel_gravity(double u, double hinv, double hinv3, int mod
     return 0;
 }
 
+
+
+#define KERNEL_FAC_FROM_FORCESOFT_TO_PLUMMER ((-1./kernel_gravity(0,1,1,-1))) /* factor which defines the plummer-equivalent radius for any kernel. multiplying ForceSoftening [radius of compact support] by this number gives the standard Plummer-equivalent definition: e.g. for a cubic spline, this returns 1./2.8, which is the desired conversion factor */
 

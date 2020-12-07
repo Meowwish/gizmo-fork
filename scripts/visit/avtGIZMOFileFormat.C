@@ -252,9 +252,9 @@ avtGIZMOFileFormat::ReadHeader() {
     ierr = H5Aread(attr_id, H5T_NATIVE_UINT,
         &header.num_part_total_high_word[0]); MYH5CHECK(ierr);
 
-    attr_id = H5Aopen(group_id, "Omega0", H5P_DEFAULT);
+    attr_id = H5Aopen(group_id, "OmegaMatter", H5P_DEFAULT);
       MYH5CHECK(attr_id);
-    ierr = H5Aread(attr_id, H5T_NATIVE_DOUBLE, &header.Omega0);
+    ierr = H5Aread(attr_id, H5T_NATIVE_DOUBLE, &header.OmegaMatter);
       MYH5CHECK(ierr);
     H5Aclose(attr_id);
 
@@ -460,7 +460,7 @@ avtGIZMOFileFormat::GetMesh(const char *meshname)
   sscanf(meshname, "PartType%d", &ptype);
   if(ptype < 0 || ptype >= GIZMO_N_PTYPE) {
     char errmsg[GIZMO_STRLEN];
-    snprintf(errmsg, GIZMO_STRLEN, "Unkown particle type: \"PartType%d\"",
+    snprintf(errmsg, GIZMO_STRLEN, "Unknown particle type: \"PartType%d\"",
         ptype);
     EXCEPTION1(InvalidDBTypeException, errmsg);
   }

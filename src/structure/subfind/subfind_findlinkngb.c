@@ -6,6 +6,7 @@
 #include <gsl/gsl_math.h>
 #include "../../allvars.h"
 #include "../../proto.h"
+#include "../../kernel.h"
 /*
 * This file was originally part of the GADGET3 code developed by Volker Springel.
 * It has been updated significantly by PFH for basic compatibility with GIZMO,
@@ -46,28 +47,17 @@ void subfind_find_linkngb(void)
   int ngrp, recvTask, place, nexport, nimport;
   double t0, t1;
 
-
-  if(ThisTask == 0)
-    printf("Start find_linkngb (%d particles on task=%d)\n", NumPartGroup, ThisTask);
-
-  //int save_DesNumNgb = All.DesNumNgb;
-  //All.DesNumNgb = All.DesLinkNgb;	/* for simplicity, reset this value */
-
+  if(ThisTask == 0) {printf("Start find_linkngb (%d particles on task=%d)\n", NumPartGroup, ThisTask);}
 
   /* allocate buffers to arrange communication */
-
   Ngblist = (int *) mymalloc("Ngblist", NumPartGroup * sizeof(int));
   Dist2list = (double *) mymalloc("Dist2list", NumPartGroup * sizeof(double));
 
-  All.BunchSize =
-    (int) ((All.BufferSize * 1024 * 1024) / (sizeof(struct data_index) + sizeof(struct data_nodelist) +
+  All.BunchSize =(int) ((All.BufferSize * 1024 * 1024) / (sizeof(struct data_index) + sizeof(struct data_nodelist) +
 					     sizeof(struct linkngbdata_in) + sizeof(struct linkngbdata_out) +
-					     sizemax(sizeof(struct linkngbdata_in),
-						     sizeof(struct linkngbdata_out))));
-  DataIndexTable =
-    (struct data_index *) mymalloc("DataIndexTable", All.BunchSize * sizeof(struct data_index));
-  DataNodeList =
-    (struct data_nodelist *) mymalloc("DataNodeList", All.BunchSize * sizeof(struct data_nodelist));
+					     sizemax(sizeof(struct linkngbdata_in),sizeof(struct linkngbdata_out))));
+  DataIndexTable = (struct data_index *) mymalloc("DataIndexTable", All.BunchSize * sizeof(struct data_index));
+  DataNodeList = (struct data_nodelist *) mymalloc("DataNodeList", All.BunchSize * sizeof(struct data_nodelist));
 
   Left = (MyFloat *)mymalloc("Left", sizeof(MyFloat) * NumPartGroup);
   Right = (MyFloat *)mymalloc("Right", sizeof(MyFloat) * NumPartGroup);
@@ -83,7 +73,6 @@ void subfind_find_linkngb(void)
   do
     {
       t0 = my_second();
-
       i = 0;			/* begin with this index */
 
       do
@@ -303,8 +292,6 @@ void subfind_find_linkngb(void)
 
   myfree(Dist2list);
   myfree(Ngblist);
-
-  //All.DesNumNgb = save_DesNumNgb;	/* restore it */
 }
 
 
@@ -312,6 +299,7 @@ void subfind_find_linkngb(void)
  *  target particle may either be local, or reside in the communication
  *  buffer.
  */
+/*!   -- this subroutine is not openmp parallelized at present, so there's not any issue about conflicts over shared memory. if you make it openmp, make sure you protect the writes to shared memory here!!! -- */
 int subfind_linkngb_evaluate(int target, int mode, int *nexport, int *nsend_local)
 {
   int startnode, numngb, ngbs, listindex = 0;
@@ -350,13 +338,9 @@ int subfind_linkngb_evaluate(int target, int mode, int *nexport, int *nsend_loca
       while(startnode >= 0)
 	{
 	  ngbs = subfind_ngb_treefind_linkngb(pos, h, target, &startnode, mode, &hmax, nexport, nsend_local);
+	  if(ngbs < 0) {return -2;}
 
-	  if(ngbs < 0)
-	    return -1;
-
-	  if(mode == 0 && hmax > 0)
-	    P[target].DM_Hsml = hmax;
-
+	  if(mode == 0 && hmax > 0) {P[target].DM_Hsml = hmax;}
 	  numngb += ngbs;
 	}
 
@@ -387,6 +371,7 @@ int subfind_linkngb_evaluate(int target, int mode, int *nexport, int *nsend_loca
 
 
 
+/*!   -- this subroutine is not openmp parallelized at present, so there's not any issue about conflicts over shared memory. if you make it openmp, make sure you protect the writes to shared memory here!!! -- */
 int subfind_ngb_treefind_linkngb(MyDouble searchcenter[3], double hsml, int target, int *startnode, int mode,
 				 double *hmax, int *nexport, int *nsend_local)
 {
@@ -452,13 +437,10 @@ int subfind_ngb_treefind_linkngb(MyDouble searchcenter[3], double hsml, int targ
 		      if(*nexport >= All.BunchSize)
 			{
 			  *nexport = nexport_save;
-			  if(nexport_save == 0)
-			    endrun(13004);	/* in this case, the buffer is too small to process even a single particle */
-			  for(task = 0; task < NTask; task++)
-			    nsend_local[task] = 0;
-			  for(no = 0; no < nexport_save; no++)
-			    nsend_local[DataIndexTable[no].Task]++;
-			  return -1;
+			  if(nexport_save == 0) {endrun(13004);} /* in this case, the buffer is too small to process even a single particle */
+			  for(task = 0; task < NTask; task++) {nsend_local[task] = 0;}
+			  for(no = 0; no < nexport_save; no++) {nsend_local[DataIndexTable[no].Task]++;}
+			  return -1; /* buffer has filled -- important that only this and other buffer-full conditions return the negative condition for the routine */
 			}
 		      Exportnodecount[task] = 0;
 		      Exportindex[task] = *nexport;
@@ -547,6 +529,7 @@ int subfind_ngb_treefind_linkngb(MyDouble searchcenter[3], double hsml, int targ
 /*! This routine finds all neighbours `j' that can interact with
  *  \f$ r_{ij} < h_i \f$  OR if  \f$ r_{ij} < h_j \f$.
  */
+/*!   -- this subroutine is not openmp parallelized at present, so there's not any issue about conflicts over shared memory. if you make it openmp, make sure you protect the writes to shared memory here!!! -- */
 int subfind_ngb_treefind_linkpairs(MyDouble searchcenter[3], double hsml, int target, int *startnode,
 				   int mode, double *hmax, int *nexport, int *nsend_local)
 {
@@ -612,13 +595,10 @@ int subfind_ngb_treefind_linkpairs(MyDouble searchcenter[3], double hsml, int ta
 		      if(*nexport >= All.BunchSize)
 			{
 			  *nexport = nexport_save;
-			  if(nexport_save == 0)
-			    endrun(13004);	/* in this case, the buffer is too small to process even a single particle */
-			  for(task = 0; task < NTask; task++)
-			    nsend_local[task] = 0;
-			  for(no = 0; no < nexport_save; no++)
-			    nsend_local[DataIndexTable[no].Task]++;
-			  return -1;
+			  if(nexport_save == 0) {endrun(13004);} /* in this case, the buffer is too small to process even a single particle */
+			  for(task = 0; task < NTask; task++) {nsend_local[task] = 0;}
+			  for(no = 0; no < nexport_save; no++) {nsend_local[DataIndexTable[no].Task]++;}
+			  return -1; /* buffer has filled -- important that only this and other buffer-full conditions return the negative condition for the routine */
 			}
 		      Exportnodecount[task] = 0;
 		      Exportindex[task] = *nexport;
@@ -705,12 +685,8 @@ int subfind_ngb_treefind_linkpairs(MyDouble searchcenter[3], double hsml, int ta
 
 int subfind_ngb_compare_dist(const void *a, const void *b)
 {
-  if(((struct r2data *) a)->r2 < (((struct r2data *) b)->r2))
-    return -1;
-
-  if(((struct r2data *) a)->r2 > (((struct r2data *) b)->r2))
-    return +1;
-
+  if(((struct r2data *) a)->r2 < (((struct r2data *) b)->r2)) {return -1;}
+  if(((struct r2data *) a)->r2 > (((struct r2data *) b)->r2)) {return +1;}
   return 0;
 }
 

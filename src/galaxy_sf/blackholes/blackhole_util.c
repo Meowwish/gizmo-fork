@@ -18,24 +18,24 @@
 * see notes in blackhole.c for details on code history.
 */
 
-#ifdef BLACK_HOLES // master flag [needs to be here to prevent compiler breaking when this is not active] //
+#ifdef BLACK_HOLES // top-level flag [needs to be here to prevent compiler breaking when this is not active] //
 
 /* function for allocating temp BH data struc needed for feedback routines*/
 void blackhole_start(void)
 {
     int i, Nbh;
-    
+
     /* count the num BHs on this task */
     N_active_loc_BHs=0;
     for(i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i])
     {
-        if(P[i].Type ==5)
+        if(bhsink_isactive(i))
         {
             P[i].IndexMapToTempStruc = N_active_loc_BHs;         /* allows access via BlackholeTempInfo[P[i].IndexMapToTempStruc] */
             N_active_loc_BHs++;                     /* N_active_loc_BHs now set for BH routines */
         }
     }
-    
+
     /* allocate the blackhole temp struct */
     if(N_active_loc_BHs>0)
     {
@@ -43,19 +43,19 @@ void blackhole_start(void)
     } else {
         BlackholeTempInfo = (struct blackhole_temp_particle_data *) mymalloc("BlackholeTempInfo", 1 * sizeof(struct blackhole_temp_particle_data));
     }
-    
+
     memset( &BlackholeTempInfo[0], 0, N_active_loc_BHs * sizeof(struct blackhole_temp_particle_data) );
-    
+
     Nbh=0;
     for(i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i])
     {
-        if(P[i].Type ==5)
+        if(bhsink_isactive(i))
         {
             BlackholeTempInfo[Nbh].index = i;               /* only meaningful field set here */
             Nbh++;
         }
     }
-    
+
     /* all future loops can now take the following form:
      for(i=0; i<N_active_loc_BHs; i++)
      {
@@ -63,7 +63,7 @@ void blackhole_start(void)
      ...
      }
      */
-    
+
 }
 
 
@@ -78,7 +78,7 @@ void blackhole_end(void)
         double mdot, mdot_in_msun_per_year;
         double mass_real, total_mass_real, medd, total_mdoteddington;
         double mass_holes, total_mass_holes, total_mdot;
-        
+
         /* sum up numbers to print for summary of the BH step (blackholes.txt) */
         mdot = mass_holes = mass_real = medd = 0;
         for(bin = 0; bin < TIMEBINS; bin++)
@@ -103,10 +103,10 @@ void blackhole_end(void)
             fprintf(FdBlackHoles, "%g %d %g %g %g %g %g\n", All.Time, All.TotBHs, total_mass_holes, total_mdot, mdot_in_msun_per_year, total_mass_real, total_mdoteddington);
         }
         fflush(FdBlackHoles);
-#ifdef BH_OUTPUT_GASSWALLOW
+#ifdef OUTPUT_SINK_ACCRETION_HIST
         fflush(FdBhSwallowDetails);
 #endif
-#ifdef BH_OUTPUT_FORMATION_PROPERTIES
+#ifdef OUTPUT_SINK_FORMATION_PROPS
         fflush(FdBhFormationDetails);
 #endif
 #if !defined(IO_REDUCED_MODE) || defined(BH_OUTPUT_MOREINFO)
@@ -150,11 +150,7 @@ void blackhole_properties_loop(void) /* Note, normalize_temp_info_struct is now 
     for(i=0; i<N_active_loc_BHs; i++)
     {
         n = BlackholeTempInfo[i].index;
-#ifndef WAKEUP /* define the timestep */
-        dt = (P[n].TimeBin ? (((integertime) 1) << P[n].TimeBin) : 0) * All.Timebase_interval / All.cf_hubble_a;
-#else
-        dt = P[n].dt_step * All.Timebase_interval / All.cf_hubble_a;
-#endif
+        dt = GET_PARTICLE_TIMESTEP_IN_PHYSICAL(n);
         BPP(n).BH_Mdot=0;  /* always initialize/default to zero accretion rate */
         set_blackhole_long_range_rp(i, n);
         set_blackhole_mdot(i, n, dt);
@@ -168,4 +164,4 @@ void blackhole_properties_loop(void) /* Note, normalize_temp_info_struct is now 
 
 
 
-#endif // master flag
+#endif // top-level flag
