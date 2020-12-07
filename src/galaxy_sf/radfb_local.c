@@ -178,7 +178,7 @@ void compute_photoionization(void)
 
         const double star_timestep = (P[i].TimeBin ? (1 << P[i].TimeBin) : 0) * All.Timebase_interval / All.cf_hubble_a;
 
-        // FIXME: this *only* loops over the local particles!!
+        // NOTE: this *only* loops over the local particles!!
         for (int j = 0; j < N_gas; j++) /* loop over the gas block */
         {
             ParticleNum[j] = j;
@@ -204,7 +204,7 @@ void compute_photoionization(void)
         // sort particles by increasing distance
         sort(Distance, IonRate, Tini, ParticleNum, Tag_HIIregion, N_gas);
 
-        // FIXME: this *only* loops over local particles!!
+        // NOTE: this *only* loops over local particles!!
         int jmax = (N_gas - 1);
         for (int j = 0; j < N_gas; j++) /* loop over the gas block */
         {
