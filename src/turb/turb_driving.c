@@ -41,24 +41,24 @@ void init_turb(void)
     kmin = 2.*M_PI / All.TurbDriving_Global_DrivingScaleKMinVar; kmax = 2.*M_PI / All.TurbDriving_Global_DrivingScaleKMaxVar; // convert these from spatial lengths to wavenumbers in the new convention we are using
 #endif
     
-    int ikxmax = boxSize_X * kmax/2./M_PI, ikymax = 0, ikzmax = 0;
+    int ikxmax = turbBoxSize_X * kmax/2./M_PI, ikymax = 0, ikzmax = 0;
 #if (NUMDIMS > 1)
-    ikymax = boxSize_Y * kmax/2./M_PI;
+    ikymax = turbBoxSize_Y * kmax/2./M_PI;
 #endif
 #if (NUMDIMS > 2)
-    ikzmax = boxSize_Z * kmax/2./M_PI;
+    ikzmax = turbBoxSize_Z * kmax/2./M_PI;
 #endif
     
     StNModes = 0;
     for(ikx = 0;ikx <= ikxmax; ikx++)
     {
-        kx = 2.*M_PI*ikx/boxSize_X;
+        kx = 2.*M_PI*ikx/turbBoxSize_X;
         for(iky = 0;iky <= ikymax; iky++)
         {
-            ky = 2.*M_PI*iky/boxSize_Y;
+            ky = 2.*M_PI*iky/turbBoxSize_Y;
             for(ikz = 0;ikz <= ikzmax; ikz++)
             {
-                kz = 2.*M_PI*ikz/boxSize_Z;
+                kz = 2.*M_PI*ikz/turbBoxSize_Z;
                 k = sqrt(kx*kx+ky*ky+kz*kz);
                 if(k>=kmin && k<=kmax)
                 {
@@ -87,15 +87,15 @@ void init_turb(void)
     
     for(ikx = 0;ikx <= ikxmax; ikx++)
     {
-        kx = 2.*M_PI*ikx/boxSize_X;
+        kx = 2.*M_PI*ikx/turbBoxSize_X;
         
         for(iky = 0;iky <= ikymax; iky++)
         {
-            ky = 2.*M_PI*iky/boxSize_Y;
+            ky = 2.*M_PI*iky/turbBoxSize_Y;
             
             for(ikz = 0;ikz <= ikzmax; ikz++)
             {
-                kz = 2.*M_PI*ikz/boxSize_Z;
+                kz = 2.*M_PI*ikz/turbBoxSize_Z;
                 
                 k = sqrt(kx*kx+ky*ky+kz*kz);
                 if(k>=kmin && k<=kmax)
@@ -344,7 +344,10 @@ void add_turb_accel()
             double fx = 0, fy = 0, fz = 0;
             for(m=0; m<StNModes; m++) // calc force
             {
-                double kxx = StMode[3*m+0]*P[i].Pos[0], kyy = StMode[3*m+1]*P[i].Pos[1], kzz = StMode[3*m+2]*P[i].Pos[2];
+                // rescale x_i according to boxSize_i/turbBoxSize_i (== integer)?
+                double kxx = StMode[3*m+0]*P[i].Pos[0]; //*(boxSize_X/turbBoxSize_X);
+                double kyy = StMode[3*m+1]*P[i].Pos[1]; //*(boxSize_Y/turbBoxSize_Y);
+                double kzz = StMode[3*m+2]*P[i].Pos[2]; //*(boxSize_Z/turbBoxSize_Z);
                 double kdotx = kxx+kyy+kzz, ampl = StAmpl[m], realt = cos(kdotx), imagt = sin(kdotx);
                 
                 fx += ampl*(StAka[3*m+0]*realt - StAkb[3*m+0]*imagt);

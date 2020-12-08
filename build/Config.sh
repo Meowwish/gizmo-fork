@@ -126,7 +126,7 @@ METALS                         # enable metallicities (with multiple species opt
 # ------------------------------------- Driven turbulence (for turbulence tests, large-eddy sims)
 # ------------------------------- users of these routines should cite Bauer & Springel 2012, MNRAS, 423, 3102. Thanks to A. Bauer for providing the core algorithms
 ####################################################################################################
-#TURB_DRIVING                   # turns on turbulent driving/stirring. see begrun for parameters that must be set
+TURB_DRIVING                   # turns on turbulent driving/stirring. see begrun for parameters that must be set
 #TURB_DRIVING_SPECTRUMGRID=128  # activates on-the-fly calculation of the turbulent velocity, vorticity, and smoothed-velocity power spectra, evaluated on a grid of linear-size TURB_DRIVING_SPECTRUMGRID elements. Requires BOX_PERIODIC
 ####################################################################################################
 

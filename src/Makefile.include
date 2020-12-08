@@ -175,7 +175,7 @@ CXX      = mpicxx -std=c++17 -Wno-deprecated-declarations
 FC       = mpif90
 LDFLAGS	 = -lgfortran
 # add -fsanitize=address to debug memory issues (out-of-bounds array accesses, etc.)
-#OPTIMIZE += -O2 -march=cascadelake -ffp-model=precise -fstandalone-debug
+#OPTIMIZE += -fstandalone-debug
 OPTIMIZE += -O2 -march=native -ffp-model=precise -fstandalone-debug
 OPTIMIZE += -flto=full
 ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))

@@ -1233,24 +1233,28 @@ extern MyDouble boxSize, boxHalf;
 #else
 #define boxSize (All.BoxSize)
 #define boxHalf (0.5*All.BoxSize)
+#define turbBoxSize (All.TurbBoxSize)
 #endif
 #ifdef BOX_LONG_X
 extern MyDouble boxSize_X, boxHalf_X;
 #else
 #define boxSize_X boxSize
 #define boxHalf_X boxHalf
+#define turbBoxSize_X turbBoxSize
 #endif
 #ifdef BOX_LONG_Y
 extern MyDouble boxSize_Y, boxHalf_Y;
 #else
 #define boxSize_Y boxSize
 #define boxHalf_Y boxHalf
+#define turbBoxSize_Y turbBoxSize
 #endif
 #ifdef BOX_LONG_Z
 extern MyDouble boxSize_Z, boxHalf_Z;
 #else
 #define boxSize_Z boxSize
 #define boxHalf_Z boxHalf
+#define turbBoxSize_Z turbBoxSize
 #endif
 
 #ifdef BOX_SHEARING
@@ -1750,7 +1754,7 @@ extern struct global_data_all_processes
     HubbleParam;		/*!< little `h', i.e. Hubble constant in units of 100 km/s/Mpc.  Only needed to get absolute physical values for cooling physics */
 
   double BoxSize;		/*!< Boxsize in case periodic boundary conditions are used */
-
+  double TurbBoxSize;   // boxsize used for turbulent driving (can be less than BoxSize)
 
   /* Code options */
 

@@ -1,7 +1,7 @@
 
 %----  Relevant files
-InitCondFile   agora_ic_medres
-OutputDir      output_agora_medres_virial
+InitCondFile   agora_ic_lowres
+OutputDir      output_agora_lowres_virial
 
 %---- File formats 
 ICFormat    3  % 1=binary, 3=hdf5 
@@ -12,8 +12,8 @@ RestartFile                 restart
 SnapshotFileBase            snapshot 
 OutputListOn                0  % =1 to use list in "OutputListFilename" 
 OutputListFilename          output_times.txt  % list of times for snaps 
-NumFilesPerSnapshot         4 
-NumFilesWrittenInParallel   4  % must be < N_processors & power of 2
+NumFilesPerSnapshot         1 
+NumFilesWrittenInParallel   1  % must be < N_processors & power of 2
 
 %---- Output frequency 
 TimeOfFirstSnapshot     0.0
@@ -29,7 +29,7 @@ ResubmitCommand         none   % change this to a shell script if needed
 
 
 %----- Memory allocation 
-MaxMemSize          3200    % sets maximum MPI process memory use, in MiByte
+MaxMemSize          1800    % sets maximum MPI process memory use, in MiByte
 		    	    %   (NOTE: only sets a limit for heap allocations that use "mymalloc()"!
 			    %	 Application binary image size, any other
 			    %	 static allocations, and internal MPI library allocations are NOT included!)
@@ -145,14 +145,12 @@ GrackleDataFile		     CloudyData_UVB=HM2012.h5
 %-------------------------------------------------------------------------
 
 %-------------- Turbulent stirring parameters (TURB_DRIVING on)
-% (currently unused in runs)
-%ST_decay       1.	    % decay time for driving-mode phase correlations
-%ST_energy      0.0002   % energy of driving-scale modes: sets norm of turb
-%ST_DtFreq      0.005    % time interval for driving updates (set by hand)
-%ST_Kmin        6.27     % minimum driving-k: should be >=2.*M_PI/All.BoxSize
-%ST_Kmax        12.57    % maximum driving-k: set to couple times Kmin or more if cascade desired
-%ST_SolWeight   1.0      % fractional wt of solenoidal modes (wt*curl + (1-wt)*div)
-%ST_AmplFac     1.0      % multiplies turb amplitudes
-%ST_SpectForm   2        % driving pwr-spec: 0=Ek~const; 1=sharp-peak at kc; 2=Ek~k^(-5/3); 3=Ek~k^-2
-%ST_Seed        42       % random number seed for modes (so you can reproduce it)
-%TimeBetTurbSpectrum 0.5 % time (code units) between evaluations of turb pwrspec
+TurbBoxSize			10.		% [code units] (kpc)
+TurbDrive_ApproxRMSVturb            10.0     % driving strength: set to approximate rms turbulent velocity desired (code units)  
+TurbDrive_MinWavelength             1.25     % minimum driving wavelength (code units): must be < MaxWavelength  
+TurbDrive_MaxWavelength             5.0      % maximum driving wavelength (code units): must be <= BoxSize  
+TurbDrive_SolenoidalFraction        1        % fraction in solenoidal modes (projection ~wt*curl + (1-wt)*div; default = 0.5)  
+TurbDrive_CoherenceTime             0.050    % coherence/correlation time of driving (code units; default = MaxWavelength / RMSVturb)  
+TurbDrive_DrivingSpectrum           3        % driving spectrum: 0=equal power all modes, 1=strongly-peaked between Max/Min, 2=Kolmogorov, 3=Burgers (default = 2)  
+TurbDrive_RandomNumberSeed          42       % random integer seed for stochastic driver, for reproducibility (default = 42)  
+TurbDrive_TimeBetweenTurbUpdates    0.001    % time interval (code units) for driving updates (default = 0.01*coherence time)

@@ -840,6 +840,11 @@ void read_parameter_file(char *fname)
       strcpy(alternate_tag[nt], "Box_Size_In_Code_Units");
       addr[nt] = &All.BoxSize;
       id[nt++] = REAL;
+      
+      strcpy(tag[nt], "TurbBoxSize");
+      strcpy(alternate_tag[nt], "Turb_Box_Size_In_Code_Units");
+      addr[nt] = &All.TurbBoxSize;
+      id[nt++] = REAL;
 
       strcpy(tag[nt], "MaxMemSize");
       strcpy(alternate_tag[nt], "Max_Memory_Per_MPI_Task_in_MB");
