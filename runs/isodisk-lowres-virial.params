@@ -1,7 +1,7 @@
 
 %----  Relevant files
-InitCondFile   agora_ic_lowres
-OutputDir      output_agora_lowres_virial
+InitCondFile   agora_ic_medres
+OutputDir      output_agora_medres_virial
 
 %---- File formats 
 ICFormat    3  % 1=binary, 3=hdf5 
@@ -29,7 +29,7 @@ ResubmitCommand         none   % change this to a shell script if needed
 
 
 %----- Memory allocation 
-MaxMemSize          1800    % sets maximum MPI process memory use, in MiByte
+MaxMemSize          3200    % sets maximum MPI process memory use, in MiByte
 		    	    %   (NOTE: only sets a limit for heap allocations that use "mymalloc()"!
 			    %	 Application binary image size, any other
 			    %	 static allocations, and internal MPI library allocations are NOT included!)
