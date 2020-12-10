@@ -9,7 +9,7 @@
 #include "../kernel.h"
 
 #ifdef SLUG
-#include "slug_wrapper.h"
+#include "slug_feedback.hpp"
 #endif
 
 /* Routines for mechanical feedback/enrichment models: stellar winds, supernovae, etc
@@ -26,10 +26,6 @@ void determine_where_SNe_occur(void)
     npossible = nhosttotal = ntotal = ptotal = dtmean = rmean = 0;
     double mpi_npossible, mpi_nhosttotal, mpi_ntotal, mpi_ptotal, mpi_dtmean, mpi_rmean;
     mpi_npossible = mpi_nhosttotal = mpi_ntotal = mpi_ptotal = mpi_dtmean = mpi_rmean = 0;
-
-#ifdef SLUG
-    int slug_objects_this_timestep = 0;
-#endif // SLUG
 
     // loop over particles //
     const double sn_loop_begin_walltime = MPI_Wtime();
@@ -70,50 +66,8 @@ void determine_where_SNe_occur(void)
         npossible++; // it is possible for a SN event to occur
 
 #ifdef SLUG
-        // use SLUG to determine whether a SN event has occured in the last timestep
-        if (P[i].slug_state_initialized)
-        {
-            slug_objects_this_timestep++;
-
-            // create slug object
-            slugWrapper mySlugObject(P[i].slug_state);
-
-            // advance slug object in time
-            // [the slug object should NOT be advanced in time anywhere else in the code,
-            //     otherwise the yields and SNe events will not be accounted for.]
-            double cluster_age_in_years = (All.Time - P[i].StellarAge) * UNIT_TIME_IN_YR;
-            mySlugObject.advanceToTime(cluster_age_in_years);
-
-            P[i].SNe_ThisTimeStep = mySlugObject.getNumberSNeThisTimestep();         // dimensionless
-            P[i].EjectaMass_ThisTimestep = mySlugObject.getEjectaMassThisTimestep(); // solar mass
-
-	        // keep track of the cumulative number of SNe produced by this particle
-	        P[i].SNe_Cumulative += P[i].SNe_ThisTimeStep;
-	    
-#ifdef SLUG_YIELDS
-            // WARNING: implementation not complete!
-            // (TODO: need to extract yields for specified isotopes into GIZMO arrays)
-            auto yields = mySlugObject.getYieldsThisTimestep(); // solar mass
-            assert(yields.size() == NUM_METAL_SPECIES);
-
-            for (size_t j = 0; j < yields.size(); ++j)
-            {
-                P[i].Yields_ThisTimestep[j] = yields[j];
-            }
-#endif // SLUG_YIELDS
-
-            // serialize slug object
-            mySlugObject.serializeCluster(P[i].slug_state);
-
-            // check whether all stochastic stars have died
-            if (mySlugObject.getNumberAliveStochasticStars() == 0)
-            {
-                // if so, mark the object as inactive
-                P[i].slug_state_initialized = false;
-            }
-        } // mySlugObject deallocated automatically
-
-#else  // *without* SLUG: calculate event rates to determine where/when the events actually occur
+        slugComputeSNFeedback(i);
+#else  // *without* SLUG
         double RSNe = mechanical_fb_calculate_eventrates(i, dt);
         rmean += RSNe;
         ptotal += RSNe * (P[i].Mass * UNIT_MASS_IN_SOLAR) * (dt * UNIT_TIME_IN_MYR);
@@ -176,29 +130,21 @@ void determine_where_SNe_occur(void)
 #ifdef SLUG_DEBUG_PERFORMANCE
     double mpi_snloop_begin_time;
     double mpi_snloop_end_time;
-    int mpi_slug_objects_this_timestep;
 
     MPI_Reduce(&sn_loop_begin_walltime, &mpi_snloop_begin_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
     MPI_Reduce(&sn_loop_end_walltime, &mpi_snloop_end_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&slug_objects_this_timestep, &mpi_slug_objects_this_timestep, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
     if (ThisTask == 0)
     {
         const double slug_elapsed_time = mpi_snloop_end_time - mpi_snloop_begin_time;
         slug_total_elapsed_time += slug_elapsed_time;
 
-        if (mpi_slug_objects_this_timestep > 0)
-        {
-            std::cout << "[SLUG] Processed "
-                      << mpi_slug_objects_this_timestep
-                      << " SLUG objects in "
-                      << slug_elapsed_time
-                      << " seconds ("
-                      << mpi_slug_objects_this_timestep / slug_elapsed_time
-                      << " objects/second).\n[SLUG] SLUG accounts for "
-                      << 100.*(slug_total_elapsed_time / CPUThisRun)
-                      << "% of overall runtime.\n";
-        }
+        std::cout << "[SLUG] Processed SLUG objects in "
+                  << slug_elapsed_time
+                  << " seconds.\n"
+                  << "[SLUG] SLUG accounts for "
+                  << 100. * (slug_total_elapsed_time / CPUThisRun)
+                  << "% of overall runtime.\n";
     }
 #endif // SLUG_DEBUG_PERFORMANCE
 
@@ -731,7 +677,6 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                     // (Thornton+ 1998: p_terminal = 3.0e5 km/s per Msun [equiv. to Mcool = 895.5 Msun].)
                     m_cooling = (895.5 / UNIT_MASS_IN_SOLAR) * (e_dep * n_dep * z_dep);
                     RsneKPC = pow( 0.238732 * m_cooling/rho_j , 1./3. );
-
 #else // NOT using SN_KIMM_CEN_MODIFIED_MODEL
                     double e0 = Esne51;
                     if(loop_iteration < 0) {e0=1;}
@@ -1047,6 +992,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
 /* parent routine which calls the relevant loops */
 void mechanical_fb_calc(int fb_loop_iteration)
 {
+#ifdef SN_INJECTED_MOMENTUM_ACCOUNTING
     for (int i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i])
     {
         P[i].SNe_InjectedMomentumThisStep = 0.;
@@ -1056,6 +1002,7 @@ void mechanical_fb_calc(int fb_loop_iteration)
             P[i].SNe_pvec[k] = 0.;
         }
     }
+#endif // SN_INJECTED_MOMENTUM_ACCOUNTING
 
     PRINT_STATUS(" ..mechanical feedback loop: iteration %d",fb_loop_iteration);
     #include "../system/code_block_xchange_perform_ops_malloc.h" /* this calls the large block of code which contains the memory allocations for the MPI/OPENMP/Pthreads parallelization block which must appear below */

@@ -423,6 +423,8 @@ INCL    += 	allvars.h \
 			eos/eos.h \
 			galaxy_sf/blackholes/blackhole.h \
 			galaxy_sf/slug_wrapper.h \
+			galaxy_sf/slug_feedback.hpp \
+			galaxy_sf/slug_sfr.hpp \
 			structure/fof.h \
 			structure/subfind/subfind.h \
 			cooling/cooling.h \
@@ -478,7 +480,7 @@ endif
 ifeq (SLUG,$(findstring SLUG,$(CONFIGVARS)))
 SLUG_INCLUDE +=
 SLUG_LIBS += -lslug
-OBJS += galaxy_sf/slug_wrapper.o
+OBJS += galaxy_sf/slug_wrapper.o galaxy_sf/slug_feedback.o galaxy_sf/slug_sfr.o
 else
 SLUG_INCLUDE +=
 SLUG_LIBS +=

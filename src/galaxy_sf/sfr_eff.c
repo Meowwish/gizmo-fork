@@ -11,7 +11,7 @@
 #include "../proto.h"
 
 #ifdef SLUG
-#include "slug_wrapper.h"
+#include "slug_sfr.hpp"
 #endif
 
 /*!
@@ -514,12 +514,7 @@ void star_formation_parent_routine(void)
 #endif
 
 #ifdef SLUG
-                {
-                    const double cluster_mass = P[i].Mass * UNIT_MASS_IN_SOLAR;
-                    slugWrapper mySlugObject(cluster_mass);
-                    mySlugObject.serializeCluster(P[i].slug_state);
-                    P[i].slug_state_initialized = true;
-                } // mySlugObject deallocated automatically
+                slugFormStar(i);
 #endif
 
 #ifdef SINGLE_STAR_SINK_DYNAMICS

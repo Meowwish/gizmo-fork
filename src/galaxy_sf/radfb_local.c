@@ -7,9 +7,6 @@
 #include "../allvars.h"
 #include "../proto.h"
 #include "../kernel.h"
-#ifdef SLUG
-#include "slug_wrapper.h"
-#endif // SLUG
 
 /* independent re-implementation of photoionization feedback by Armillotta et al. */
 
@@ -137,17 +134,7 @@ void compute_photoionization(void)
         }
 
 #ifdef SLUG
-        // compute number of ionizing photons via SLUG
-        double N_photons = 0.;
-
-        if (P[i].slug_state_initialized)
-        {
-            // re-create slug object
-            slugWrapper mySlugObject(P[i].slug_state);
-
-            // compute ionizing photons
-            N_photons = mySlugObject.getPhotometryQH0();
-        }
+        double N_photons = slugComputeIonizingPhotons(i); // compute number of ionizing photons via SLUG
 #else
         // *without* SLUG: assume a fidicual number of 10^49 ionizing photons per 100 solar masses
         const double N_photons_per_100Msun = 1.0e49; // s^-1
