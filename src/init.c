@@ -94,7 +94,7 @@ void init(void)
     set_cosmo_factors_for_current_time();
 
 
-#if defined(COOLING) && !defined(FLAG_NOT_IN_PUBLIC_CODE)
+#if defined(COOLING) && !defined(FLAG_NOT_IN_PUBLIC_CODE) && !defined(COOL_GRACKLE)
     IonizeParams();
 #endif
 
@@ -263,8 +263,8 @@ void init(void)
 #endif
 
 #ifdef GALSF_PHOTOIONIZATION
-        SphP[i].photo_star = -1;
-        SphP[i].photo_subtime = 0;
+        //SphP[i].photo_star = -1;
+        //SphP[i].photo_subtime = 0;
 #endif
         
         if(RestartFlag != 1)

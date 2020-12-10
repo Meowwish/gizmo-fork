@@ -8,6 +8,10 @@
 #include "../proto.h"
 #include "../kernel.h"
 
+#ifdef SLUG
+#include "slug_feedback.hpp"
+#endif
+
 /* independent re-implementation of photoionization feedback by Armillotta et al. */
 
 #ifdef GALSF_PHOTOIONIZATION
@@ -103,7 +107,7 @@ void compute_photoionization(void)
     const double beta = 3.0e-13; // cm**3 s*-1
 
 #if 0
-    // Wake stars after one star time step
+    // Wake gas particles after one star time step
     for (int i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i])
     {
         if (P[i].Type != 4)
@@ -132,7 +136,7 @@ void compute_photoionization(void)
 
     // loop over *all* local star particles
     //for (int i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i])
-    for (int i = 0; i < NumPart; i++))
+    for (int i = 0; i < NumPart; i++)
     {
         if (P[i].Type != 4)
         {
