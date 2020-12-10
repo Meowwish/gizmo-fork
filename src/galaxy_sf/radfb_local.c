@@ -119,7 +119,7 @@ void compute_photoionization(void)
             continue;
         }
         for (int j = 0; j < N_gas; j++) {
-            if (SphP[j].photo_star == P[i].ID && SphP[j].HIIregion == 1) // race condition
+            if (SphP[j].photo_star == P[i].ID && SphP[j].HIIregion == 1) // race condition (photo_star could have moved to a different processor)
             {
                 SphP[j].HIIregion = 0;
                 SphP[j].photo_subtime = 0;
