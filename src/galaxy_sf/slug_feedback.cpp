@@ -47,7 +47,7 @@ void slugComputeSNFeedback(int i)
 auto slugComputeIonizingPhotons(int i) -> double
 {
     // compute number of ionizing photons via SLUG
-    double N_photons = 0.;
+    double N_photons = 0.; // units == [s^-1]
 
     if (P[i].slug_state_initialized)
     {
