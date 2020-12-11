@@ -54,6 +54,10 @@ auto slugComputeIonizingPhotons(int i) -> double
         // re-create slug object
         slugWrapper mySlugObject(P[i].slug_state);
 
+        // advance to current time (*but do NOT save, otherwise we will lose SN events!*)
+        double cluster_age_in_years = (All.Time - P[i].StellarAge) * UNIT_TIME_IN_YR;
+        mySlugObject.advanceToTime(cluster_age_in_years);
+
         // compute ionizing photons
         N_photons = mySlugObject.getPhotometryQH0();
     }
