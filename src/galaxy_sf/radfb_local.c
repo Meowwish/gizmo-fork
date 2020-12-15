@@ -7,6 +7,7 @@
 #include "../allvars.h"
 #include "../proto.h"
 #include "../kernel.h"
+#include "sglib.h"
 
 #ifdef SLUG
 #include "slug_feedback.hpp"
@@ -15,81 +16,6 @@
 /* independent re-implementation of photoionization feedback by Armillotta et al. */
 
 #ifdef GALSF_PHOTOIONIZATION
-static inline void downheap2(double *data1, double *data2, double *data3, int *data4, int *data5, const size_t N, size_t k)
-{
-
-    double v1 = data1[k];
-    double v2 = data2[k];
-    double v3 = data3[k];
-    int v4 = data4[k];
-    int v5 = data5[k];
-
-    while (k <= N / 2)
-    {
-        size_t j = 2 * k;
-        if (j < N && data1[j] < data1[(j + 1)])
-            j++;
-        if (!(v1 < data1[j]))
-            break;
-        data1[k] = data1[j];
-        data2[k] = data2[j];
-        data3[k] = data3[j];
-        data4[k] = data4[j];
-        data5[k] = data5[j];
-        k = j;
-    }
-    data1[k] = v1;
-    data2[k] = v2;
-    data3[k] = v3;
-    data4[k] = v4;
-    data5[k] = v5;
-}
-
-void sort(double *data1, double *data2, double *data3, int *data4, int *data5, const size_t n)
-{
-
-    if (n == 0)
-        return;
-    size_t N = n - 1;
-    size_t k = N / 2;
-    k++;
-    do
-    {
-        k--;
-        downheap2(data1, data2, data3, data4, data5, N, k);
-    } while (k > 0);
-
-    while (N > 0)
-    {
-        /* first swap the elements */
-        double tmp;
-
-        tmp = data1[0];
-        data1[0] = data1[N];
-        data1[N] = tmp;
-
-        tmp = data2[0];
-        data2[0] = data2[N];
-        data2[N] = tmp;
-
-        tmp = data3[0];
-        data3[0] = data3[N];
-        data3[N] = tmp;
-
-        int tmp2;
-
-        tmp2 = data4[0];
-        data4[0] = data4[N];
-        data4[N] = tmp2;
-
-        tmp2 = data5[0];
-        data5[0] = data5[N];
-        data5[N] = tmp2;
-
-        N--;
-        downheap2(data1, data2, data3, data4, data5, N, 0);
-    }
-}
 
 void compute_photoionization(void)
 {
@@ -170,7 +96,7 @@ void compute_photoionization(void)
         }
 
 #ifdef GALSF_PHOTOIONIZATION_DEBUGGING
-        const double n_H = 100.;                                                                   // approximate lower bound for HII region mean density
+        const double n_H = 100.; // TODO: use P[i].DensAroundStar
         const double r1_approx = pow(3.0 * N_photons / (4.0 * M_PI * n_H * n_H * beta), 1. / 3.); // cm
         const double cm_in_parsec = 3.085678e18;
         printf("[Photoionization] Q [photons/sec/(100 Msun)] = %g\n", N_photons / (P[i].Mass * UNIT_MASS_IN_SOLAR / 100.));
@@ -203,7 +129,13 @@ void compute_photoionization(void)
         }
 
         // sort particles by increasing distance
-        sort(Distance, IonRate, Tini, ParticleNum, Tag_HIIregion, N_gas);
+#define PARTICLE_EXCHANGER(type, a, i, j) { SGLIB_ARRAY_ELEMENTS_EXCHANGER(double, Distance,   i, j); \
+                                            SGLIB_ARRAY_ELEMENTS_EXCHANGER(double, IonRate,    i, j); \
+                                            SGLIB_ARRAY_ELEMENTS_EXCHANGER(double, Tini,       i, j); \
+                                            SGLIB_ARRAY_ELEMENTS_EXCHANGER(int, ParticleNum,   i, j); \
+                                            SGLIB_ARRAY_ELEMENTS_EXCHANGER(int, Tag_HIIregion, i, j); }
+
+        SGLIB_ARRAY_HEAP_SORT(double, Distance, N_gas, SGLIB_NUMERIC_COMPARATOR, PARTICLE_EXCHANGER)
 
         // loop over all local gas particles
         int jmax = (N_gas - 1);
