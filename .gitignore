@@ -7,6 +7,10 @@ GIZMO
 GIZMO_config.h
 compile_time_info.c
 GRACKLE_INFO
+ewald_spc_table_64_dbl.dat
+cpu.txt
+sfr.txt
+SNeIIheating.txt
 
 *.sarif
 
