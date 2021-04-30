@@ -1366,7 +1366,7 @@ void InitCool(void)
 
 #ifdef COOL_GRACKLE
     InitGrackle();
-#endif
+#else
 
 #ifdef CHIMES
     sprintf(ChimesGlobalVars.MainDataTablePath, "%s/chimes_main_data.hdf5", ChimesDataPath);
@@ -1425,6 +1425,7 @@ void InitCool(void)
     LoadMultiSpeciesTables();
 #endif
 #endif // CHIMES
+#endif // COOL_GRACKLE
 }
 
 
