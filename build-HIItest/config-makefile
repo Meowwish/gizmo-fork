@@ -1,0 +1,5 @@
+GIZMO_config.h:  $(CONFIG)
+	$(PERL) $(SRC_DIR)/prepare-config.perl $(CONFIG)
+
+compile_time_info.c: $(CONFIG)
+	$(PERL) $(SRC_DIR)/prepare-config.perl $(CONFIG)
