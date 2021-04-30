@@ -195,8 +195,10 @@ SLUG_LIBS = -L$(SLUG_HOME)/src -Wl,-rpath=$(SLUG_HOME)/src
 GSL_HOME = $(HOME)/gsl_install
 GSL_INCL = -I$(GSL_HOME)/include
 GSL_LIBS = -L$(GSL_HOME)/lib
-HDF5INCL = -I$(HDF5_HOME)/include -DH5_USE_16_API
-HDF5LIB  = -L$(HDF5_HOME)/lib -lhdf5 -lz
+HDF5INCL = -I/usr/include/hdf5/serial -DH5_USE_16_API
+#HDF5INCL = -I$(HDF5_HOME)/include -DH5_USE_16_API
+#HDF5LIB  = -L$(HDF5_HOME)/lib -lhdf5 -lz
+HDF5LIB  = -lhdf5_serial -lz
 MPICHLIB = 
 OPT     += -DUSE_MPI_IN_PLACE  -DNO_ISEND_IRECV_IN_DOMAIN # both critical for OpenMPI!
 endif

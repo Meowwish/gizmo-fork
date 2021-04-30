@@ -536,11 +536,13 @@ void compute_photoionization(void);
 #ifdef COOL_METAL_LINES_BY_SPECIES
 /*double GetMetalLambda(double, double);*/
 double getSpCoolTableVal(long i,long j,long k,long tblK);
+#ifndef CHIMES
 double GetCoolingRateWSpecies(double nHcgs, double logT, double *Z);
 double GetLambdaSpecies(long k_index, long index_x0y0, long index_x0y1, long index_x1y0, long index_x1y1, double dx, double dy, double dz, double mdz);
 void LoadMultiSpeciesTables(void);
 void ReadMultiSpeciesTables(int iT);
 char *GetMultiSpeciesFilename(int i, int hk);
+#endif
 #endif
 
 double bh_angleweight(double bh_lum_input, MyFloat bh_angle[3], double dx, double dy, double dz);
@@ -563,6 +565,23 @@ void disp_density(void);
 #endif
 
 
+#ifdef CHIMES
+double chimes_convert_u_to_temp(double u, double rho, int target);
+void chimes_update_gas_vars(int target);
+void chimes_gizmo_exit(void);
+#ifdef COOL_METAL_LINES_BY_SPECIES
+void chimes_update_element_abundances(int i);
+#endif
+#ifdef CHIMES_TURB_DIFF_IONS
+void chimes_update_turbulent_abundances(int i, int mode);
+#endif
+#ifdef CHIMES_METAL_DEPLETION
+void chimes_init_depletion_data(void);
+double chimes_jenkins_linear_fit(double nH, double T, double Ax, double Bx, double zx);
+void chimes_compute_depletions(double nH, double T, int thread_id);
+#endif
+#else
+#endif
 void cooling_parent_routine(void);
 void count_hot_phase(void);
 void delete_node(int i);
@@ -596,6 +615,7 @@ void hydro_force(void);
 void init(void);
 void do_the_cooling_for_particle(int i);
 double get_equilibrium_dust_temperature_estimate(int i, double shielding_factor_for_exgalbg);
+double return_electron_fraction_from_heavy_ions(int target, double temperature, double density_cgs, double n_elec_HHe);
 void apply_pm_hires_region_clipping_selection(int i);
 double get_starformation_rate(int i);
 void update_internalenergy_for_galsf_effective_eos(int i, double tcool, double tsfr, double cloudmass_fraction, double rateOfSF);

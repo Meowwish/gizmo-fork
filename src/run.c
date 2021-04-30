@@ -220,12 +220,12 @@ void run(void)
 
 void set_non_standard_physics_for_current_time(void)
 {
-#if defined(COOLING) && !defined(FLAG_NOT_IN_PUBLIC_CODE) && !defined(COOL_GRACKLE)
+#if defined(COOLING) && !defined(CHIMES) && !defined(COOL_GRACKLE)
     /* set UV background for the current time */
     IonizeParams();
 #endif
 
-#if defined(COOL_METAL_LINES_BY_SPECIES) && !defined(FLAG_NOT_IN_PUBLIC_CODE)
+#if defined(COOL_METAL_LINES_BY_SPECIES) && !defined(CHIMES)
     /* load the metal-line cooling tables appropriate for the UV background */
     if(All.ComovingIntegrationOn) {LoadMultiSpeciesTables();}
 #endif
@@ -833,6 +833,9 @@ void write_cpu_log(void)
 #ifdef COOLING
 	      "cooling+chem  %10.2f  %5.1f%%\n"
 #endif
+#ifdef CHIMES
+	      " coolchmimbal %10.2f  %5.1f%%\n"
+#endif
 #ifdef BLACK_HOLES
 	      "blackholes    %10.2f  %5.1f%%\n"
 #endif
@@ -906,6 +909,9 @@ void write_cpu_log(void)
     All.CPU_Sum[CPU_SNAPSHOT], (All.CPU_Sum[CPU_SNAPSHOT]) / All.CPU_Sum[CPU_ALL] * 100,
 #ifdef COOLING
     All.CPU_Sum[CPU_COOLINGSFR], (All.CPU_Sum[CPU_COOLINGSFR]) / All.CPU_Sum[CPU_ALL] * 100,
+#endif
+#ifdef CHIMES
+    All.CPU_Sum[CPU_COOLSFRIMBAL], (All.CPU_Sum[CPU_COOLSFRIMBAL]) / All.CPU_Sum[CPU_ALL] * 100,
 #endif
 #ifdef BLACK_HOLES
     All.CPU_Sum[CPU_BLACKHOLES], (All.CPU_Sum[CPU_BLACKHOLES]) / All.CPU_Sum[CPU_ALL] * 100,

@@ -274,7 +274,9 @@ void empty_read_buffer(enum iofields blocknr, int offset, int pc, int type)
 
         case IO_NE:		/* electron abundance */
 #if defined(COOLING) || defined(RT_CHEM_PHOTOION)
+#ifndef CHIMES
             for(n = 0; n < pc; n++) {SphP[offset + n].Ne = *fp++;}
+#endif
 #endif
             break;
 
@@ -441,6 +443,16 @@ void empty_read_buffer(enum iofields blocknr, int offset, int pc, int type)
             break;
 
         case IO_CHIMES_ABUNDANCES:
+#if defined(CHIMES) && !defined(CHIMES_INITIALISE_IN_EQM)
+            for (n = 0; n < pc; n++)
+            {
+    	        allocate_gas_abundances_memory(&(ChimesGasVars[offset + n]), &ChimesGlobalVars);
+	            for (k = 0; k < ChimesGlobalVars.totalNumberOfSpecies; k++) {ChimesGasVars[offset + n].abundances[k] = (ChimesFloat) (*fp++);}
+#ifdef CHIMES_TURB_DIFF_IONS
+                chimes_update_turbulent_abundances(n, 1);
+#endif
+            }
+#endif
             break;
 
         case IO_COSMICRAY_ENERGY:
@@ -799,6 +811,9 @@ void read_file(char *fname, int readTask, int lastTask)
 #if defined(BH_GRAVCAPTURE_FIXEDSINKRADIUS)
                    && blocknr != IO_SINKRAD
 #endif
+#if defined(CHIMES) && !defined(CHIMES_INITIALISE_IN_EQM)
+                   && blocknr != IO_CHIMES_ABUNDANCES
+#endif
 #ifdef PIC_MHD
                    && blocknr != IO_GRAINTYPE
 #endif
@@ -868,7 +883,7 @@ void read_file(char *fname, int readTask, int lastTask)
 #if (COSMIC_RAYS_EVOLVE_SPECTRUM_SPECIAL_SNAPSHOTRESTART==1)
             if(RestartFlag == 2 && blocknr == IO_COSMICRAY_ENERGY) {bytes_per_blockelement = (1) * sizeof(MyInputFloat);}
 #endif
-#ifdef METALS /* some trickery here to enable snapshot-restarts from runs with different numbers of metal species ?? */
+#ifdef METALS /* some trickery here to enable snapshot-restarts from runs with different numbers of metal species */
             if(blocknr==IO_Z && RestartFlag==2 && All.ICFormat==3 && header.flag_metals<NUM_METAL_SPECIES && header.flag_metals>0) {bytes_per_blockelement = (header.flag_metals) * sizeof(MyInputFloat);}
 #endif
 
@@ -947,7 +962,7 @@ void read_file(char *fname, int readTask, int lastTask)
 #if (COSMIC_RAYS_EVOLVE_SPECTRUM_SPECIAL_SNAPSHOTRESTART==1)
                                         if(RestartFlag == 2 && blocknr == IO_COSMICRAY_ENERGY) {dims[1] = 1;}
 #endif
-#ifdef METALS /* some trickery here to enable snapshot-restarts from runs with different numbers of metal species ?? */
+#ifdef METALS /* some trickery here to enable snapshot-restarts from runs with different numbers of metal species */
                                         if(blocknr==IO_Z && RestartFlag==2 && All.ICFormat==3 && header.flag_metals<NUM_METAL_SPECIES && header.flag_metals>0) {dims[1] = header.flag_metals;}
 #endif
                                         if(dims[1] == 1) {rank = 1;} else {rank = 2;}
@@ -964,7 +979,7 @@ void read_file(char *fname, int readTask, int lastTask)
 #if (COSMIC_RAYS_EVOLVE_SPECTRUM_SPECIAL_SNAPSHOTRESTART==1)
                                         if(RestartFlag == 2 && blocknr == IO_COSMICRAY_ENERGY) {count[1] = 1;}
 #endif
-#ifdef METALS /* some trickery here to enable snapshot-restarts from runs with different numbers of metal species ?? */
+#ifdef METALS /* some trickery here to enable snapshot-restarts from runs with different numbers of metal species */
                                         if(blocknr==IO_Z && RestartFlag==2 && All.ICFormat==3 && header.flag_metals<NUM_METAL_SPECIES && header.flag_metals>0) {count[1] = header.flag_metals;}
 #endif
                                         pcsum += pc;

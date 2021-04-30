@@ -119,6 +119,13 @@ void do_hermite_prediction(void)
 		tend = P[i].Ti_begstep + ti_step;    /* end of step */
 		double dt_grav = (tend - tstart) * All.Timebase_interval;
 		for(j=0; j<3; j++) {
+#ifdef PMGRID
+            //Add the long-range kick from the first half-step, if necessary (since we are overwriting the previous kick operations with the Hermite scheme)
+            if(All.PM_Ti_begstep == All.Ti_Current)	/* need to do long-range kick */
+            {
+                P[i].OldVel[j] += P[i].GravPM[j] * (All.PM_Ti_endstep - All.PM_Ti_begstep)/2 * All.Timebase_interval;
+            }
+#endif
 		    P[i].Pos[j] = P[i].OldPos[j] + dt_grav * (P[i].OldVel[j] + dt_grav/2 * (P[i].Hermite_OldAcc[j] + dt_grav/3 * P[i].OldJerk[j])) ;
 		    P[i].Vel[j] = P[i].OldVel[j] + dt_grav * (P[i].Hermite_OldAcc[j] + dt_grav/2 * P[i].OldJerk[j]);
 		}}}} // for(i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i]) 
@@ -137,6 +144,13 @@ void do_hermite_correction(void) // corrector step
                     for(j=0; j<3; j++) {
                         P[i].Vel[j] = P[i].OldVel[j] + dt_grav * 0.5*(P[i].Hermite_OldAcc[j] + P[i].GravAccel[j]) + (P[i].OldJerk[j] - P[i].GravJerk[j]) * dt_grav * dt_grav/12;
                         P[i].Pos[j] = P[i].OldPos[j] + dt_grav * 0.5*(P[i].Vel[j] + P[i].OldVel[j]) + (P[i].Hermite_OldAcc[j] - P[i].GravAccel[j]) * dt_grav * dt_grav/12;
+#ifdef PMGRID
+                        //Add the long-range kick from the second half-step, if necessary (since we are overwriting the previous kick operations with the Hermite scheme)
+                        if(All.PM_Ti_endstep == All.Ti_Current)	/* need to do long-range kick */
+                        {
+                            P[i].OldVel[j] += P[i].GravPM[j] * (All.PM_Ti_endstep - All.PM_Ti_begstep)/2 * All.Timebase_interval;
+                        }
+#endif
 		    }}}} //     for(i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i])
 }
 #endif // HERMITE_INTEGRATION
@@ -540,9 +554,6 @@ void apply_special_boundary_conditions(int i, double mass_for_dp, int mode)
 #ifdef RT_EVOLVE_FLUX
                 if(P[i].Type==0) {int kf; for(kf=0;kf<N_RT_FREQ_BINS;kf++) {if(SphP[i].Rad_Flux[kf][j]<0) {SphP[i].Rad_Flux[kf][j]=-SphP[i].Rad_Flux[kf][j]; SphP[i].Rad_Flux_Pred[kf][j]=SphP[i].Rad_Flux[kf][j];}}}
 #endif
-#ifdef COSMIC_RAYS_M1
-                if(P[i].Type==0) {int kf; for(kf=0;kf<N_CR_PARTICLE_BINS;kf++) {if(SphP[i].CosmicRayFlux[kf][j]<0) {SphP[i].CosmicRayFlux[kf][j]=-SphP[i].CosmicRayFlux[kf][j]; SphP[i].CosmicRayFluxPred[kf][j]=SphP[i].CosmicRayFlux[kf][j];}}}
-#endif
             }
             if(special_boundary_condition_xyz_def_outflow[j] == 0 || special_boundary_condition_xyz_def_outflow[j] == -1) {P[i].Mass=0; if(mode==1) {P[i].dp[0]=P[i].dp[1]=P[i].dp[2]=0;}}
         }
@@ -554,9 +565,6 @@ void apply_special_boundary_conditions(int i, double mass_for_dp, int mode)
                 P[i].Pos[j]=box_upper[j]*(1.-((double)P[i].ID)*1.e-9);
 #ifdef RT_EVOLVE_FLUX
                 if(P[i].Type==0) {int kf; for(kf=0;kf<N_RT_FREQ_BINS;kf++) {if(SphP[i].Rad_Flux[kf][j]>0) {SphP[i].Rad_Flux[kf][j]=-SphP[i].Rad_Flux[kf][j]; SphP[i].Rad_Flux_Pred[kf][j]=SphP[i].Rad_Flux[kf][j];}}}
-#endif
-#ifdef COSMIC_RAYS_M1
-                if(P[i].Type==0) {int kf; for(kf=0;kf<N_CR_PARTICLE_BINS;kf++) {if(SphP[i].CosmicRayFlux[kf][j]>0) {SphP[i].CosmicRayFlux[kf][j]=-SphP[i].CosmicRayFlux[kf][j]; SphP[i].CosmicRayFluxPred[kf][j]=SphP[i].CosmicRayFlux[kf][j];}}}
 #endif
             }
             if(special_boundary_condition_xyz_def_outflow[j] == 0 || special_boundary_condition_xyz_def_outflow[j] == 1) {P[i].Mass=0; if(mode==1) {P[i].dp[0]=P[i].dp[1]=P[i].dp[2]=0;}}

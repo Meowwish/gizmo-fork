@@ -219,6 +219,7 @@
 #define DM_SIDM 8 /* use the SIDM module to handle scattering of otherwise-collisionless particles against each other -- set to Particle Type=3 here */
 #endif
 #if defined(PIC_MHD)
+#define PIC_MHD_NEW_RSOL_METHOD /* prefer new method for dealing with RSOL, should make simulations easier if done correctly */
 #ifdef GRAIN_FLUID
 #define GRAIN_FLUID_AND_PIC_BOTH_DEFINED /* keyword used later to know what we need to read in */
 #else
@@ -252,6 +253,8 @@
 
 
 
+
+
 #if defined(COOL_GRACKLE)
 #if !defined(COOLING)
 #define COOLING
@@ -267,6 +270,44 @@ extern "C" {
 
 #endif // COOL_GRACKLE
 
+#ifdef CHIMES
+#include "./cooling/chimes/chimes_proto.h"
+extern struct gasVariables *ChimesGasVars;
+extern struct globalVariables ChimesGlobalVars;
+extern char ChimesDataPath[256];
+extern char ChimesEqAbundanceTable[196];
+extern char ChimesPhotoIonTable[196];
+extern double chimes_rad_field_norm_factor;
+extern double shielding_length_factor;
+extern double cr_rate;
+extern int ChimesEqmMode;
+extern int ChimesUVBMode;
+extern int ChimesInitIonState;
+extern int Chimes_incl_full_output;
+extern int N_chimes_full_output_freq;
+#ifdef CHIMES_HII_REGIONS
+#endif
+#ifdef CHIMES_STELLAR_FLUXES
+// The following defines the stellar age bins that we will use to define the UV spectra from stars used in CHIMES.
+#define CHIMES_LOCAL_UV_NBINS 8
+#define CHIMES_LOCAL_UV_AGE_LOW 0.0
+#define CHIMES_LOCAL_UV_DELTA_AGE_LOW 0.2
+#define CHIMES_LOCAL_UV_AGE_MID 1.0
+#define CHIMES_LOCAL_UV_DELTA_AGE_HI 1.0
+#endif
+#ifdef CHIMES_METAL_DEPLETION
+#define DEPL_N_ELEM 17
+struct Chimes_depletion_data_structure
+{
+  double SolarAbund[DEPL_N_ELEM];
+  double DeplPars[DEPL_N_ELEM][3];
+  double DustToGasSaturated;
+  double ChimesDepletionFactors[7];
+  double ChimesDustRatio;
+};
+extern struct Chimes_depletion_data_structure *ChimesDepletionData;
+#endif // CHIMES_METAL_DEPLETION
+#endif // CHIMES
 
 
 
@@ -519,7 +560,7 @@ extern "C" {
 
 /* default to speed-of-light equal to actual speed-of-light, and stars as photo-ionizing sources */
 #ifndef RT_SPEEDOFLIGHT_REDUCTION
-#define RT_SPEEDOFLIGHT_REDUCTION 1.0
+#define RT_SPEEDOFLIGHT_REDUCTION (1.0)
 #endif
 #ifndef RT_SOURCES
 #define RT_SOURCES 1+2+4+8+16+32 // default to allowing all types to act as sources //
@@ -537,7 +578,7 @@ extern "C" {
 /* ----- end block of options for RHD modules ------ */
 
 
-#if defined(GALSF) || defined(BLACK_HOLES) || defined(RADTRANSFER) || defined(OUTPUT_DENS_AROUND_STAR) || defined(FLAG_NOT_IN_PUBLIC_CODE)
+#if defined(GALSF) || defined(BLACK_HOLES) || defined(RADTRANSFER) || defined(OUTPUT_DENS_AROUND_STAR) || defined(CHIMES)
 #define DO_DENSITY_AROUND_STAR_PARTICLES
 #if !defined(ALLOW_IMBALANCED_GASPARTICLELOAD)
 #define ALLOW_IMBALANCED_GASPARTICLELOAD
@@ -997,7 +1038,7 @@ typedef unsigned long long peanokey;
 
 #define U_TO_TEMP_UNITS         ((PROTONMASS/BOLTZMANN)*((UNIT_ENERGY_IN_CGS)/(UNIT_MASS_IN_CGS))) /* units to convert specific internal energy to temperature. needs to be multiplied by dimensionless factor=mean_molec_weight_in_amu*(gamma_eos-1) */
 #define C_LIGHT_CODE            ((C_LIGHT/UNIT_VEL_IN_CGS)) /* pure convenience function, speed-of-light in code units */
-#define C_LIGHT_CODE_REDUCED    ((RT_SPEEDOFLIGHT_REDUCTION*((C_LIGHT)/(UNIT_VEL_IN_CGS)))) /* reduced speed-of-light in code units, again here as a convenience function */
+#define C_LIGHT_CODE_REDUCED    (((RT_SPEEDOFLIGHT_REDUCTION)*((C_LIGHT)/(UNIT_VEL_IN_CGS)))) /* reduced speed-of-light in code units, again here as a convenience function */
 #define H0_CGS                  ((All.HubbleParam*HUBBLE_H100_CGS)) /* actual value of H0 in cgs */
 #define COSMIC_BARYON_DENSITY_CGS ((All.OmegaBaryon*(H0_CGS)*(H0_CGS)*(3./(8.*M_PI*GRAVITY_G))*All.cf_a3inv)) /* cosmic mean baryon density [scale-factor-dependent] in cgs units */
 
@@ -1037,9 +1078,7 @@ typedef unsigned long long peanokey;
 #endif // METALS //
 
 
-#if defined(FLAG_NOT_IN_PUBLIC_CODE_ALT_RSOL_FORM) && defined(FLAG_NOT_IN_PUBLIC_CODE_M1)
-#else
-#endif
+
 
 
 #ifndef FOF_PRIMARY_LINK_TYPES
@@ -1543,26 +1582,6 @@ double rt_ion_G_HeI[N_RT_FREQ_BINS];
 double rt_ion_G_HeII[N_RT_FREQ_BINS];
 #endif
 
-#if defined(FLAG_NOT_IN_PUBLIC_CODE_EVOLVE_SPECTRUM) /* define some global variables we will need to use semi-constantly to make reference to the CR spectra */
-double CR_global_min_rigidity_in_bin[N_CR_PARTICLE_BINS];
-double CR_global_max_rigidity_in_bin[N_CR_PARTICLE_BINS];
-double CR_global_rigidity_at_bin_center[N_CR_PARTICLE_BINS];
-double CR_global_charge_in_bin[N_CR_PARTICLE_BINS];
-int CR_species_ID_in_bin[N_CR_PARTICLE_BINS];
-#define N_CR_SPECTRUM_LUT 101 /*!< number of elements per bin in the look-up-tables we will pre-compute to use for inverting the energy-number relation to determine the spectral slope */
-double CR_global_slope_lut[N_CR_PARTICLE_BINS][N_CR_SPECTRUM_LUT]; /*!< holder for the actual look-up-tables */
-#if defined(FLAG_NOT_IN_PUBLIC_CODE_EVOLVE_SPECTRUM_EXTENDED_NETWORK)
-#define N_CR_PARTICLE_SPECIES 8
-int CR_secondary_species_listref[N_CR_PARTICLE_SPECIES][N_CR_PARTICLE_SPECIES]; /*!< list for each type of the different secondaries to which it can decay */
-int CR_secondary_target_bin[N_CR_PARTICLE_BINS][N_CR_PARTICLE_SPECIES]; /*!< destination bin for the secondaries produced by different primaries */
-double CR_frag_secondary_coeff[N_CR_PARTICLE_BINS][N_CR_PARTICLE_SPECIES]; /*!< coefficients for fragmentation to the given secondaries (also pre-computed for simplicity) */
-double CR_frag_coeff[N_CR_PARTICLE_BINS]; /*!< total coefficients for fragmentation processes (pre-compute b/c cross-sections are complicated) */
-double CR_rad_decay_coeff[N_CR_PARTICLE_BINS]; /*!< radioactive decay coefficients (pre-computed for ease, also because of dilation dependence) */
-#else
-#define N_CR_PARTICLE_SPECIES 2 /* total number of CR species to be evolved. must be set here because of references below*/
-#endif
-int CR_species_ID_active_list[N_CR_PARTICLE_SPECIES]; /*!< holds the list of species ids to loop over */
-#endif
 
 extern struct topnode_data
 {
@@ -1713,6 +1732,13 @@ extern struct global_data_all_processes
   double InitGasTemp;		/*!< may be used to set the temperature in the IC's */
   double InitGasU;		/*!< the same, but converted to thermal energy per unit mass */
   double MinGasTemp;		/*!< may be used to set a floor for the gas temperature */
+#ifdef CHIMES
+  int ChimesThermEvolOn;        /*!< Flag to determine whether to evolve the temperature in CHIMES. */
+#ifdef CHIMES_STELLAR_FLUXES
+  double Chimes_f_esc_ion;
+  double Chimes_f_esc_G0;
+#endif
+#endif // CHIMES
 
   double MinEgySpec;		/*!< the minimum allowed temperature expressed as energy per unit mass */
 #ifdef SPHAV_ARTIFICIAL_CONDUCTIVITY
@@ -2624,9 +2650,11 @@ extern struct sph_particle_data
 #endif
 
 #ifdef COOLING
+#ifndef CHIMES
   MyFloat Ne;  /*!< electron fraction, expressed as local electron number
 		    density normalized to the hydrogen number density. Gives
 		    indirectly ionization state and mean molecular weight. */
+#endif
 #endif
 #ifdef GALSF
   MyFloat Sfr;                      /*!< particle star formation rate */

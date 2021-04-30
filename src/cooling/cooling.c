@@ -24,6 +24,7 @@
 /* requires the cooling table TREECOOL, which is included in the GIZMO source in the cooling directory */
 #define NCOOLTAB  2000 /* defines size of cooling table */
 
+#if !defined(CHIMES)
 static double Tmin = -1.0, Tmax = 9.0, deltaT; /* minimum/maximum temp, in log10(T/K) and temperature gridding: will be appropriately set in make_cooling_tables subroutine below */
 static double *BetaH0, *BetaHep, *Betaff, *AlphaHp, *AlphaHep, *Alphad, *AlphaHepp, *GammaeH0, *GammaeHe0, *GammaeHep; // UV background parameters
 #ifdef COOL_METAL_LINES_BY_SPECIES
@@ -33,7 +34,18 @@ static float *SpCoolTable0, *SpCoolTable1;
 #endif
 /* these are constants of the UV background at a given redshift: they are interpolated from TREECOOL but then not modified particle-by-particle */
 static double J_UV = 0, gJH0 = 0, gJHep = 0, gJHe0 = 0, epsH0 = 0, epsHep = 0, epsHe0 = 0;
+#endif
 
+#if defined(CHIMES)
+int ChimesEqmMode, ChimesUVBMode, ChimesInitIonState, N_chimes_full_output_freq, Chimes_incl_full_output = 1;
+double chimes_rad_field_norm_factor, shielding_length_factor, cr_rate;
+char ChimesDataPath[256], ChimesEqAbundanceTable[196], ChimesPhotoIonTable[196];
+struct gasVariables *ChimesGasVars;
+struct globalVariables ChimesGlobalVars;
+#ifdef CHIMES_METAL_DEPLETION
+struct Chimes_depletion_data_structure *ChimesDepletionData;
+#endif
+#endif
 
 
 
@@ -84,6 +96,11 @@ void cooling_parent_routine(void)
     }
     } /* close parallel block */
     free(active_indices); /* free memory */
+
+#ifdef CHIMES /* CHIMES records some extra timing information here owing to large possible imbalances */
+  CPU_Step[CPU_COOLINGSFR] += measure_time(); MPI_Barrier(MPI_COMM_WORLD);
+  CPU_Step[CPU_COOLSFRIMBAL] += measure_time(); PRINT_STATUS("CHIMES chemistry and cooling finished");
+#endif
 }
 
 
@@ -125,7 +142,12 @@ void do_the_cooling_for_particle(int i)
 
 #ifndef RT_COOLING_PHOTOHEATING_OLDFORMAT
         /* Call the actual COOLING subroutine! */
+#ifdef CHIMES
+        double dummy_ne = 0.0;
+        unew = DoCooling(uold, SphP[i].Density * All.cf_a3inv, dtime, dummy_ne, i);
+#else
         unew = DoCooling(uold, SphP[i].Density * All.cf_a3inv, dtime, SphP[i].Ne, i);
+#endif
 #else
         unew = uold + dtime * (rt_DoHeating(i, dtime) + rt_DoCooling(i, dtime));
 #endif
@@ -141,8 +163,8 @@ void do_the_cooling_for_particle(int i)
 
         
 #ifdef RT_INFRARED /* assume (for now) that all radiated/absorbed energy comes from the IR bin [not really correct, this should just be the dust term] */
-        double nHcgs = HYDROGEN_MASSFRAC * UNIT_DENSITY_IN_CGS * SphP[i].Density / PROTONMASS;	/* hydrogen number dens in cgs units */
-        double ratefact = (C_LIGHT_CODE_REDUCED/C_LIGHT_CODE) * nHcgs * nHcgs / (SphP[i].Density * UNIT_DENSITY_IN_CGS); /* need to account for RSOL factors in emission/absorption rates */
+        double nHcgs = HYDROGEN_MASSFRAC * UNIT_DENSITY_IN_CGS * SphP[i].Density * All.cf_a3inv / PROTONMASS;	/* hydrogen number dens in cgs units */
+        double ratefact = (C_LIGHT_CODE_REDUCED/C_LIGHT_CODE) * nHcgs * nHcgs / (SphP[i].Density * All.cf_a3inv * UNIT_DENSITY_IN_CGS); /* need to account for RSOL factors in emission/absorption rates */
         double de_u = -SphP[i].LambdaDust * ratefact * (dtime*UNIT_TIME_IN_CGS) / (UNIT_SPECEGY_IN_CGS) * P[i].Mass; /* energy gained by gas needs to be subtracted from radiation */
         if(de_u<=-0.99*SphP[i].Rad_E_gamma[RT_FREQ_BIN_INFRARED]) {de_u=-0.99*SphP[i].Rad_E_gamma[RT_FREQ_BIN_INFRARED]; unew=DMAX(0.01*SphP[i].InternalEnergy , SphP[i].InternalEnergy-de_u/P[i].Mass);}
         SphP[i].Rad_E_gamma[RT_FREQ_BIN_INFRARED] += de_u; /* energy gained by gas is lost here */
@@ -210,6 +232,24 @@ double DoCooling(double u_old, double rho, double dt, double ne_guess, int targe
     return DMAX(u,All.MinEgySpec);
 #endif
 
+#ifdef CHIMES
+    chimes_update_gas_vars(target);
+
+    /* Call CHIMES to evolve the chemistry and temperature over
+     * the hydro timestep. */
+    chimes_network(&(ChimesGasVars[target]), &ChimesGlobalVars);
+
+    // Compute updated internal energy
+    u = (double) ChimesGasVars[target].temperature * BOLTZMANN / ((GAMMA(target)-1) * PROTONMASS * calculate_mean_molecular_weight(&(ChimesGasVars[target]), &ChimesGlobalVars));
+    u /= UNIT_SPECEGY_IN_CGS;  // code units
+
+#ifdef CHIMES_TURB_DIFF_IONS 
+    chimes_update_turbulent_abundances(target, 1); 
+#endif 
+
+    return DMAX(u, All.MinEgySpec);
+
+#else // CHIMES
 
     int iter=0, iter_upper=0, iter_lower=0, iter_condition = 0; double LambdaNet, ratefact, u_upper, u_lower;
 #ifdef RT_INFRARED
@@ -281,10 +321,12 @@ double DoCooling(double u_old, double rho, double dt, double ne_guess, int targe
 
     /* safe return */
     return specific_energy_codeunits_toreturn;
+#endif // CHIMES
 }
 
 
 
+#ifndef CHIMES
 /* returns cooling time.
  * NOTE: If we actually have heating, a cooling time of 0 is returned.
  */
@@ -355,12 +397,21 @@ double DoInstabilityCooling(double m_old, double u, double rho, double dt, doubl
     return m;
 }
 
+#endif // !(CHIMES)
 
 
 
 
 
 
+#ifdef CHIMES
+/* This function converts thermal energy to temperature, using the mean molecular weight computed from the non-equilibrium CHIMES abundances. */
+double chimes_convert_u_to_temp(double u, double rho, int target)
+{
+  return u * (GAMMA(target)-1) * PROTONMASS * ((double) calculate_mean_molecular_weight(&(ChimesGasVars[target]), &ChimesGlobalVars)) / BOLTZMANN;
+}
+
+#else  // CHIMES
 
 /* this function determines the electron fraction, and hence the mean molecular weight. With it arrives at a self-consistent temperature.
  * Ionization abundances and the rates for the emission are also computed */
@@ -445,10 +496,12 @@ double convert_u_to_temp(double u, double rho, int target, double *ne_guess, dou
     if(log10(temp)<Tmin) temp=pow(10.0,Tmin);
     return temp;
 }
+#endif // CHIMES
 
 
 
 
+#ifndef CHIMES
 /* this function computes the actual ionization states, relative abundances, and returns the ionization/recombination rates if needed */
 double find_abundances_and_rates(double logT, double rho, int target, double shieldfac, int return_cooling_mode,
                                  double *ne_guess, double *nH0_guess, double *nHp_guess, double *nHe0_guess, double *nHep_guess, double *nHepp_guess,
@@ -464,7 +517,7 @@ double find_abundances_and_rates(double logT, double rho, int target, double shi
 
     if(logT <= Tmin)		/* everything neutral */
     {
-        nH0 = 1.0; nHe0 = yhelium(target); nHp = 0; nHep = 0; nHepp = 0; n_elec = 0;
+        nH0 = 1.0; nHe0 = yhelium(target); nHp = 0; nHep = 0; nHepp = 0; n_elec = 1.e-22;
         *nH0_guess=nH0; *nHe0_guess=nHe0; *nHp_guess=nHp; *nHep_guess=nHep; *nHepp_guess=nHepp; *ne_guess=n_elec;
         *mu_guess=Get_Gas_Mean_Molecular_Weight_mu(pow(10.,logT), rho, nH0_guess, ne_guess, 0, target);
         return 0;
@@ -636,6 +689,9 @@ double find_abundances_and_rates(double logT, double rho, int target, double shi
 
         neold = n_elec;
         n_elec = nHp + nHep + 2 * nHepp;	/* eqn (38) */
+#ifdef COOL_LOW_TEMPERATURES
+        n_elec += return_electron_fraction_from_heavy_ions(target, pow(10.,logT), rho, n_elec);
+#endif
         necgs = n_elec * nHcgs;
 
         if(J_UV == 0) break;
@@ -706,6 +762,7 @@ double CoolingRateFromU(double u, double rho, double ne_guess, int target)
 }
 
 
+#endif // !(CHIMES)
 
 
 
@@ -713,6 +770,7 @@ extern FILE *fd;
 
 
 
+#ifndef CHIMES
 /*  Calculates (heating rate-cooling rate)/n_h^2 in cgs units
  */
 double CoolingRate(double logT, double rho, double n_elec_guess, int target)
@@ -874,23 +932,23 @@ double CoolingRate(double logT, double rho, double n_elec_guess, int target)
         
         if(LambdaCompton<0) {Heat -= LambdaCompton;} /* Compton heating rather than cooling */
 
-#if defined(FLAG_NOT_IN_PUBLIC_CODE) || defined(RT_PHOTOELECTRIC) || defined(RT_FUV_BACKGROUND)
+#if defined(FLAG_NOT_IN_PUBLIC_CODE) || defined(RT_PHOTOELECTRIC) || defined(RT_ISRF_BACKGROUND)
         /* Photoelectric heating following Bakes & Thielens 1994 (also Wolfire 1995); now with 'update' from Wolfire 2005 for PAH [fudge factor 0.5 below] */
         if((target >= 0) && (T < 1.0e6))
         {
-            double photoelec;
+            double photoelec = 0;
 #ifdef RT_PHOTOELECTRIC
-            photoelec = SphP[target].Rad_E_gamma[RT_FREQ_BIN_PHOTOELECTRIC] * (SphP[target].Density*All.cf_a3inv/P[target].Mass) * UNIT_PRESSURE_IN_CGS / 3.9e-14; // convert to Habing field //
-            if(photoelec > 0) {if(photoelec > 1.e4) {photoelec = 1.e4;}}
+            photoelec += SphP[target].Rad_E_gamma[RT_FREQ_BIN_PHOTOELECTRIC] * (SphP[target].Density*All.cf_a3inv/P[target].Mass) * UNIT_PRESSURE_IN_CGS / 3.9e-14; // convert to Habing field //
 #endif
-#ifdef RT_FUV_BACKGROUND // add a constant assumed FUV background, for isolated ISM simulations that don't get FUV from local sources self-consistently
+#ifdef RT_ISRF_BACKGROUND // add a constant assumed FUV background, for isolated ISM simulations that don't get FUV from local sources self-consistently
             double column = evaluate_NH_from_GradRho(P[target].GradRho,PPP[target].Hsml,SphP[target].Density,PPP[target].NumNgb,1,target) * UNIT_SURFDEN_IN_CGS; // converts to cgs            
-            photoelec += RT_FUV_BACKGROUND * 1.7 * exp(-DMAX(P[target].Metallicity[0]/All.SolarAbundances[0],1e-4) * column * 2000.); // RT_IRSF_BACKGROUND rescales the overal IRSF, factor of 1.7 gives Draine 1978 field in Habing units, extinction factor assumes the same FUV band-integrated dust opacity as RT module
+            photoelec += RT_ISRF_BACKGROUND * 1.7 * exp(-DMAX(P[target].Metallicity[0]/All.SolarAbundances[0],1e-4) * column * 500.); // RT_ISRF_BACKGROUND rescales the overal ISRF, factor of 1.7 gives Draine 1978 field in Habing units, extinction factor assumes the same FUV band-integrated dust opacity as RT module
 #endif
+            if(photoelec > 0) {if(photoelec > 1.e4) {photoelec = 1.e4;}}
 
             if(photoelec > 0)
             {
-                double LambdaPElec = 1.3e-24 * photoelec / nHcgs * P[target].Metallicity[0]/All.SolarAbundances[0];
+                double LambdaPElec = 1.3e-24 * photoelec / nHcgs * (P[target].Metallicity[0]/All.SolarAbundances[0]);
                 double x_photoelec = photoelec * sqrt(T) / (0.5 * (1.0e-12+n_elec) * nHcgs);
                 LambdaPElec *= 0.049/(1+pow(x_photoelec/1925.,0.73)) + 0.037*pow(T/1.0e4,0.7)/(1+x_photoelec/5000.);
                 Heat += LambdaPElec;
@@ -1294,6 +1352,7 @@ void IonizeParamsFunction(void)
         epsHe0 *= 4. * pi * J_UV;
     }
 }
+#endif // !(CHIMES)
 
 
 
@@ -1307,19 +1366,70 @@ void InitCool(void)
 
 #ifdef COOL_GRACKLE
     InitGrackle();
-#else
+#endif
+
+#ifdef CHIMES
+    sprintf(ChimesGlobalVars.MainDataTablePath, "%s/chimes_main_data.hdf5", ChimesDataPath);
+    sprintf(ChimesGlobalVars.EqAbundanceTablePath, "%s/EqAbundancesTables/%s", ChimesDataPath, ChimesEqAbundanceTable);
+    sprintf(ChimesGlobalVars.PhotoIonTablePath[0], "%s/%s", ChimesDataPath, ChimesPhotoIonTable);
+
+    // By default, use 1 spectrum, unless
+    // stellar fluxes are enabled.
+    ChimesGlobalVars.N_spectra = 1;
+
+#ifdef CHIMES_STELLAR_FLUXES
+    ChimesGlobalVars.N_spectra += CHIMES_LOCAL_UV_NBINS;
+
+    int spectrum_idx;
+    for (spectrum_idx = 1; spectrum_idx < ChimesGlobalVars.N_spectra; spectrum_idx++)
+      sprintf(ChimesGlobalVars.PhotoIonTablePath[spectrum_idx], "%s/starburstCrossSections/cross_sections_SB%d.hdf5", ChimesDataPath, spectrum_idx);
+#endif
+
+    if (ChimesUVBMode > 0)
+      {
+	ChimesGlobalVars.redshift_dependent_UVB_index = 0;
+	if (ChimesUVBMode == 1)
+	  ChimesGlobalVars.use_redshift_dependent_eqm_tables = 0;
+	else
+	  ChimesGlobalVars.use_redshift_dependent_eqm_tables = 1;
+      }
+    else
+      {
+	ChimesGlobalVars.redshift_dependent_UVB_index = -1;
+	ChimesGlobalVars.use_redshift_dependent_eqm_tables = 0;
+      }
+
+    // Hybrid cooling has not yet been
+    // implemented in Gizmo. Switch
+    // it off for now.
+    ChimesGlobalVars.hybrid_cooling_mode = 0;
+
+    // Set the chimes_exit() function
+    // to use the Gizmo-specific
+    // chimes_gizmo_exit().
+    chimes_exit = &chimes_gizmo_exit;
+
+    // Initialise the CHIMES module.
+    init_chimes(&ChimesGlobalVars);
+
+#ifdef CHIMES_METAL_DEPLETION
+    chimes_init_depletion_data();
+#endif
+
+#else // CHIMES
     InitCoolMemory();
     MakeCoolingTable();
     ReadIonizeParams("TREECOOL");
     IonizeParams();
 #ifdef COOL_METAL_LINES_BY_SPECIES
     LoadMultiSpeciesTables();
-#endif // COOL_METAL_LINES_BY_SPECIES
-#endif // COOL_GRACKLE
+#endif
+#endif // CHIMES
 }
 
 
 
+#ifndef CHIMES
 #ifdef COOL_METAL_LINES_BY_SPECIES
 double GetCoolingRateWSpecies(double nHcgs, double logT, double *Z)
 {
@@ -1383,6 +1493,7 @@ double GetLambdaSpecies(long k_index, long index_x0y0, long index_x0y1, long ind
 }
 
 #endif // COOL_METAL_LINES_BY_SPECIES
+#endif // !(CHIMES)
 
 
 
@@ -1524,6 +1635,9 @@ double get_equilibrium_dust_temperature_estimate(int i, double shielding_factor_
     double e_CMB=0.262*All.cf_a3inv/All.cf_atime, T_cmb=2.73/All.cf_atime; // CMB [energy in eV/cm^3, T in K]
     double e_IR=0.31, Tdust_ext=DMAX(30.,T_cmb); // Milky way ISRF from Draine (2011), assume peak of dust emission at ~100 microns
     double e_HiEgy=0.66, T_hiegy=5800.; // Milky way ISRF from Draine (2011), assume peak of stellar emission at ~0.6 microns [can still have hot dust, this effect is pretty weak]
+#ifdef RT_ISRF_BACKGROUND
+    e_IR *= RT_ISRF_BACKGROUND; e_HiEgy *= RT_ISRF_BACKGROUND; // need to re-scale the assumed ISRF components
+#endif
     if(i >= 0)
     {
 #if defined(RADTRANSFER) || defined(RT_USE_GRAVTREE_SAVE_RAD_ENERGY) // use actual explicitly-evolved radiation field, if possible
@@ -1544,6 +1658,39 @@ double get_equilibrium_dust_temperature_estimate(int i, double shielding_factor_
         double T0=2.92, q=pow(T0*e_IR,0.25), y=(T_cmb*e_CMB + T_hiegy*e_HiEgy)/(T0*e_IR*q); if(y<=1) {Tdust_eqm=T0*q*(0.8+sqrt(0.04+0.1*y));} else {double y5=pow(y,0.2), y5_3=y5*y5*y5, y5_4=y5_3*y5; Tdust_eqm=T0*q*(1.+15.*y5_4+sqrt(1.+30.*y5_4+25.*y5_4*y5_4))/(20.*y5_3);} // this gives an extremely accurate and exactly-joined solution to the full quintic equation assuming T_rad_IR=T_dust
     }
     return DMAX(DMIN(Tdust_eqm , 2000.) , 1.); // limit at sublimation temperature or some very low temp //
+}
+
+
+
+/* this function estimates the free electron fraction from heavy ions, assuming a simple mix of cold molecular gas, Mg, and dust, with the ions from singly-ionized Mg, to prevent artificially low free electron fractions */
+double return_electron_fraction_from_heavy_ions(int target, double temperature, double density_cgs, double n_elec_HHe)
+{
+    if(All.ComovingIntegrationOn) {double rhofac=density_cgs/(1000.*COSMIC_BARYON_DENSITY_CGS); if(rhofac<0.2) {return 0;}} // ignore these reactions in the IGM
+    double zeta_cr=1.0e-17, f_dustgas=0.01, n_ion_max=4.1533e-5, XH=HYDROGEN_MASSFRAC; // cosmic ray ionization rate (fixed as constant for non-CR runs) and dust-to-gas ratio
+#ifdef METALS
+    if(target>=0) {f_dustgas=0.5*P[target].Metallicity[0];} // constant dust-to-metals ratio
+#ifdef COOL_METAL_LINES_BY_SPECIES
+    if(target>=0) {n_ion_max = (All.SolarAbundances[6]/24.3)/XH;} // limit, to avoid over-ionization at low metallicities
+#endif
+#endif
+    /* Regime I: highly/photo-ionized, any contributions here would be negligible -- no need to continue */
+    if(n_elec_HHe > 0.01) {return n_ion_max;} // contribute something negligible, doesn't matter here //
+    double a_grain_micron=0.1, m_ion=24.305*PROTONMASS, mu_eff=2.38, m_neutrals=mu_eff*PROTONMASS, m_grain=4.189e-12*(2.4)*a_grain_micron*a_grain_micron*a_grain_micron, ngrain_ngas=(m_neutrals/m_grain)*f_dustgas; // effective size of grains that matter at these densities, and ions [here Mg] that dominate
+    double k_ei=9.77e-8, y=sqrt(m_ion/ELECTRONMASS), ln_y=log(y), psi_0=-ln_y+(1.+ln_y)*log(1.+ln_y)/(2.+ln_y), k_eg_00=0.0195*a_grain_micron*a_grain_micron*sqrt(temperature), k_eg_0=k_eg_00*exp(psi_0), n_crit=k_ei*zeta_cr/(k_eg_0*ngrain_ngas*k_eg_0*ngrain_ngas), n_eff=density_cgs/m_neutrals;
+
+    /* Regime II: CR-ionized with high enough ionization fraction that gas-phase recombinations dominate */
+    if(n_eff < 0.01*n_crit) {return DMIN(n_ion_max , sqrt(zeta_cr / (k_ei * n_eff)) / (XH*mu_eff) );} // CR-dominated off gas with recombination -- put into appropriate units here
+    if(n_eff < 100.*n_crit) {return DMIN(n_ion_max , 0.5 * (sqrt(4.*n_crit/n_eff + 1.) - 1.) * (k_eg_0*ngrain_ngas)/(k_ei*XH*mu_eff));} // interpolates between gas-recombination and dust-dominated regimes
+    
+    /* Regime III: recombination dominated by dust, but dust has a 'normal' efficiency of absorbing grains */
+    double psi_fac=16.71/(a_grain_micron*temperature), alpha=zeta_cr*psi_fac/(k_eg_00 * ngrain_ngas*ngrain_ngas * n_eff), alpha_min=0.02, alpha_max=10.; /* Z*psi_fac = Z*e^2/(a_grain*kB*T) to dimensionless [psi] units; alpha=prefactor in charge equation: psi = alpha*(exp[-psi] - y/(1-psi)) */
+    if(alpha > alpha_max) {return DMIN(n_ion_max , zeta_cr / (k_eg_0*ngrain_ngas * XH*mu_eff*n_eff ) );}
+    
+    /* Regime IV: recombination dominated by dust and grains dominate the charge, strongly suppressing the free charges */
+    if(alpha < 1.e-4) {return DMIN(n_ion_max , zeta_cr / (k_eg_00*ngrain_ngas * XH*mu_eff*n_eff) );} // psi->small, negligible correction here
+    if(alpha < alpha_min) {double psi=0.5*(1.-sqrt(1.+4.*y*alpha)); return DMIN(n_ion_max , zeta_cr / (k_eg_00*exp(psi)*ngrain_ngas * XH*mu_eff*n_eff) );} // small-psi-limit
+    double psi_xmin=0.5*(1.-sqrt(1.+4.*y*alpha_min)), psi=psi_0 + (psi_xmin-psi_0)*2./(1.+alpha_min/alpha); // this interpolates between the asymptotic limmits at low and high alpha, where we can obtain high-accuracy solutions here
+    return DMIN(n_ion_max , zeta_cr / (k_eg_00*exp(psi)*ngrain_ngas * XH*mu_eff*n_eff));
 }
 
 
@@ -1637,10 +1784,19 @@ double evaluate_Compton_heating_cooling_rate(int target, double T, double nHcgs,
 /*  this function computes the self-consistent temperature and electron fraction */
 double ThermalProperties(double u, double rho, int target, double *mu_guess, double *ne_guess, double *nH0_guess, double *nHp_guess, double *nHe0_guess, double *nHep_guess, double *nHepp_guess)
 {
+#if defined(CHIMES)
+    int i = target; *ne_guess = ChimesGasVars[i].abundances[ChimesGlobalVars.speciesIndices[sp_elec]]; *nH0_guess = ChimesGasVars[i].abundances[ChimesGlobalVars.speciesIndices[sp_HI]];
+    *nHp_guess = ChimesGasVars[i].abundances[ChimesGlobalVars.speciesIndices[sp_HII]]; *nHe0_guess = ChimesGasVars[i].abundances[ChimesGlobalVars.speciesIndices[sp_HeI]];
+    *nHep_guess = ChimesGasVars[i].abundances[ChimesGlobalVars.speciesIndices[sp_HeII]]; *nHepp_guess = ChimesGasVars[i].abundances[ChimesGlobalVars.speciesIndices[sp_HeIII]];
+    double temp = ChimesGasVars[target].temperature;
+    *mu_guess = Get_Gas_Mean_Molecular_Weight_mu(temp, rho, nH0_guess, ne_guess, 0, target);
+    return temp;
+#else
     if(target >= 0) {*ne_guess=SphP[target].Ne; *nH0_guess = DMAX(0,DMIN(1,1.-( *ne_guess / 1.2 )));} else {*ne_guess=1.; *nH0_guess=0.;}
     rho *= UNIT_DENSITY_IN_CGS; u *= UNIT_SPECEGY_IN_CGS;   /* convert to physical cgs units */
     double temp = convert_u_to_temp(u, rho, target, ne_guess, nH0_guess, nHp_guess, nHe0_guess, nHep_guess, nHepp_guess, mu_guess);
     return temp;
+#endif
 }
 
 
@@ -1670,4 +1826,297 @@ double return_uvb_shieldfac(int target, double gamma_12, double nHcgs, double lo
 
 
 
+#ifdef CHIMES
+/* This routine updates the ChimesGasVars structure for particle target. */
+void chimes_update_gas_vars(int target)
+{
+  double dt = GET_PARTICLE_TIMESTEP_IN_PHYSICAL(target);
+  double u_old_cgs = DMAX(All.MinEgySpec, SphP[target].InternalEnergy) * UNIT_SPECEGY_IN_CGS;
+  double rho_cgs = SphP[target].Density * All.cf_a3inv * UNIT_DENSITY_IN_CGS;
+
+#ifdef COOL_METAL_LINES_BY_SPECIES
+  double H_mass_fraction = 1.0 - (P[target].Metallicity[0] + P[target].Metallicity[1]);
+#else
+  double H_mass_fraction = XH;
+#endif
+
+  ChimesGasVars[target].temperature = (ChimesFloat) chimes_convert_u_to_temp(u_old_cgs, rho_cgs, target);
+  ChimesGasVars[target].nH_tot = (ChimesFloat) (H_mass_fraction * rho_cgs / PROTONMASS);
+  ChimesGasVars[target].ThermEvolOn = All.ChimesThermEvolOn;
+
+  // If there is an EoS, need to set TempFloor to that instead.
+  ChimesGasVars[target].TempFloor = (ChimesFloat) DMAX(All.MinGasTemp, 10.1);
+
+  // Flag to control how the temperature
+  // floor is implemented in CHIMES.
+  ChimesGasVars[target].temp_floor_mode = 1;
+
+  // Extragalactic UV background
+  ChimesGasVars[target].isotropic_photon_density[0] = chimes_table_spectra.isotropic_photon_density[0];
+  ChimesGasVars[target].isotropic_photon_density[0] *= chimes_rad_field_norm_factor;
+
+  ChimesGasVars[target].G0_parameter[0] = chimes_table_spectra.G0_parameter[0];
+  ChimesGasVars[target].H2_dissocJ[0] =  chimes_table_spectra.H2_dissocJ[0];
+
+#ifdef CHIMES_STELLAR_FLUXES
+  int kc;
+  for (kc = 0; kc < CHIMES_LOCAL_UV_NBINS; kc++)
+    {
+      ChimesGasVars[target].isotropic_photon_density[kc + 1] = (ChimesFloat) (SphP[target].Chimes_fluxPhotIon[kc] / C_LIGHT);
+
+#ifdef CHIMES_HII_REGIONS
+    if(SphP[target].DelayTimeHII > 0) {
+        ChimesGasVars[target].isotropic_photon_density[kc + 1] += (ChimesFloat) (SphP[target].Chimes_fluxPhotIon_HII[kc] / C_LIGHT);
+        ChimesGasVars[target].G0_parameter[kc + 1] = (ChimesFloat) ((SphP[target].Chimes_G0[kc] + SphP[target].Chimes_G0_HII[kc]) / DMAX((SphP[target].Chimes_fluxPhotIon[kc] + SphP[target].Chimes_fluxPhotIon_HII[kc]), 1.0e-300));
+	} else {ChimesGasVars[target].G0_parameter[kc + 1] = (ChimesFloat) (SphP[target].Chimes_G0[kc] / DMAX(SphP[target].Chimes_fluxPhotIon[kc], 1.0e-300));}
+    ChimesGasVars[target].H2_dissocJ[kc + 1] = (ChimesFloat) (ChimesGasVars[target].G0_parameter[kc + 1] * (chimes_table_spectra.H2_dissocJ[kc + 1] / chimes_table_spectra.G0_parameter[kc + 1]));
+#else
+      ChimesGasVars[target].G0_parameter[kc + 1] = (ChimesFloat) (SphP[target].Chimes_G0[kc] / DMAX(SphP[target].Chimes_fluxPhotIon[kc], 1.0e-300));
+      ChimesGasVars[target].H2_dissocJ[kc + 1] = (ChimesFloat) (ChimesGasVars[target].G0_parameter[kc + 1] * (chimes_table_spectra.H2_dissocJ[kc + 1] / chimes_table_spectra.G0_parameter[kc + 1]));
+#endif
+    }
+#endif
+
+  ChimesGasVars[target].cr_rate = (ChimesFloat) cr_rate;  // For now, assume a constant cr_rate.
+  ChimesGasVars[target].hydro_timestep = (ChimesFloat) (dt * UNIT_TIME_IN_CGS);
+
+  ChimesGasVars[target].ForceEqOn = ChimesEqmMode;
+  ChimesGasVars[target].divVel = (ChimesFloat) P[target].Particle_DivVel / UNIT_TIME_IN_CGS;
+  if (All.ComovingIntegrationOn)
+    {
+      ChimesGasVars[target].divVel *= (ChimesFloat) All.cf_a2inv;
+      ChimesGasVars[target].divVel += (ChimesFloat) (3 * All.cf_hubble_a / UNIT_TIME_IN_CGS);  /* Term due to Hubble expansion */
+    }
+  ChimesGasVars[target].divVel = (ChimesFloat) fabs(ChimesGasVars[target].divVel);
+
+#ifndef COOLING_OPERATOR_SPLIT
+  ChimesGasVars[target].constant_heating_rate = ChimesGasVars[target].nH_tot * ((ChimesFloat) SphP[target].DtInternalEnergy);
+#else
+  ChimesGasVars[target].constant_heating_rate = 0.0;
+#endif
+
+#ifdef CHIMES_SOBOLEV_SHIELDING
+  double surface_density;
+  surface_density = evaluate_NH_from_GradRho(P[target].GradRho,PPP[target].Hsml,SphP[target].Density,PPP[target].NumNgb,1,target) * UNIT_SURFDEN_IN_CGS; // converts to cgs
+  ChimesGasVars[target].cell_size = (ChimesFloat) (shielding_length_factor * surface_density / rho_cgs);
+#else
+  ChimesGasVars[target].cell_size = 1.0;
+#endif
+
+  ChimesGasVars[target].doppler_broad = 7.1;  // km/s. For now, just set this constant. Thermal broadening is also added within CHIMES.
+
+  ChimesGasVars[target].InitIonState = ChimesInitIonState;
+
+#ifdef CHIMES_HII_REGIONS
+  if (SphP[target].DelayTimeHII > 0.0) {ChimesGasVars[target].cell_size = 1.0;} // switch of shielding in HII regions
+#endif
+
+#ifdef CHIMES_TURB_DIFF_IONS
+  chimes_update_turbulent_abundances(target, 0);
+#endif
+
+#if defined(COOL_METAL_LINES_BY_SPECIES) && !defined(GALSF_FB_NOENRICHMENT)
+  chimes_update_element_abundances(target);
+#endif
+
+  return;
+}
+
+#ifdef COOL_METAL_LINES_BY_SPECIES
+/* This routine re-computes the element abundances from
+ * the metallicity array and updates the individual ion
+ * abundances accordingly. */
+void chimes_update_element_abundances(int i)
+{
+  double H_mass_fraction = 1.0 - (P[i].Metallicity[0] + P[i].Metallicity[1]);
+
+  /* Update the element abundances in ChimesGasVars. */
+  ChimesGasVars[i].element_abundances[0] = (ChimesFloat) (P[i].Metallicity[1] / (4.0 * H_mass_fraction));   // He
+  ChimesGasVars[i].element_abundances[1] = (ChimesFloat) (P[i].Metallicity[2] / (12.0 * H_mass_fraction));  // C
+  ChimesGasVars[i].element_abundances[2] = (ChimesFloat) (P[i].Metallicity[3] / (14.0 * H_mass_fraction));  // N
+  ChimesGasVars[i].element_abundances[3] = (ChimesFloat) (P[i].Metallicity[4] / (16.0 * H_mass_fraction));  // O
+  ChimesGasVars[i].element_abundances[4] = (ChimesFloat) (P[i].Metallicity[5] / (20.0 * H_mass_fraction));  // Ne
+  ChimesGasVars[i].element_abundances[5] = (ChimesFloat) (P[i].Metallicity[6] / (24.0 * H_mass_fraction));  // Mg
+  ChimesGasVars[i].element_abundances[6] = (ChimesFloat) (P[i].Metallicity[7] / (28.0 * H_mass_fraction));  // Si
+  ChimesGasVars[i].element_abundances[7] = (ChimesFloat) (P[i].Metallicity[8] / (32.0 * H_mass_fraction));  // S
+  ChimesGasVars[i].element_abundances[8] = (ChimesFloat) (P[i].Metallicity[9] / (40.0 * H_mass_fraction));  // Ca
+  ChimesGasVars[i].element_abundances[9] = (ChimesFloat) (P[i].Metallicity[10] / (56.0 * H_mass_fraction)); // Fe
+
+  ChimesGasVars[i].metallicity = (ChimesFloat) (P[i].Metallicity[0] / 0.0129);  // In Zsol. CHIMES uses Zsol = 0.0129.
+  ChimesGasVars[i].dust_ratio = ChimesGasVars[i].metallicity;
+
+#ifdef CHIMES_METAL_DEPLETION
+#ifdef _OPENMP
+  int ThisThread = omp_get_thread_num();
+#else
+  int ThisThread = 0;
+#endif
+  chimes_compute_depletions(ChimesGasVars[i].nH_tot, ChimesGasVars[i].temperature, ThisThread);
+
+  ChimesGasVars[i].element_abundances[1] *= (ChimesFloat) ChimesDepletionData[ThisThread].ChimesDepletionFactors[0]; // C
+  ChimesGasVars[i].element_abundances[2] *= (ChimesFloat) ChimesDepletionData[ThisThread].ChimesDepletionFactors[1]; // N
+  ChimesGasVars[i].element_abundances[3] *= (ChimesFloat) ChimesDepletionData[ThisThread].ChimesDepletionFactors[2]; // O
+  ChimesGasVars[i].element_abundances[5] *= (ChimesFloat) ChimesDepletionData[ThisThread].ChimesDepletionFactors[3]; // Mg
+  ChimesGasVars[i].element_abundances[6] *= (ChimesFloat) ChimesDepletionData[ThisThread].ChimesDepletionFactors[4]; // Si
+  ChimesGasVars[i].element_abundances[7] *= (ChimesFloat) ChimesDepletionData[ThisThread].ChimesDepletionFactors[5]; // S
+  ChimesGasVars[i].element_abundances[9] *= (ChimesFloat) ChimesDepletionData[ThisThread].ChimesDepletionFactors[6]; // Fe
+
+  ChimesGasVars[i].dust_ratio *= (ChimesFloat) ChimesDepletionData[ThisThread].ChimesDustRatio;
+#endif // CHIMES_METAL_DEPLETION
+
+  /* The element abundances may have changed, so use the check_constraint_equations()
+   * routine to update the abundance arrays accordingly. If metals have been injected
+   * into a particle, it is distributed across all of the metal's atomic/ionic/molecular
+   * species, preserving the ion and molecule fractions of that element. */
+
+  check_constraint_equations(&(ChimesGasVars[i]), &ChimesGlobalVars);
+}
+#endif // COOL_METAL_LINES_BY_SPECIES
+
+#ifdef CHIMES_TURB_DIFF_IONS
+/* mode == 0: re-compute the CHIMES abundance array from the ChimesNIons and ChimesHtot
+ *            arrays that are used to track turbulent diffusion of ions and molecules.
+ * mode == 1: update the ChimeSNIons array from the current CHIMES abundance array.
+ */
+void chimes_update_turbulent_abundances(int i, int mode)
+{
+  int k_species;
+  double NHtot = (1.0 - (P[i].Metallicity[0] + P[i].Metallicity[1])) * (P[i].Mass * UNIT_MASS_IN_CGS) / PROTONMASS;
+
+  if (mode == 0)
+    {
+      for (k_species = 0; k_species < ChimesGlobalVars.totalNumberOfSpecies; k_species++)
+	ChimesGasVars[i].abundances[k_species] = (ChimesFloat) (SphP[i].ChimesNIons[k_species] / NHtot);
+    }
+  else
+    {
+      for (k_species = 0; k_species < ChimesGlobalVars.totalNumberOfSpecies; k_species++)
+	SphP[i].ChimesNIons[k_species] = ((double) ChimesGasVars[i].abundances[k_species]) * NHtot;
+    }
+}
+#endif // CHIMES_TURB_DIFF_IONS
+
+#ifdef CHIMES_METAL_DEPLETION
+void chimes_init_depletion_data(void)
+{
+  int i;
+
+#ifdef _OPENMP
+  ChimesDepletionData = (struct Chimes_depletion_data_structure *) malloc(maxThreads * sizeof(struct Chimes_depletion_data_structure));
+#else
+  ChimesDepletionData = (struct Chimes_depletion_data_structure *) malloc(sizeof(struct Chimes_depletion_data_structure));
+#endif
+
+  // Elements in Jenkins (2009) in the order
+  // C, N, O, Mg, Si, P, S, Cl, Ti, Cr, Mn, Fe,
+  // Ni, Cu, Zn, Ge, Kr
+  // Solar abundances are as mass fractions,
+  // taken from the Cloudy default values, as
+  // used in CHIMES.
+  double SolarAbund[DEPL_N_ELEM] = {2.07e-3, 8.36e-4, 5.49e-3, 5.91e-4, 6.83e-4, 7.01e-6, 4.09e-4, 4.72e-6, 3.56e-6, 1.72e-5, 1.12e-5, 1.1e-3, 7.42e-5, 7.32e-7, 1.83e-6, 2.58e-7, 1.36e-7};
+
+  // Fit parameters, using equation 10 of Jenkins (2009).
+  // Where possible, we take the updated fit parameters
+  // A2 and B2 from De Cia et al. (2016), which we convert
+  // to the Ax and Bx of J09 (with zx = 0). Otherwise, we
+  // use the original J09 parameters. We list these in the
+  // order Ax, Bx, zx.
+  double DeplPars[DEPL_N_ELEM][3] = {{-0.101, -0.193, 0.803}, // C
+				     {0.0, -0.109, 0.55},     // N
+				     {-0.101, -0.172, 0.0},     // O
+				     {-0.412, -0.648, 0.0},     // Mg
+				     {-0.426, -0.669, 0.0},     // Si
+				     {-0.068, -0.091, 0.0},      // P
+				     {-0.189, -0.324, 0.0},     // S
+				     {-1.242, -0.314, 0.609}, // Cl
+				     {-2.048, -1.957, 0.43},  // Ti
+				     {-0.892, -1.188, 0.0},      // Cr
+				     {-0.642, -0.923, 0.0},      // Mn
+				     {-0.851, -1.287, 0.0},     // Fe
+				     {-1.490, -1.829, 0.599}, // Ni
+				     {-0.710, -1.102, 0.711}, // Cu
+				     {-0.182, -0.274, 0.0},       // Zn
+				     {-0.615, -0.725, 0.69},  // Ge
+				     {-0.166, -0.332, 0.684}}; // Kr
+
+  int n_thread;
+#ifdef _OPENMP
+  n_thread = maxThreads;
+#else
+  n_thread = 1;
+#endif
+
+  for (i = 0; i < n_thread; i++)
+    {
+      memcpy(ChimesDepletionData[i].SolarAbund, SolarAbund, DEPL_N_ELEM * sizeof(double));
+      memcpy(ChimesDepletionData[i].DeplPars, DeplPars, DEPL_N_ELEM * 3 * sizeof(double));
+      // DustToGasSaturated is the dust to gas ratio when F_star = 1.0, i.e. at maximum depletion onto grains.
+      ChimesDepletionData[i].DustToGasSaturated = 5.9688e-03;
+    }
+}
+
+/* Computes the linear fits as in Jenkins (2009)
+ * or De Cia et al. (2016). Note that this returns
+ * log10(fraction in the gas phase) */
+double chimes_depletion_linear_fit(double nH, double T, double Ax, double Bx, double zx)
+{
+  // First, compute the parameter F_star, using the
+  // best-fit relation from Fig. 16 of Jenkins (2009).
+  double F_star = 0.772 + (0.461 * log10(nH));
+  double depletion;
+
+  // Limit F_star to be no greater than unity
+  if (F_star > 1.0)
+    F_star = 1.0;
+
+  // All metals are in the gas phase if T > 10^6 K
+  if (T > 1.0e6)
+    return 0.0;
+  else
+    {
+      depletion = Bx + (Ax * (F_star - zx));
+
+      // Limit depletion to no greater than 0.0 (remember: it is a log)
+      if (depletion > 0.0)
+	return 0.0;
+      else
+	return depletion;
+    }
+}
+
+void chimes_compute_depletions(double nH, double T, int thread_id)
+{
+  int i;
+  double pars[DEPL_N_ELEM][3];
+  memcpy(pars, ChimesDepletionData[thread_id].DeplPars, DEPL_N_ELEM * 3 * sizeof(double));
+
+  // ChimesDepletionFactors array is for the metals
+  // in the order C, N, O, Mg, Si, S, Fe. The other
+  // metals in CHIMES are not depleted.
+  ChimesDepletionData[thread_id].ChimesDepletionFactors[0] = pow(10.0, chimes_depletion_linear_fit(nH, T, pars[0][0], pars[0][1], pars[0][2])); // C
+  ChimesDepletionData[thread_id].ChimesDepletionFactors[1] = pow(10.0, chimes_depletion_linear_fit(nH, T, pars[1][0], pars[1][1], pars[1][2])); // N
+  ChimesDepletionData[thread_id].ChimesDepletionFactors[2] = pow(10.0, chimes_depletion_linear_fit(nH, T, pars[2][0], pars[2][1], pars[2][2])); // O
+  ChimesDepletionData[thread_id].ChimesDepletionFactors[3] = pow(10.0, chimes_depletion_linear_fit(nH, T, pars[3][0], pars[3][1], pars[3][2])); // Mg
+  ChimesDepletionData[thread_id].ChimesDepletionFactors[4] = pow(10.0, chimes_depletion_linear_fit(nH, T, pars[4][0], pars[4][1], pars[4][2])); // Si
+  ChimesDepletionData[thread_id].ChimesDepletionFactors[5] = pow(10.0, chimes_depletion_linear_fit(nH, T, pars[6][0], pars[6][1], pars[6][2])); // S
+  ChimesDepletionData[thread_id].ChimesDepletionFactors[6] = pow(10.0, chimes_depletion_linear_fit(nH, T, pars[11][0], pars[11][1], pars[11][2])); // Fe
+
+  // The dust abundance as used in CHIMES will be the
+  // metallicity in solar units multiplied by ChimesDustRatio
+  ChimesDepletionData[thread_id].ChimesDustRatio = 0.0;
+  for (i = 0; i < DEPL_N_ELEM; i++)
+    ChimesDepletionData[thread_id].ChimesDustRatio += ChimesDepletionData[thread_id].SolarAbund[i] * (1.0 - pow(10.0, chimes_depletion_linear_fit(nH, T, pars[i][0], pars[i][1], pars[i][2])));
+
+  // The above sum gives the dust to gas mass ratio.
+  // Now normalise it by the saturated value.
+  ChimesDepletionData[thread_id].ChimesDustRatio /= ChimesDepletionData[thread_id].DustToGasSaturated;
+}
+#endif // CHIMES_METAL_DEPLETION
+
+
+void chimes_gizmo_exit(void)
+{
+  endrun(56275362);
+}
+#endif // CHIMES
 #endif
