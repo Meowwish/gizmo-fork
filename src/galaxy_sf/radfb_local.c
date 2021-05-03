@@ -77,7 +77,7 @@ void compute_photoionization(void)
         double N_photons = slugComputeIonizingPhotons(i); // compute number of ionizing photons via SLUG
 #else
         // *without* SLUG: assume a fidicual number of 10^49 ionizing photons per 100 solar masses
-        const double N_photons_per_100Msun = 1.0e49; // s^-1
+        double N_photons_per_100Msun = 1.0e49; // s^-1
         const double star_age = evaluate_stellar_age_Gyr(P[i].StellarAge);
 
         // assume no ionizing photons after 5 Myr

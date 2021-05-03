@@ -310,7 +310,7 @@ OUTPUT_COOLRATE                # outputs cooling rate, and conduction rate if en
 #OUTPUT_LINEOFSIGHT_PARTICLES   # computes power spectrum of these (requires additional code integration)
 #OUTPUT_POWERSPEC               # compute and output cosmological power spectra. requires BOX_PERIODIC and PMGRID.
 #OUTPUT_RECOMPUTE_POTENTIAL     # update potential every output even it EVALPOTENTIAL is set
-#OUTPUT_DENS_AROUND_STAR        # output gas density in neighborhood of stars [collisionless particle types], not just gas
+OUTPUT_DENS_AROUND_STAR        # output gas density in neighborhood of stars [collisionless particle types], not just gas
 #OUTPUT_MOLECULAR_FRACTION      # output the code-estimated molecular mass fraction [needs COOLING], for e.g. approximate molecular fraction estimators (as opposed to detailed chemistry modules, which already output this)
 #INPUT_READ_HSML                # force reading hsml from IC file (instead of re-computing them; in general this is redundant but useful if special guesses needed)
 #OUTPUT_TWOPOINT_ENABLED        # allows user to calculate mass 2-point function by enabling and setting restartflag=5
@@ -336,7 +336,7 @@ STOP_WHEN_BELOW_MINTIMESTEP    # forces code to quit when stepsize wants to go b
 #DEBUG                          # enables core-dumps and FPU exceptions
 # --------------------
 # ----- Hydrodynamics
-FREEZE_HYDRO                   # zeros all fluxes from RP and doesn't let particles move (for testing additional physics layers)
+#FREEZE_HYDRO                   # zeros all fluxes from RP and doesn't let particles move (for testing additional physics layers)
 #EOS_ENFORCE_ADIABAT=(1.0)      # if set, this forces gas to lie -exactly- along the adiabat P=EOS_ENFORCE_ADIABAT*(rho^GAMMA)
 #HYDRO_REPLACE_RIEMANN_KT       # replaces the hydro Riemann solver (HLLC) with a Kurganov-Tadmor flux derived in Panuelos, Wadsley, and Kevlahan, 2019. works with MFM/MFV/fixed-grid methods [-without- MHD active, but other modules are fine]. more diffusive, but smoother, and more stable convergence results
 #SLOPE_LIMITER_TOLERANCE=0      # sets the slope-limiters used. higher=more aggressive (less diffusive, but less stable). 1=default. 0=conservative. use on problems where sharp density contrasts in poor particle arrangement may cause errors. 2=same as AGGRESSIVE_SLOPE_LIMITERS below
@@ -392,12 +392,13 @@ ALLOW_IMBALANCED_GASPARTICLELOAD # increases All.MaxPartSph to All.MaxPart: can 
 ####################################################################################################
 
 # ----- extra options
-SLUG # use feedback computed from the SLUG2 library
-SLUG_DEBUG_PERFORMANCE # compute SLUG runtime overhead
+#SLUG # use feedback computed from the SLUG2 library
+#SLUG_DEBUG_PERFORMANCE # compute SLUG runtime overhead
 #SLUG_DEBUG_SN_RATE
-SN_KIMM_CEN_MODIFIED_MODEL
-SN_MOMENTUM_LIMITER
+#SN_KIMM_CEN_MODIFIED_MODEL
+#SN_MOMENTUM_LIMITER
 #DEBUG_RADIAL_MOMENTUM
-GALSF_PHOTOIONIZATION           # re-implementation of photoionization feedback by Armillotta et al.
+GALSF_PHOTOIONIZATION   # re-implementation of photoionization feedback by Armillotta et al.
 GALSF_PHOTOIONIZATION_DEBUGGING
 HII_TEST_PROBLEM
+

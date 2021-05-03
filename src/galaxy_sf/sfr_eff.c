@@ -397,6 +397,7 @@ void star_formation_parent_routine(void)
     PRINT_STATUS("Calculating star formation...");
 
 #ifdef HII_TEST_PROBLEM
+#warning "HII_TEST_PROBLEM is enabled!"
     for (int i = 0; i < NumPart; i++) {
       if (P[i].Type == 5) { // form a star particle from type 5 particles in ICs
         Stars_converted++;
@@ -407,11 +408,8 @@ void star_formation_parent_routine(void)
         P[i].Type = 4; // convert to star particle
         TimeBinCountSph[P[i].TimeBin]--;
         TimeBinSfr[P[i].TimeBin] -= SphP[i].Sfr;
-        P[i].StellarAge =
-            All.Time; // not actually stellar age, but formation time!
-#ifdef DO_DENSITY_AROUND_STAR_PARTICLES
+        P[i].StellarAge = All.Time; // not actually stellar age, but formation time!
         P[i].DensAroundStar = SphP[i].Density;
-#endif // DO_DENSITY_AROUND_STAR_PARTICLES
 #ifdef SLUG
         slugFormStar(i);
 #endif  // SLUG
