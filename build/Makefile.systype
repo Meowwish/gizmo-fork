@@ -6,7 +6,8 @@
 #
 #############
 
-SYSTYPE="Gadi"
+#SYSTYPE="Gadi"
+SYSTYPE="Gadi-Intel"
 #SYSTYPE="Frontera"
 #SYSTYPE="Stampede2"
 #SYSTYPE="Bridges2"

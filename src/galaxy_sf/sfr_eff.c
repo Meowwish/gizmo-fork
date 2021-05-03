@@ -394,6 +394,32 @@ void star_formation_parent_routine(void)
     stars_spawned = stars_converted = 0; sum_sm = sum_mass_stars = 0;
     for(bits = 0; GALSF_GENERATIONS > (1 << bits); bits++);
 
+    PRINT_STATUS("Calculating star formation...");
+
+#ifdef HII_TEST_PROBLEM
+    for (int i = 0; i < NumPart; i++) {
+      if (P[i].Type == 5) { // form a star particle from type 5 particles in ICs
+        Stars_converted++;
+        stars_converted++;
+        P[i].Mass = 100. / UNIT_MASS_IN_SOLAR; // assume a 100 Msun star cluster
+        sum_mass_stars += P[i].Mass;
+
+        P[i].Type = 4; // convert to star particle
+        TimeBinCountSph[P[i].TimeBin]--;
+        TimeBinSfr[P[i].TimeBin] -= SphP[i].Sfr;
+        P[i].StellarAge =
+            All.Time; // not actually stellar age, but formation time!
+#ifdef DO_DENSITY_AROUND_STAR_PARTICLES
+        P[i].DensAroundStar = SphP[i].Density;
+#endif // DO_DENSITY_AROUND_STAR_PARTICLES
+#ifdef SLUG
+        slugFormStar(i);
+#endif  // SLUG
+        printf("Formed star from type 5 particle!\n");
+      } // if (P[i].Type == 5)
+    }
+#endif // HII_TEST_PROBLEM
+
     for(i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i])
     {
       if((P[i].Type == 0)&&(P[i].Mass>0))

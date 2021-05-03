@@ -19,7 +19,7 @@ NumFilesWrittenInParallel   1  % must be < N_processors & power of 2
 
 %---- Output frequency 
 TimeOfFirstSnapshot     0.  % time (code units) of first snapshot
-TimeBetSnapshot         1e-8 % time between (if OutputListOn=0), code units
+TimeBetSnapshot         2e-5 % time between (if OutputListOn=0), code units
 %TimeBetStatistics       0.0005229134794147133 % time between additional statistics (e.g. energy)
 
 %---- CPU run-time and checkpointing time-limits
@@ -33,7 +33,7 @@ TimeBegin   0.0    % Beginning of the simulation
 TimeMax     0.01    % End of the simulation
 
 %---- Maximum and minimum timesteps allowed
-MaxSizeTimestep         5e-6 %5.2291347941471334e-05  % in code units, set for your problem
+MaxSizeTimestep         5e-5 %5.2291347941471334e-05  % in code units, set for your problem
 MinSizeTimestep         1.0e-15 % set this very low, or get the wrong answer
 
 
@@ -83,15 +83,6 @@ SofteningBulge  3.66e-5    % collisionless particles (type=3)
 SofteningStars  3.66e-5   % stars spawned from gas (type=4)
 SofteningBndry  3.66e-5       % black holes (if active), or collisionless (type=5)
 
-%---- if these are set in cosmo runs, SofteningX switches from comoving to physical
-%------- units when the comoving value exceeds the choice here
-%------- (these are ignored, and *only* the above are used, for non-cosmo runs)
-SofteningGasMaxPhys     0.0005  % e.g. switch to 0.5pc physical below z=1
-SofteningHaloMaxPhys    0.010
-SofteningDiskMaxPhys    0.075 
-SofteningBulgeMaxPhys   0.250 
-SofteningStarsMaxPhys   0.0005 
-SofteningBndryMaxPhys   0.0005 
 %----- parameters for adaptive gravitational softening 
 %AGS_DesNumNgb           32  % neighbor number for calculating adaptive gravsoft
 
@@ -145,50 +136,9 @@ SofteningBndryMaxPhys   0.0005
 %---- Star Formation parameters (GALSF on)
 CritPhysDensity     89200000.0    %  critical physical density for star formation (cm^(-3)) 
 SfEffPerFreeFall    1.0     %  SFR/(Mgas/tfreefall) for gas which meets SF criteria
+%InitMetallicity     1.0 % solar
+%InitStellarAge      10.0 % Gyr
 
-
-%---- sub-grid (Springel+Hernquist/GADGET/AREPO) "effective equation of state" 
-%------- star formation+feedback model (GALSF_EFFECTIVE_EQS on)
-%MaxSfrTimescale     4.0         % code units (SF timescale at 2-phase threshold)
-%TempSupernova       3.0e8       % in Kelvin (temp of hot gas in 2-phase model)
-%TempClouds          1000.0      % in Kelvin (temp of cold gas in 2-phase model)
-%FactorSN            0.1         % SNe coupling frac (frac of egy retained in hot)
-%FactorEVP           3000.0      % controls Kennicutt normalization 
-%FactorForSofterEQS  1.0         % interpolate between 'stiff' and isothermal EOS
-%------- the sub-grid "decoupled winds" model (GALSF_SUBGRID_WINDS on)
-%WindEfficiency          2.0     % mass-loading (Mdot_wind = SFR * WindEfficiency) 
-%WindEnergyFraction      0.06    % fraction of SNe energy in winds (sets velocity) 
-%WindFreeTravelMaxTime   0.1     % 'free-stream time' in units of t_Hubble(z)
-%WindFreeTravelDensFac   0.1     % 'free-stream' until density < this * CritPhysDensity
-%------- alternative winds (set GALSF_SUBGRID_WIND_SCALING == 1 or 2)
-%------- (scaling with local dark matter properties, as Dave/Oppenheimer/Mannucci/Illustris)
-%VariableWindVelFactor    1.0    % wind velocity relative to estimated halo v_escape
-%VariableWindSpecMomentum 5000.  % wind momentum per unit stellar mass (code velocity units)
-
-
-
-%-------------- Black Hole accretion & formation (BLACK_HOLES on)
-%--- formation/seeding  
-%SeedBlackHoleMass            0.0001    % initial mass (on-the-fly or single galaxy)
-%SeedAlphaDiskMass            0.0        % initial mass in the alpha disk (BH_ALPHADISK_ACCRETION)
-%SeedBlackHoleMinRedshift     2.0        % minimum redshift where new BH particles are seeded (lower-z ceases seeding)
-%SeedBlackHoleMassSigma       0.5        % lognormal standard deviation (in dex) in initial BH seed masses
-%----- (specific options for on-the-fly friends-of-friends based BH seeding: FOF on)
-%MinFoFMassForNewSeed         10.	    % minimum mass of FOF group (stars or DM) to get seed, in code units
-%TimeBetOnTheFlyFoF           1.01       % time (in code units, e.g. scale-factor) between on-the-fly FOF searches
-%--- accretion
-%BlackHoleAccretionFactor     1.0	    % multiplier for mdot (relative to model)
-%BlackHoleEddingtonFactor     1e100	    % fraction of eddington to cap (can be >1) 
-%BlackHoleNgbFactor           1.0	    % multiplier for kernel neighbors for BH 
-%BlackHoleMaxAccretionRadius  19.988700229804227	    % max radius for BH neighbor search/accretion (code units)
-%BlackHoleRadiativeEfficiency 5e-7        % radiative efficiency (for accretion and feedback)
-%--- feedback 
-%BlackHoleFeedbackFactor      1.0	    % generic feedback strength multiplier 
-%BH_FluxMomentumFactor        1.0	    % multiply radiation pressure (BH_PHOTONMOMENTUM), set it to zero to avoid launching gas from rad. pressure 
-%BAL_f_accretion              0.7        % fraction of gas swallowed by BH (BH_WIND options)
-%BAL_v_outflow                100000.	    % velocity (km/s) of BAL outflow (BH_WIND options)
-%BAL_internal_temperature     10.      % internal temperature (K) of BAL outflow (BH_WIND_SPAWN)
-%BAL_wind_particle_mass       0.001     % mass of 'virtual wind particles' in code units (BH_WIND_SPAWN)
 
 
 %-------------------------------------------------------------------------
@@ -216,15 +166,6 @@ GrackleDataFile		     CloudyData_UVB=HM2012.h5
 %ST_Seed        42       % random number seed for modes (so you can reproduce it)
 %IsoSoundSpeed  200.      % initializes gas sound speed in box to this value
 %TimeBetTurbSpectrum 0.5 % time (code units) between evaluations of turb pwrspec
-
-
-%-------------------------------------------------------------------------------------------------
-%------------------ Non-Standard Dark Matter, Dark Energy, Gravity, or Expansion -----------------
-%-------------------------------------------------------------------------------------------------
-
-%-------------- Parameters for non-standard or time-dependent Gravity/Dark Energy/Expansion (GR_TABULATED_COSMOLOGY on)
-%DarkEnergyConstantW       -1        % time-independent DE parameter w, used only if no table
-%TabulatedCosmologyFile    CosmoTbl  % table with cosmological parameters
 
 
 %--- Developer-Mode Parameters (usually hard-coded, but set manually if DEVELOPER_MODE is on) --------

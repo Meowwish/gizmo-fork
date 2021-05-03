@@ -676,7 +676,6 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                     
                     // (Thornton+ 1998: p_terminal = 3.0e5 km/s per Msun [equiv. to Mcool = 895.5 Msun].)
                     m_cooling = (895.5 / UNIT_MASS_IN_SOLAR) * (e_dep * n_dep * z_dep);
-                    RsneKPC = pow( 0.238732 * m_cooling/rho_j , 1./3. );
 #else // NOT using SN_KIMM_CEN_MODIFIED_MODEL
                     double e0 = Esne51;
                     if(loop_iteration < 0) {e0=1;}
@@ -690,8 +689,8 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                     double nz_dep  = pow(n0 * z0_term , 0.14);
                     v_cooling = 210. * DMAX(nz_dep,0.5) / UNIT_VEL_IN_KMS;
                     m_cooling = 4.56e36 * e0 / (nz_dep*nz_dep * UNIT_MASS_IN_CGS);
-                    RsneKPC = pow( 0.238732 * m_cooling/rho_j , 1./3. );
 #endif // SN_KIMM_CEN_MODIFIED_MODEL
+                    RsneKPC = pow( 0.238732 * m_cooling/rho_j , 1./3. );
                 }
                 RsneKPC_3 = RsneKPC*RsneKPC*RsneKPC;
                 // if loop_iteration==-1, this is a pre-calc loop to get the relevant weights for coupling //

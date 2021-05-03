@@ -10,12 +10,12 @@ OutputListFilename                                output_times.txt
 NumFilesPerSnapshot                               1
 NumFilesWrittenInParallel                         1
 TimeOfFirstSnapshot                               0
-TimeBetSnapshot                                   1e-08
+TimeBetSnapshot                                   2e-05
 TimeLimitCPU                                      172800
 CpuTimeBetRestartFile                             7200
 TimeBegin                                         0
 TimeMax                                           0.01
-MaxSizeTimestep                                   5e-06
+MaxSizeTimestep                                   5e-05
 MinSizeTimestep                                   1e-15
 UnitLength_in_cm                                  3.08568e+18
 UnitMass_in_g                                     1.989e+33
@@ -43,12 +43,6 @@ SofteningDisk                                     0.15
 SofteningBulge                                    3.66e-05
 SofteningStars                                    3.66e-05
 SofteningBndry                                    3.66e-05
-SofteningGasMaxPhys                               0.0005
-SofteningHaloMaxPhys                              0.01
-SofteningDiskMaxPhys                              0.075
-SofteningBulgeMaxPhys                             0.25
-SofteningStarsMaxPhys                             0.0005
-SofteningBndryMaxPhys                             0.0005
 CritPhysDensity                                   8.92e+07
 SfEffPerFreeFall                                  1
 GrackleDataFile                                   CloudyData_UVB=HM2012.h5
