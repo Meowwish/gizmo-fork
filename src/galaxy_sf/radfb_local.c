@@ -27,7 +27,7 @@ void compute_photoionization(void)
 
     // if gas is photoionized, assume it is heated to this temperature
     const double Tfin = 1.0e4;
-    // mean molecular weight assuming full ionization (approximately ~0.6)
+    // mean molecular weight assuming full H/He ionization (approximately ~0.6)
     const double molw_i = 4.0 / (8 - 5 * (1 - HYDROGEN_MASSFRAC));
     // case B recombination coefficient (approximate)
     const double beta = 3.0e-13; // cm**3 s*-1
@@ -96,7 +96,7 @@ void compute_photoionization(void)
         }
 
 #ifdef GALSF_PHOTOIONIZATION_DEBUGGING
-        const double n_H = P[i].DensAroundStar * UNIT_DENSITY_IN_NHCGS;
+        const double n_H = HYDROGEN_MASSFRAC * P[i].DensAroundStar * UNIT_DENSITY_IN_NHCGS;
         const double r1_approx = pow(3.0 * N_photons / (4.0 * M_PI * n_H * n_H * beta), 1. / 3.); // cm
         const double cm_in_parsec = 3.085678e18;
         printf("[Photoionization] Q [photons/sec/(100 Msun)] = %g\n", N_photons / (P[i].Mass * UNIT_MASS_IN_SOLAR / 100.));
