@@ -123,9 +123,11 @@ void compute_photoionization(void)
 
             // dimensionless mean molecular weight of fluid element (prior to photoionization)
             // N.B. SphP[j].InternalEnergy is the internal energy *per unit mass*
-            const double molw_n = Tini[j] * BOLTZMANN / (EOS_GAMMA - 1) / (SphP[j].InternalEnergy * UNIT_ENERGY_IN_CGS / UNIT_MASS_IN_CGS) / PROTONMASS;
+            //const double molw_n = Tini[j] * BOLTZMANN / (EOS_GAMMA - 1) / (SphP[j].InternalEnergy * UNIT_ENERGY_IN_CGS / UNIT_MASS_IN_CGS) / PROTONMASS;
+            //IonRate[j] = HYDROGEN_MASSFRAC * beta * Rhob * Mb / (2 * PROTONMASS * PROTONMASS * molw_n * molw_i);
 
-            IonRate[j] = HYDROGEN_MASSFRAC * beta * Rhob * Mb / (2 * PROTONMASS * PROTONMASS * molw_n * molw_i);
+            // assume gas where Tgas < Tfin is completely neutral
+            IonRate[j] = HYDROGEN_MASSFRAC * beta * Rhob * Mb * (HYDROGEN_MASSFRAC / (PROTONMASS * PROTONMASS));
         }
 
         // sort particles by increasing distance
