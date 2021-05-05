@@ -82,16 +82,16 @@ GravityConstantInternal     0		        % calculated by code if =0
 InitGasTemp     0	    % set by IC file if =0
 MinGasTemp      10.	    % don't set <10 in explicit feedback runs, otherwise 0
 
-%---- Density/volume estimation (kernel) 
+%---- Density/volume estimation (kernel)
 DesNumNgb               32      % 32 for standard kernel, 60-114 for quintic 
 MaxHsml                 1.e4    % minimum gas kernel length (some very large value to prevent errors)
-MinGasHsmlFractional    0.    % minimum kernel length relative to gas force softening (<= 1)
+MinGasHsmlFractional    0.      % minimum kernel length relative to gas force softening (should be *zero* for MFM/MFV)
 
 %---- Gravitational softening lengths 
 %----- Softening lengths per particle type. If ADAPTIVE_GRAVSOFT is set, these  
 %-------- are the minimum softening allowed for each type ------- 
 %-------- (units are co-moving for cosmological integrations)
-SofteningGas    0.       % gas (type=0)
+SofteningGas    0.001    % gas (type=0) [1 pc]
 SofteningHalo   0.050    % dark matter/collisionless particles (type=1)
 SofteningDisk   0.020    % collisionless particles (type=2)
 SofteningBulge  0.020    % collisionless particles (type=3)

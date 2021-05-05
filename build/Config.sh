@@ -230,7 +230,7 @@ GALSF_FB_MECHANICAL            # explicit algorithm including thermal+kinetic/mo
 #GALSF_FB_THERMAL               # simple 'pure thermal energy dump' feedback: mass, metals, and thermal energy are injected locally in simple kernel-weighted fashion around young stars. tends to severely over-cool owing to lack of mechanical/kinetic treatment at finite resolution (better algorithm is mechanical)
 
 GALSF_PHOTOIONIZATION           # re-implementation of photoionization feedback by Armillotta et al.
-GALSF_PHOTOIONIZATION_DEBUGGING
+#GALSF_PHOTOIONIZATION_DEBUGGING
 
 ## ----------------------------------------------------------------------------------------------------
 ############################################################################################################################
@@ -402,5 +402,5 @@ SLUG_DEBUG_PERFORMANCE # compute SLUG runtime overhead
 SN_KIMM_CEN_MODIFIED_MODEL
 SN_MOMENTUM_LIMITER
 #DEBUG_RADIAL_MOMENTUM
-
+#SF_TRUNCATE_HIGH_DENSITIES
 
