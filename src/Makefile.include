@@ -175,7 +175,7 @@ CXX      = mpicxx -std=c++17 -Wno-deprecated-declarations
 FC       = mpif90
 LDFLAGS	 = -lgfortran
 # add -fsanitize=address to debug memory issues (out-of-bounds array accesses, etc.)
-OPTIMIZE += -O2 -march=native -ffp-model=precise -fstandalone-debug #-fsanitize=address
+OPTIMIZE += -g -O2 -march=native -ffp-model=precise -fstandalone-debug #-fsanitize=address
 OPTIMIZE += -flto=thin
 ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
 OPTIMIZE += -fopenmp # openmp required compiler flags
@@ -204,11 +204,11 @@ OPT     += -DUSE_MPI_IN_PLACE  -DNO_ISEND_IRECV_IN_DOMAIN # both critical for Op
 endif
 #----------------------------------------------------------------------------------------------
 
-ifeq ($(SYSTYPE),"Gadi-Intel") # NOT recommended if compiling with SLUG (intel c++ support is buggy)
+ifeq ($(SYSTYPE),"Gadi-Intel")
 CC       = mpicxx -x c++ -std=c++17 # use C++ compiler
 CXX      = mpicxx -std=c++17
 FC       = mpif90 -nofor_main -cxxlib
-OPTIMIZE = -O2 -xCORE-AVX2
+OPTIMIZE = -g -O2 -xCORE-AVX2
 ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
 OPTIMIZE += -qopenmp
 endif

@@ -32,7 +32,6 @@ void compute_photoionization(void)
     // case B recombination coefficient (approximate)
     const double beta = 3.0e-13; // cm**3 s*-1
 
-#if 0
     // Wake gas particles after one star time step
     for (int i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i])
     {
@@ -45,24 +44,16 @@ void compute_photoionization(void)
             continue;
         }
         for (int j = 0; j < N_gas; j++) {
-            if (SphP[j].photo_star == P[i].ID && SphP[j].HIIregion == 1) // race condition (photo_star could have moved to a different processor)
+            if (SphP[j].photo_star == P[i].ID && SphP[j].HIIregion == 1) // race condition (photo_star could have moved to a different processor; this case is handled by cooling.c:72)
             {
                 SphP[j].HIIregion = 0;
                 SphP[j].photo_subtime = 0;
             }
         }
     }
-#endif
 
-    // reset HII region tags on *all* local gas particles
-    for (int j = 0; j < N_gas; j++)
-    {
-        SphP[j].HIIregion = 0;
-    }
-
-    // loop over *all* local star particles
-    //for (int i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i])
-    for (int i = 0; i < NumPart; i++)
+    // loop over active star particles
+    for (int i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i])
     {
         if (P[i].Type != 4)
         {
@@ -95,15 +86,18 @@ void compute_photoionization(void)
             continue;
         }
 
+        const double n_H = HYDROGEN_MASSFRAC * P[i].DensAroundStar * UNIT_DENSITY_IN_NHCGS; // H cm^-3
+        const double r1_approx_cgs = pow(3.0 * N_photons / (4.0 * M_PI * n_H * n_H * beta), 1. / 3.); // cm
+        const double r1_approx = r1_approx_cgs / UNIT_LENGTH_IN_CGS; // code units
+        const double max_radius_HII = 2.0 * r1_approx; // [code units] maximum radius of any HII region
+
 #ifdef GALSF_PHOTOIONIZATION_DEBUGGING
-        const double n_H = HYDROGEN_MASSFRAC * P[i].DensAroundStar * UNIT_DENSITY_IN_NHCGS;
-        const double r1_approx = pow(3.0 * N_photons / (4.0 * M_PI * n_H * n_H * beta), 1. / 3.); // cm
-        const double cm_in_parsec = 3.085678e18;
         printf("[Photoionization] Q [photons/sec/(100 Msun)] = %g\n", N_photons / (P[i].Mass * UNIT_MASS_IN_SOLAR / 100.));
-        printf("\tApproximate upper bound on size of HII region = %g pc; ", r1_approx / cm_in_parsec);
+        const double cm_in_parsec = 3.085678e18;
+        printf("\tApproximate upper bound on size of HII region = %g pc; ", r1_approx_cgs / cm_in_parsec);
 #endif
 
-        //const double star_timestep = (P[i].TimeBin ? (1 << P[i].TimeBin) : 0) * All.Timebase_interval / All.cf_hubble_a;
+        const double star_timestep = (P[i].TimeBin ? (1 << P[i].TimeBin) : 0) * All.Timebase_interval / All.cf_hubble_a;
 
         // loop over all local gas particles
         for (int j = 0; j < N_gas; j++) /* loop over the gas block */
@@ -122,7 +116,6 @@ void compute_photoionization(void)
             Tini[j] = CallGrackle(SphP[j].InternalEnergy, SphP[j].Density, 0, SphP[j].Ne, j, 2);
 
             // dimensionless mean molecular weight of fluid element (prior to photoionization)
-            // N.B. SphP[j].InternalEnergy is the internal energy *per unit mass*
             //const double molw_n = Tini[j] * BOLTZMANN / (EOS_GAMMA - 1) / (SphP[j].InternalEnergy * UNIT_ENERGY_IN_CGS / UNIT_MASS_IN_CGS) / PROTONMASS;
             //IonRate[j] = HYDROGEN_MASSFRAC * beta * Rhob * Mb / (2 * PROTONMASS * PROTONMASS * molw_n * molw_i);
 
@@ -145,7 +138,7 @@ void compute_photoionization(void)
         {
             if (Tag_HIIregion[j] == 1)
             {
-                continue; // The particle belongs to another HII region
+                continue; // Particle belongs to another HII region
             }
 
             if (Tini[j] >= Tfin)
@@ -153,8 +146,14 @@ void compute_photoionization(void)
                 continue; // Particle already ionized
             }
 
+            if (Distance[j] > max_radius_HII)
+            {
+                jmax = j;
+                break; // Particle is beyond the (somewhat arbitrary) maximum radius of an HII region
+            }
+
             const double e_ion = BOLTZMANN * Tfin / ((EOS_GAMMA - 1) * molw_i * PROTONMASS) * UNIT_MASS_IN_CGS / UNIT_ENERGY_IN_CGS;
-            //const double gas_timestep = (P[ParticleNum[j]].TimeBin ? (1 << P[ParticleNum[j]].TimeBin) : 0) * All.Timebase_interval / All.cf_hubble_a;
+            const double gas_timestep = (P[ParticleNum[j]].TimeBin ? (1 << P[ParticleNum[j]].TimeBin) : 0) * All.Timebase_interval / All.cf_hubble_a;
 
             if (IonRate[j] <= N_photons)
             {
@@ -162,8 +161,8 @@ void compute_photoionization(void)
                 SphP[ParticleNum[j]].InternalEnergyPred = e_ion;
                 SphP[ParticleNum[j]].HIIregion = 1;
 
-                //SphP[ParticleNum[j]].photo_subtime = round(star_timestep / gas_timestep);
-                //SphP[ParticleNum[j]].photo_star = P[i].ID;
+                SphP[ParticleNum[j]].photo_subtime = round(star_timestep / gas_timestep);
+                SphP[ParticleNum[j]].photo_star = P[i].ID;
 
                 N_photons -= IonRate[j];
             }
@@ -177,8 +176,8 @@ void compute_photoionization(void)
                     SphP[ParticleNum[j]].InternalEnergyPred = e_ion;
                     SphP[ParticleNum[j]].HIIregion = 1;
 
-                    //SphP[ParticleNum[j]].photo_subtime = round(star_timestep / gas_timestep);
-                    //SphP[ParticleNum[j]].photo_star = P[i].ID;
+                    SphP[ParticleNum[j]].photo_subtime = round(star_timestep / gas_timestep);
+                    SphP[ParticleNum[j]].photo_star = P[i].ID;
 
                     N_photons -= IonRate[j];
                 }

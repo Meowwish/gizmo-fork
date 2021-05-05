@@ -28,7 +28,7 @@ Omega0                                            0
 OmegaLambda                                       0
 OmegaBaryon                                       0
 HubbleParam                                       1
-MaxMemSize                                        4500
+MaxMemSize                                        5500
 PartAllocFactor                                   1.5
 BufferSize                                        100
 TreeDomainUpdateFrequency                         0.05

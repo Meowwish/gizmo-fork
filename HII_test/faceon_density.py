@@ -10,6 +10,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='plot a GIZMO output')
     parser.add_argument('input_filename', help='hdf5 snapshot filename')
     parser.add_argument('output_filename', help='output plot file')
+    parser.add_argument('output_filename_density')
     args = parser.parse_args()
 
     snap = args.input_filename
@@ -26,7 +27,7 @@ if __name__ == '__main__':
     volbox_cgs = lbox_cgs**3
     mean_density_cgs = massbox_cgs / volbox_cgs
     n_H = hydrogen_massfrac * mean_density_cgs / m_H
-    N_photons = 1.0e49 # s^{-1}
+    N_photons = 5.0*1.02814e48 # s^{-1}
     beta = 3.0e-13
     r1_approx = (3.0 * N_photons / (4.0 * np.pi * n_H * n_H * beta))**(1./3.)
     print(f"r1_approx: {(r1_approx / unitlength_cgs):.4f} pc")
@@ -50,6 +51,12 @@ if __name__ == '__main__':
                     colorbar_label=r"HII region",
                     bfield=None, star_coords=None, xymin=0., xymax=20., plane='z',
                     norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1.0))
+
+    dens = mesh.Density() * unitdensity_cgs / m_H
+    save_slice_plot(mesh, dens, args.output_filename_density, colorbar_label=r'density',
+        bfield=None, star_coords=None, xymin=0., xymax=20., plane='z',
+        vmin=np.min(dens), vmax=np.max(dens))
+
 
     #import matplotlib.pyplot as plt
     #ax = plt.gca()

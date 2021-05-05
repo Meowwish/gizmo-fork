@@ -392,10 +392,10 @@ ALLOW_IMBALANCED_GASPARTICLELOAD # increases All.MaxPartSph to All.MaxPart: can 
 ####################################################################################################
 
 # ----- extra options
-#SLUG # use feedback computed from the SLUG2 library
+SLUG # use feedback computed from the SLUG2 library
 #SLUG_DEBUG_PERFORMANCE # compute SLUG runtime overhead
-#SLUG_DEBUG_SN_RATE
-#SN_KIMM_CEN_MODIFIED_MODEL
+SLUG_DEBUG_SN_RATE
+SN_KIMM_CEN_MODIFIED_MODEL
 #SN_MOMENTUM_LIMITER
 #DEBUG_RADIAL_MOMENTUM
 GALSF_PHOTOIONIZATION   # re-implementation of photoionization feedback by Armillotta et al.

@@ -68,13 +68,12 @@ void cooling_parent_routine(void)
 #ifdef GALSF_PHOTOIONIZATION
         /* skip cooling if this particle is actively being photoionized */
         if(SphP[i].HIIregion == 1) {
-#if 0
-            SphP[i].photo_subtime -= 1;
+            // decrement counter [necessary because the HII region may be split across multiple processors]
+            SphP[i].photo_subtime -= 1; 
             if (SphP[i].photo_subtime <= 0)
             {
                 SphP[i].HIIregion = 0;
             }
-#endif
             continue;
         }
 #endif

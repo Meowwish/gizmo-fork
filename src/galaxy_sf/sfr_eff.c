@@ -398,23 +398,25 @@ void star_formation_parent_routine(void)
 
 #ifdef HII_TEST_PROBLEM
 #warning "HII_TEST_PROBLEM is enabled!"
-    for (int i = 0; i < NumPart; i++) {
-      if (P[i].Type == 5) { // form a star particle from type 5 particles in ICs
-        Stars_converted++;
-        stars_converted++;
-        P[i].Mass = 100. / UNIT_MASS_IN_SOLAR; // assume a 100 Msun star cluster
-        sum_mass_stars += P[i].Mass;
+    if (All.Time == 0.) {
+      for (int i = 0; i < NumPart; i++) {
+        if (P[i].Type == 5) { // form a star particle from type 5 particles in ICs
+          Stars_converted++;
+          stars_converted++;
+          P[i].Mass = 500. / UNIT_MASS_IN_SOLAR; // assume a 500 Msun star cluster
+          sum_mass_stars += P[i].Mass;
 
-        P[i].Type = 4; // convert to star particle
-        TimeBinCountSph[P[i].TimeBin]--;
-        TimeBinSfr[P[i].TimeBin] -= SphP[i].Sfr;
-        P[i].StellarAge = All.Time; // not actually stellar age, but formation time!
-        P[i].DensAroundStar = SphP[i].Density;
+          P[i].Type = 4; // convert to star particle
+          TimeBinCountSph[P[i].TimeBin]--;
+          TimeBinSfr[P[i].TimeBin] -= SphP[i].Sfr;
+          P[i].StellarAge = All.Time; // not actually stellar age, but formation time!
+          P[i].DensAroundStar = SphP[i].Density;
 #ifdef SLUG
-        slugFormStar(i);
-#endif  // SLUG
-        printf("Formed star from type 5 particle!\n");
-      } // if (P[i].Type == 5)
+          slugFormStar(i);
+#endif // SLUG
+          printf("Formed star from type 5 particle!\n");
+        } // if (P[i].Type == 5)
+      }
     }
 #endif // HII_TEST_PROBLEM
 
