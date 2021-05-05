@@ -12,8 +12,8 @@ RestartFile                 restart
 SnapshotFileBase            snapshot 
 OutputListOn                0  % =1 to use list in "OutputListFilename" 
 OutputListFilename          output_times.txt  % list of times for snaps 
-NumFilesPerSnapshot         4 
-NumFilesWrittenInParallel   4  % must be < N_processors & power of 2
+NumFilesPerSnapshot         1 
+NumFilesWrittenInParallel   1  % must be < N_processors & power of 2
 
 %---- Output frequency 
 TimeOfFirstSnapshot     0.0
@@ -52,6 +52,9 @@ OmegaLambda             0       % =0 for non-cosmological
 OmegaBaryon             0       % =0 for non-cosmological
 HubbleParam             1       % little 'h'; =1 for non-cosmological runs
 
+TurbBoxSize                 10000.  % in code units
+
+
 %---- Accuracy of time integration 
 MinSizeTimestep         1.0e-12  % for this problem, time unit is Gyr
 MaxSizeTimestep         0.001	 % for this problem, time unit is Gyr
@@ -82,13 +85,13 @@ MinGasTemp      10.	    % don't set <10 in explicit feedback runs, otherwise 0
 %---- Density/volume estimation (kernel) 
 DesNumNgb               32      % 32 for standard kernel, 60-114 for quintic 
 MaxHsml                 1.e4    % minimum gas kernel length (some very large value to prevent errors)
-MinGasHsmlFractional    0.01    % minimum kernel length relative to gas force softening (<= 1)
+MinGasHsmlFractional    0.    % minimum kernel length relative to gas force softening (<= 1)
 
 %---- Gravitational softening lengths 
 %----- Softening lengths per particle type. If ADAPTIVE_GRAVSOFT is set, these  
 %-------- are the minimum softening allowed for each type ------- 
 %-------- (units are co-moving for cosmological integrations)
-SofteningGas    0.001    % gas (type=0) (in units above, =1 pc softening)
+SofteningGas    0.       % gas (type=0)
 SofteningHalo   0.050    % dark matter/collisionless particles (type=1)
 SofteningDisk   0.020    % collisionless particles (type=2)
 SofteningBulge  0.020    % collisionless particles (type=3)
@@ -136,7 +139,6 @@ SfEffPerFreeFall    0.01     %  SFR/(Mgas/tfreefall) for gas which meets SF crit
 
 
 %-------------- Grackle UVB file (GRACKLE on)
-% (currently unused in runs)
 GrackleDataFile		     CloudyData_UVB=HM2012.h5
 
 
