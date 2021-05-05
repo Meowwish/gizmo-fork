@@ -207,7 +207,7 @@ endif
 ifeq ($(SYSTYPE),"Gadi-Intel")
 CC       = mpicxx -x c++ -std=c++17 # use C++ compiler
 CXX      = mpicxx -std=c++17
-FC       = mpif90 -nofor_main -cxxlib
+FC       = mpif90 -nofor_main -cxxlib -lmpi_cxx
 OPTIMIZE = -g -O2 -xCORE-AVX2
 ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
 OPTIMIZE += -qopenmp
@@ -223,10 +223,10 @@ SLUG_INCLUDE = -I$(SLUG_HOME)/src -I$(SPDLOG_HOME)/include -I$(BOOST_HOME)/inclu
 SLUG_LIBS = -L$(SLUG_HOME)/src -Wl,-rpath=$(SLUG_HOME)/src
 GSL_INCL = -I$(GSL_HOME)/include
 GSL_LIBS = -L$(GSL_HOME)/lib
-#HDF5INCL = -I$(HDF5_HOME)/include -DH5_USE_16_API
-#HDF5LIB  = -L$(HDF5_HOME)/lib -lhdf5 -lz
-HDF5INCL = -I/usr/include/hdf5/serial -DH5_USE_16_API
-HDF5LIB  = -lhdf5_serial -lz
+HDF5INCL = -I$(HDF5_HOME)/include -DH5_USE_16_API
+HDF5LIB  = -L$(HDF5_HOME)/lib -lhdf5 -lz
+#HDF5INCL = -I/usr/include/hdf5/serial -DH5_USE_16_API
+#HDF5LIB  = -lhdf5_serial -lz
 MPICHLIB =
 OPT     += -DUSE_MPI_IN_PLACE -DNO_ISEND_IRECV_IN_DOMAIN
 endif
@@ -501,7 +501,7 @@ LIBS += -lpthread
 endif
 
 $(EXEC): $(OBJS) $(FOBJS)  
-	$(CXX) $(LDFLAGS) $(OPTIMIZE) $(OBJS) $(FOBJS) $(LIBS) $(RLIBS) -o $(EXEC)
+	$(FC) $(LDFLAGS) $(OPTIMIZE) $(OBJS) $(FOBJS) $(LIBS) $(RLIBS) -o $(EXEC)
 
 $(OBJS): $(INCL)  $(CONFIG)  compile_time_info.c
 
