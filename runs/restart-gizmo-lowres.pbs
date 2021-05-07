@@ -3,14 +3,14 @@
 #PBS -N gizmo_isodisk_lowres
 #PBS -P jh2
 #PBS -q normal
-#PBS -l ncpus=48
-#PBS -l mem=190GB
+#PBS -l ncpus=96
+#PBS -l mem=380GB
 #PBS -m aeb
 #PBS -M ben.wibking@anu.edu.au
 #PBS -l wd
-#PBS -l walltime=24:00:00
+#PBS -l walltime=48:00:00
 #PBS -l storage=scratch/jh2+gdata/jh2
-#PBS -l jobfs=400GB
+#PBS -l jobfs=800GB
 
 # submit this job with a command such as:
 # qsub -W depend=afterok:11269086 restart-gizmo.pbs
@@ -22,7 +22,8 @@ cd /g/data/jh2/bw0729/gizmo-fork/runs
 
 
 # --- set MPI options ---
-MPI_OPTIONS="-mca hwloc_base_mem_alloc_policy none"
+#MPI_OPTIONS="-mca hwloc_base_mem_alloc_policy none"
+MPI_OPTIONS=""
 
 
 ## --- restart GIZMO from restartfiles ---
