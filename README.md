@@ -6,6 +6,8 @@
 * Enabling SLUG adds a ~20% memory overhead to the particle data allocations but should have ~1% runtime overhead or less for production resolution runs.
 * When SLUG is enabled, it is recommended to use 0+1+1024 for the star formation bitflags (and nothing else). Without adding +1024, collapse may continue to arbitrarily high densities (implying arbitrarily small timesteps in MFM mode).
 * GALSF_SFR_MOLECULAR_CRITERION is not compatible with Grackle cooling!
+* The SLUG functionality has not been tested with cosmological simulations. It may not work or may even give incorrect results.
+* The SLUG functionality has not been tested with OpenMP. It may not work or may even given incorrect results.
 * In MFM mode, MinGasHsmlFractional *must* be set to exactly zero. Otherwise, a numerical instability may occur that causes the simulation to explode.
 * The photoionization feedback has been re-implemented following the description in the FIRE-2 'Physics Versus Numerics' paper. Also, I have added a limit for the maximum radius of an HII region, which is necessary in order for SLUG feedback to work properly, since the feedback is much more clustered when SLUG is enabled.
 * The fiducial radial momentum used by GIZMO for SN feedback is 679,000 Msun km/s. This is 2.26 times greater than the commonly-used estimate from Thornton et al. (1998) (3e5 Msun km/s). There was a particle configuration-dependent normalization bug in the injected mass, momentum, and energy, leading to a factor ~2 overestimate in the worst case. In this version of the code, I have adjusted the normalization to match that of Thornton et al., and also fixed the normalization (the latter is now fixed in the Phil's bitbucket repository).
