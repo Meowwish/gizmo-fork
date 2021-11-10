@@ -176,11 +176,13 @@ void read_ic(char *fname)
 void empty_read_buffer(enum iofields blocknr, int offset, int pc, int type)
 {
     long n, k; MyInputFloat *fp; MyInputPosFloat *fp_pos; MyIDType *ip; int *ip_int; float *fp_single;
+    uint64_t *ip_int64;
     fp = (MyInputFloat *) CommBuffer;
     fp_pos = (MyInputPosFloat *) CommBuffer;
     fp_single = (float *) CommBuffer;
     ip = (MyIDType *) CommBuffer;
     ip_int = (int *) CommBuffer;
+    ip_int64 = (uint64_t *) CommBuffer;
 
     switch(blocknr)
     {
@@ -503,6 +505,51 @@ void empty_read_buffer(enum iofields blocknr, int offset, int pc, int type)
 #endif
             break;
 
+        /* SLUG objects*/
+        case IO_SLUG_STATE_RNG:  /* combining 2 64 bit int into one 128 int */
+            for(n = 0; n < pc; n++) {
+                uint64_t part1 = *ip_int64++;
+                rng_state_t part2 = *ip_int64++;
+                P[offset + n].slug_state.rngStateAtBirth = part1 + (part2 << 64);
+                }
+            break;
+
+        case IO_SLUG_STATE_INT:
+            for(n = 0; n < pc; n++) 
+                {
+                    P[offset + n].slug_state.id = *ip_int64++;
+                    P[offset + n].slug_state.stoch_sn = *ip_int64++;
+                }
+            break;
+
+        case IO_SLUG_STATE_DOUBLE: /*I did not include the last three quantities since I dont know how to deal with N */
+            for(n = 0; n < pc; n++) 
+                {
+                    P[offset + n].slug_state.targetMass = *fp++;
+                    P[offset + n].slug_state.birthMass = *fp++;
+                    P[offset + n].slug_state.aliveMass = *fp++;
+                    P[offset + n].slug_state.stochBirthMass = *fp++;
+                    P[offset + n].slug_state.stochAliveMass = *fp++;
+                    P[offset + n].slug_state.stochRemnantMass = *fp++;
+                    P[offset + n].slug_state.nonStochBirthMass = *fp++;
+                    P[offset + n].slug_state.nonStochAliveMass = *fp++;
+                    P[offset + n].slug_state.nonStochRemnantMass = *fp++;
+                    P[offset + n].slug_state.stellarMass = *fp++;
+                    P[offset + n].slug_state.stochStellarMass = *fp++;
+                    P[offset + n].slug_state.nonStochStellarMass = *fp++;
+                    P[offset + n].slug_state.formationTime = *fp++;
+                    P[offset + n].slug_state.curTime = *fp++;
+                    P[offset + n].slug_state.clusterAge = *fp++;
+                    P[offset + n].slug_state.lifetime = *fp++;
+                    P[offset + n].slug_state.stellarDeathMass = *fp++;
+                    P[offset + n].slug_state.A_V = *fp++;
+                    P[offset + n].slug_state.A_Vneb = *fp++;
+                    P[offset + n].slug_state.Lbol = *fp++;
+                    P[offset + n].slug_state.Lbol_ext = *fp++;
+                    P[offset + n].slug_state.tot_sn = *fp++;
+                    P[offset + n].slug_state.last_yield_time = *fp++;
+                }
+            break;
 
         /* the other input fields (if present) are not needed to define the
              initial conditions of the code */
@@ -566,6 +613,7 @@ void empty_read_buffer(enum iofields blocknr, int offset, int pc, int type)
         case IO_DYNERRORDEFAULT:
         case IO_VDIV:
         case IO_VORT:
+        case IO_VGRADNORM:
         case IO_CHIMES_MU:
         case IO_CHIMES_REDUCED:
         case IO_CHIMES_NH:

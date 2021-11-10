@@ -2558,7 +2558,7 @@ extern struct sph_particle_data
     MyDouble VelPred[3];            /*!< predicted SPH particle velocity at the current time */
     //MyDouble dMomentum[3];        /*!< change in momentum from hydro step (conserved variable) */ //manifest-indiv-timestep-debug//
     MyDouble HydroAccel[3];         /*!< acceleration due to hydrodynamical force (for drifting) */
-
+    MyDouble GradVelNorm;           /* Magnitude of Velocity Gradient*/
 #ifdef HYDRO_EXPLICITLY_INTEGRATE_VOLUME
     MyDouble Density_ExplicitInt;   /*!< explicitly integrated volume/density variable to be used if integrating the SPH-like form of the continuity directly */
 #endif
@@ -3241,6 +3241,10 @@ enum iofields
   IO_DENS_AROUND_STAR,
   IO_DELAY_TIME_HII,
   IO_MOLECULARFRACTION,
+  IO_VGRADNORM,
+  IO_SLUG_STATE_RNG,
+  IO_SLUG_STATE_INT,
+  IO_SLUG_STATE_DOUBLE, /* The change to the order may cause an error. */
   IO_LASTENTRY			/* This should be kept - it signals the end of the list */
 };
 

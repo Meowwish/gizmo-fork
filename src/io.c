@@ -179,6 +179,7 @@ void fill_write_buffer(enum iofields blocknr, int *startindex, int pc, int type)
     MyOutputPosFloat *fp_pos;
     MyIDType *ip;
     int *ip_int;
+    uint64_t *ip_int64;
     float *fp_single;
 #ifdef OUTPUT_COOLRATE
     double tcool, u;
@@ -205,6 +206,7 @@ void fill_write_buffer(enum iofields blocknr, int *startindex, int pc, int type)
     fp_pos = (MyOutputPosFloat *) CommBuffer;
     ip = (MyIDType *) CommBuffer;
     ip_int = (int *) CommBuffer;
+    ip_int64 = (uint64_t *) CommBuffer;
     pindex = *startindex;
 
     switch (blocknr)
@@ -802,6 +804,76 @@ void fill_write_buffer(enum iofields blocknr, int *startindex, int pc, int type)
                 }
 #endif
             break;
+
+        case IO_SLUG_STATE_RNG:  /* It is an 128 bit integer. I split it into 2 64 bit integers for easier output */
+            for(n = 0; n < pc; pindex++)
+                if(P[pindex].Type == type)
+                {   rng_state_t x;
+                    x = P[pindex].slug_state.rngStateAtBirth;
+                    uint64_t part1 = (uint64_t) x;
+                    uint64_t part2 = (x >> 64);
+                    *ip_int64++ = part1;
+                    *ip_int64++ = part2;
+                    n++;
+                }
+            break;
+
+        case IO_SLUG_STATE_INT:
+            for(n = 0; n < pc; pindex++)
+                if(P[pindex].Type == type)
+                {
+                    *ip_int64++ = (uint64_t) P[pindex].slug_state.id;
+                    *ip_int64++ = (uint64_t) P[pindex].slug_state.stoch_sn;
+                    n++;
+                }
+            break;
+
+        case IO_SLUG_STATE_DOUBLE: /*I did not include the last three quantities since I dont know how to deal with N */
+            for(n = 0; n < pc; pindex++)
+                if(P[pindex].Type == type)
+                {
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.targetMass;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.birthMass;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.aliveMass;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.stochBirthMass;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.stochAliveMass;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.stochRemnantMass;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.nonStochBirthMass;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.nonStochAliveMass;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.nonStochRemnantMass;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.stellarMass;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.stochStellarMass;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.nonStochStellarMass;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.formationTime;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.curTime;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.clusterAge;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.lifetime;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.stellarDeathMass;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.A_V;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.A_Vneb;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.Lbol;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.Lbol_ext;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.tot_sn;
+                    *fp++ = (MyOutputFloat) P[pindex].slug_state.last_yield_time;
+                    n++;
+                }
+            break;
+
+        case IO_VGRADNORM: /* Velocity gradient */
+            for(n = 0; n < pc; pindex++)
+                if(P[pindex].Type == type)
+                {
+                    MyOutputFloat vgn = 0.;
+                    for(k = 0; k < 3; k++)
+                    {
+                        for(int j = 0; j < 3; j++) 
+                          vgn += SphP[pindex].Gradients.Velocity[j][k]*SphP[pindex].Gradients.Velocity[j][k];
+                    }
+                    SphP[pindex].GradVelNorm = sqrt(vgn);
+                    *fp++ = SphP[pindex].GradVelNorm;
+                    n++;
+                }
+        break;
 
         case IO_IMF:		/* parameters describing the IMF  */
 #ifdef GALSF_SFR_IMF_VARIATION
@@ -1616,7 +1688,22 @@ int get_bytes_per_blockelement(enum iofields blocknr, int mode)
         case IO_STAGE_PROTOSTAR:
             bytes_per_blockelement = sizeof(int);
             break;
-            
+
+        case IO_SLUG_STATE_RNG:
+            bytes_per_blockelement = sizeof(uint64_t) * 2;
+            //Total size of the struct
+            break;
+
+        case IO_SLUG_STATE_INT:
+            bytes_per_blockelement = sizeof(uint64_t) * 2;
+            //Total size of the struct
+            break;
+
+        case IO_SLUG_STATE_DOUBLE:
+            bytes_per_blockelement = sizeof(double) * 23;
+            //Total size of the struct
+            break;
+
         case IO_AGE_PROTOSTAR:
         case IO_MASS:
         case IO_BH_DIST:
@@ -1646,6 +1733,7 @@ int get_bytes_per_blockelement(enum iofields blocknr, int mode)
         case IO_TSTP:
         case IO_DIVB:
         case IO_VDIV:
+        case IO_VGRADNORM:
         case IO_ABVC:
         case IO_AMDC:
         case IO_PHI:
@@ -1844,7 +1932,19 @@ int get_datatype_in_block(enum iofields blocknr)
         case IO_STAGE_PROTOSTAR:
             typekey = 0;		/* native int */
             break;
-            
+
+        case IO_SLUG_STATE_RNG:
+            typekey = 2;		/* 64 bit int */
+            break;
+
+        case IO_SLUG_STATE_INT:
+            typekey = 2;		/* 64 bit int */
+            break;
+
+        case IO_SLUG_STATE_DOUBLE:
+            typekey = 1;		/* Double */
+            break;
+
         default:
             typekey = 1;		/* native MyOutputFloat */
             break;
@@ -1859,7 +1959,19 @@ int get_values_per_blockelement(enum iofields blocknr)
 {
     int values = 0;
     switch (blocknr)
-    {
+    {   
+        case IO_SLUG_STATE_RNG:
+            values = 2;
+            break;
+
+        case IO_SLUG_STATE_INT:
+            values = 2;
+            break;
+        
+        case IO_SLUG_STATE_DOUBLE:
+            values = 23;
+            break;
+
         case IO_POS:
         case IO_VEL:
         case IO_INIB:
@@ -1905,6 +2017,7 @@ int get_values_per_blockelement(enum iofields blocknr)
         case IO_DTENTR:
         case IO_TSTP:
         case IO_VDIV:
+        case IO_VGRADNORM:
         case IO_DIVB:
         case IO_ABVC:
         case IO_AMDC:
@@ -2125,6 +2238,7 @@ long get_particles_in_block(enum iofields blocknr, int *typelist)
         case IO_BFLD:
         case IO_VDIV:
         case IO_VORT:
+        case IO_VGRADNORM:
         case IO_COSMICRAY_ENERGY:
         case IO_COSMICRAY_SLOPES:
         case IO_COSMICRAY_KAPPA:
@@ -2174,6 +2288,21 @@ long get_particles_in_block(enum iofields blocknr, int *typelist)
         case IO_AGE:
             for(i=0; i<6; i++) {if(!((1 << i) & (valid_star_types))) {typelist[i]=0;}}
             return nstars_tot;
+            break;
+
+        case IO_SLUG_STATE_RNG:
+            for(i=0; i<6; i++) {if(!((1 << i) & (valid_star_types))) {typelist[i]=0;}}
+            return nstars_tot; /* only nstars > 0 will be written to be output */
+            break;
+
+        case IO_SLUG_STATE_INT:
+            for(i=0; i<6; i++) {if(!((1 << i) & (valid_star_types))) {typelist[i]=0;}}
+            return nstars_tot;
+            break;
+
+        case IO_SLUG_STATE_DOUBLE:
+            for(i=0; i<6; i++) {if(!((1 << i) & (valid_star_types))) {typelist[i]=0;}}
+            return nstars_tot; /* only nstars > 0 will be written to be output */
             break;
 
         case IO_OSTAR:
@@ -2476,6 +2605,22 @@ int blockpresent(enum iofields blocknr)
 #else
             return 0;
 #endif
+            break;
+
+        case IO_VGRADNORM:
+            return 1;
+            break;
+
+        case IO_SLUG_STATE_RNG:
+            return 1;
+            break;
+        
+        case IO_SLUG_STATE_INT:
+            return 1;
+            break;
+
+        case IO_SLUG_STATE_DOUBLE:
+            return 1;
             break;
 
         case IO_IMF:
@@ -2909,6 +3054,18 @@ void get_Tab_IO_Label(enum iofields blocknr, char *label)
         case IO_VDIV:
             strncpy(label, "VDIV", 4);
             break;
+        case IO_VGRADNORM:
+            strncpy(label, "VGRA", 4);
+            break; 
+        case IO_SLUG_STATE_RNG:
+            strncpy(label, "SRNG", 4);
+            break;
+        case IO_SLUG_STATE_INT:
+            strncpy(label, "SINT", 4);
+            break; 
+        case IO_SLUG_STATE_DOUBLE:
+            strncpy(label, "SDOU", 4);
+            break;        
         case IO_VORT:
             strncpy(label, "VORT", 4);
             break;
@@ -3283,6 +3440,18 @@ void get_dataset_name(enum iofields blocknr, char *buf)
         case IO_VDIV:
             strcpy(buf, "VelocityDivergence");
             break;
+        case IO_VGRADNORM:
+            strcpy(buf, "NormVelocityGradient");
+            break;
+        case IO_SLUG_STATE_RNG:
+            strcpy(buf, "SlugStateRng");
+            break; 
+        case IO_SLUG_STATE_INT:
+            strcpy(buf, "SlugStateInt");
+            break; 
+        case IO_SLUG_STATE_DOUBLE:
+            strcpy(buf, "SlugStateDouble");
+            break;      
         case IO_VORT:
             strcpy(buf, "Vorticity");
             break;
