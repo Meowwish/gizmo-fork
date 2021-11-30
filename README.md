@@ -11,6 +11,7 @@
 * This version of the code is only tested with the versions of Grackle and SLUG that are included as submodules. Use other versions at your own risk.
 * Enabling SLUG adds a ~20% memory overhead to the particle data allocations but should have ~5% runtime overhead for production resolution runs.
 * When SLUG is enabled, it is recommended to use 0+1+1024 for the star formation bitflags (and nothing else). Without adding +1024, collapse may continue to arbitrarily high densities (implying arbitrarily small timesteps in MFM mode).
+* Even with the +1024 bitflag, a very small number of gas particles may still have extremely high densities. This appears to be due to some gas particles gaining mass (via SN ejecta) and becoming bound to one or more neighbouring particles. However, timesteps for these particles are not updated immediately, since particles only have their timesteps updated when their *previous* timestep ends. Ideally, particles that have their mass/momentum/energy changed would have their timesteps recalculated immediately following the feedback injection, but this is not implemented.
 * `GALSF_SFR_MOLECULAR_CRITERION` is not compatible with Grackle cooling. Don't try to use it with Grackle.
 * The SLUG functionality has not been tested with cosmological simulations. It may not work or may even give incorrect results.
 * The SLUG functionality has not been tested with OpenMP. It may not work or may even given incorrect results.
