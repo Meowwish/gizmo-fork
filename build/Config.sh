@@ -231,7 +231,7 @@ GALSF_FB_MECHANICAL            # explicit algorithm including thermal+kinetic/mo
 
 GALSF_PHOTOIONIZATION           # re-implementation of photoionization feedback by Armillotta et al.
 #GALSF_PHOTOIONIZATION_DEBUGGING
-
+READ_STELLAR_AGES               #Read the star ages from the IC file
 ## ----------------------------------------------------------------------------------------------------
 ############################################################################################################################
 

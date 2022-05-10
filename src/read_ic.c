@@ -506,6 +506,12 @@ void empty_read_buffer(enum iofields blocknr, int offset, int pc, int type)
             break;
 
         /* SLUG objects*/
+        case IO_SLUG_STATE_INITIAL:  /* saving whether slug object is intialized */
+            for(n = 0; n < pc; n++) {
+                P[offset + n].slug_state_initialized = *ip_int++;
+                }
+            break;
+
         case IO_SLUG_STATE_RNG:  /* combining 2 64 bit int into one 128 int */
             for(n = 0; n < pc; n++) {
                 uint64_t part1 = *ip_int64++;
@@ -879,6 +885,13 @@ void read_file(char *fname, int readTask, int lastTask)
 #endif
 #ifdef PIC_MHD
                    && blocknr != IO_GRAINTYPE
+#endif
+#if defined(SLUG)
+                   && blocknr != IO_SLUG_STATE_INITIAL
+                   && blocknr != IO_SLUG_STATE_RNG
+                   && blocknr != IO_SLUG_STATE_INT
+                   && blocknr != IO_SLUG_STATE_DOUBLE
+                   && blocknr != IO_AGE
 #endif
                    )
 #if defined(GDE_DISTORTIONTENSOR) && defined(GDE_READIC)

@@ -804,7 +804,16 @@ void fill_write_buffer(enum iofields blocknr, int *startindex, int pc, int type)
                 }
 #endif
             break;
-
+        
+        case IO_SLUG_STATE_INITIAL: /* It is a true/false entry, recording whether the slug cluster is turned on*/
+            for(n = 0; n < pc; pindex++)
+                if(P[pindex].Type == type)
+                {
+                    *ip_int++ = (int) P[pindex].slug_state_initialized;
+                    n++;
+                }
+            break;
+        
         case IO_SLUG_STATE_RNG:  /* It is an 128 bit integer. I split it into 2 64 bit integers for easier output */
             for(n = 0; n < pc; pindex++)
                 if(P[pindex].Type == type)
@@ -1688,6 +1697,11 @@ int get_bytes_per_blockelement(enum iofields blocknr, int mode)
         case IO_STAGE_PROTOSTAR:
             bytes_per_blockelement = sizeof(int);
             break;
+        
+        case IO_SLUG_STATE_INITIAL:
+            bytes_per_blockelement = sizeof(int);
+            //Total size of the struct
+            break;
 
         case IO_SLUG_STATE_RNG:
             bytes_per_blockelement = sizeof(uint64_t) * 2;
@@ -1932,6 +1946,10 @@ int get_datatype_in_block(enum iofields blocknr)
         case IO_STAGE_PROTOSTAR:
             typekey = 0;		/* native int */
             break;
+        
+        case IO_SLUG_STATE_INITIAL:
+            typekey = 0;		/* native int */
+            break;
 
         case IO_SLUG_STATE_RNG:
             typekey = 2;		/* 64 bit int */
@@ -1960,6 +1978,10 @@ int get_values_per_blockelement(enum iofields blocknr)
     int values = 0;
     switch (blocknr)
     {   
+        case IO_SLUG_STATE_INITIAL:
+            values = 1;
+            break;
+
         case IO_SLUG_STATE_RNG:
             values = 2;
             break;
@@ -2290,19 +2312,24 @@ long get_particles_in_block(enum iofields blocknr, int *typelist)
             return nstars_tot;
             break;
 
+        case IO_SLUG_STATE_INITIAL:
+            for(i=0; i<6; i++) {if(i != 4) {typelist[i] = 0;}}
+            return nstars_tot; /* only type 4 star particles will have SLUG properties */
+            break;
+
         case IO_SLUG_STATE_RNG:
-            for(i=0; i<6; i++) {if(!((1 << i) & (valid_star_types))) {typelist[i]=0;}}
-            return nstars_tot; /* only nstars > 0 will be written to be output */
+            for(i=0; i<6; i++) {if(i != 4) {typelist[i] = 0;}}
+            return nstars_tot; /* only type 4 star particles will have SLUG properties */
             break;
 
         case IO_SLUG_STATE_INT:
-            for(i=0; i<6; i++) {if(!((1 << i) & (valid_star_types))) {typelist[i]=0;}}
-            return nstars_tot;
+            for(i=0; i<6; i++) {if(i != 4) {typelist[i] = 0;}} 
+            return nstars_tot; /* only type 4 star particles will have SLUG properties */
             break;
 
         case IO_SLUG_STATE_DOUBLE:
-            for(i=0; i<6; i++) {if(!((1 << i) & (valid_star_types))) {typelist[i]=0;}}
-            return nstars_tot; /* only nstars > 0 will be written to be output */
+            for(i=0; i<6; i++) {if(i != 4) {typelist[i] = 0;}}
+            return nstars_tot; /* only type 4 star particles will have SLUG properties */
             break;
 
         case IO_OSTAR:
@@ -2608,6 +2635,10 @@ int blockpresent(enum iofields blocknr)
             break;
 
         case IO_VGRADNORM:
+            return 1;
+            break;
+        
+        case IO_SLUG_STATE_INITIAL:
             return 1;
             break;
 
@@ -3056,7 +3087,10 @@ void get_Tab_IO_Label(enum iofields blocknr, char *label)
             break;
         case IO_VGRADNORM:
             strncpy(label, "VGRA", 4);
-            break; 
+            break;
+        case IO_SLUG_STATE_INITIAL:
+            strncpy(label, "SITL", 4);
+            break;
         case IO_SLUG_STATE_RNG:
             strncpy(label, "SRNG", 4);
             break;
@@ -3442,6 +3476,9 @@ void get_dataset_name(enum iofields blocknr, char *buf)
             break;
         case IO_VGRADNORM:
             strcpy(buf, "NormVelocityGradient");
+            break;
+        case IO_SLUG_STATE_INITIAL:
+            strcpy(buf, "SlugStateInitial");
             break;
         case IO_SLUG_STATE_RNG:
             strcpy(buf, "SlugStateRng");

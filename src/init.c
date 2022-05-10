@@ -249,7 +249,10 @@ void init(void)
 #ifdef GALSF
         if(RestartFlag == 0)
         {
+            /*P[i].StellarAge = 0;*/
+#ifndef READ_STELLAR_AGES
             P[i].StellarAge = 0;
+#endif
 #ifdef GALSF_PHOTOIONIZATION
             SphP[i].HIIregion = 0;
 #endif
@@ -282,7 +285,7 @@ void init(void)
             int k; for(k=0;k<AREA_WEIGHTED_SUM_ELEMENTS;k++) {P[i].Area_weighted_sum[k] = 0;}
 #endif
         }
-#if defined(INIT_STELLAR_METALS_AGES_DEFINED) && defined(GALSF)
+#if defined(INIT_STELLAR_METALS_AGES_DEFINED) && defined(GALSF) && !defined(READ_STELLAR_AGES)
         if(RestartFlag == 0)
         {
             //P[i].StellarAge = -2.0 * All.InitStellarAgeinGyr / (UNIT_TIME_IN_GYR) * get_random_number(P[i].ID + 3);

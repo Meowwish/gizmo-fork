@@ -3242,6 +3242,7 @@ enum iofields
   IO_DELAY_TIME_HII,
   IO_MOLECULARFRACTION,
   IO_VGRADNORM,
+  IO_SLUG_STATE_INITIAL,
   IO_SLUG_STATE_RNG,
   IO_SLUG_STATE_INT,
   IO_SLUG_STATE_DOUBLE, /* The change to the order may cause an error. */
