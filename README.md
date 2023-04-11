@@ -3,6 +3,7 @@
 ## workarounds for compiler and MPI bugs
 * Clang is the recommended compiler. Intel compiler version 2020.3.304 is tested and also works. (Earlier Intel versions sometimes fail to work correctly with SLUG and/or GIZMO.) GCC also mostly works (but do *not* use GCC version 7, it will generate incorrect code that will crash).
 * `NO_ISEND_IRECV_IN_DOMAIN` should *always* be enabled; otherwise the code will randomly hang in an MPI call during the domain decomposition
+* Disable FITS and MPI support while building SLUG. Use `make lib` instead of `make` because SLUG is only needed as a library
 * `USE_MPI_IN_PLACE` should *almost always* be enabled (required if using OpenMPI); if it is not but it should be, the code will crash during MPI calls with aliased pointers
 * *If you are using Mellanox Infiniband cards:* The Mellanox hardware-accelerated MPI collectives implementation has a bug that crashes the code. Workaround: add `-x HCOLL_ENABLE_MCAST=0` to the `mpirun` command-line options
 
