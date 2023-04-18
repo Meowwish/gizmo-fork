@@ -507,28 +507,35 @@ void empty_read_buffer(enum iofields blocknr, int offset, int pc, int type)
 
         /* SLUG objects*/
         case IO_SLUG_STATE_INITIAL:  /* saving whether slug object is intialized */
+#ifdef SLUG
             for(n = 0; n < pc; n++) {
                 P[offset + n].slug_state_initialized = *ip_int++;
                 }
+#endif
             break;
 
         case IO_SLUG_STATE_RNG:  /* combining 2 64 bit int into one 128 int */
+#ifdef SLUG
             for(n = 0; n < pc; n++) {
                 uint64_t part1 = *ip_int64++;
                 rng_state_t part2 = *ip_int64++;
                 P[offset + n].slug_state.rngStateAtBirth = part1 + (part2 << 64);
                 }
+#endif
             break;
 
         case IO_SLUG_STATE_INT:
+#ifdef SLUG
             for(n = 0; n < pc; n++) 
                 {
                     P[offset + n].slug_state.id = *ip_int64++;
                     P[offset + n].slug_state.stoch_sn = *ip_int64++;
                 }
+#endif
             break;
 
         case IO_SLUG_STATE_DOUBLE: /*I did not include the last three quantities since I dont know how to deal with N */
+#ifdef SLUG
             for(n = 0; n < pc; n++) 
                 {
                     P[offset + n].slug_state.targetMass = *fp++;
@@ -555,6 +562,7 @@ void empty_read_buffer(enum iofields blocknr, int offset, int pc, int type)
                     P[offset + n].slug_state.tot_sn = *fp++;
                     P[offset + n].slug_state.last_yield_time = *fp++;
                 }
+#endif
             break;
 
         /* the other input fields (if present) are not needed to define the
