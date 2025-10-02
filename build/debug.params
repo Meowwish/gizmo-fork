@@ -1,0 +1,162 @@
+
+%----  Relevant files
+InitCondFile   /g/data/jh2/zh6526/snapshotSplit/smallSample3
+OutputDir      /g/data/jh2/zh6526/debug/
+%---- File formats 
+ICFormat    3  % 1=binary, 3=hdf5 
+SnapFormat  3  % 1=binary, 3=hdf5 
+
+%---- Output parameters 
+RestartFile                 restart 
+SnapshotFileBase            snapshot 
+OutputListOn                0  % =1 to use list in "OutputListFilename" 
+OutputListFilename          output_times.txt  % list of times for snaps 
+NumFilesPerSnapshot         8 
+NumFilesWrittenInParallel   1  % must be < N_processors & power of 2
+
+%---- Output frequency 
+TimeOfFirstSnapshot     0.1
+TimeBetSnapshot         2.e-4   % Gyr
+TimeBetStatistics       2.e-4   % Gyr
+
+
+%---- CPU-time limits 
+TimeLimitCPU            172800 % seconds [= 48 hours]
+CpuTimeBetRestartFile   3600   % seconds
+ResubmitOn              0
+ResubmitCommand         none   % change this to a shell script if needed
+
+
+%----- Memory allocation 
+MaxMemSize          64000    % sets maximum MPI process memory use, in MiByte
+		    	    %   (NOTE: only sets a limit for heap allocations that use "mymalloc()"!
+			    %	 Application binary image size, any other
+			    %	 static allocations, and internal MPI library allocations are NOT included!)
+PartAllocFactor     3.5     % maximum relative memory imbalance allowed for particle buffers
+		    	    %   (AGORA disc appears not to require large values for this.)
+BufferSize          30     % in MiByte
+		    	    %   (NOTE: this is only the *send* buffer!
+		    	    %   This can actually be set too large, causing
+			    %   memory problems at the receiving end.)
+
+%---- Characteristics of run 
+TimeBegin   0.1   % Beginning of the simulation 
+TimeMax     0.12    % End of the simulation
+
+%---- Cosmological parameters 
+ComovingIntegrationOn   0       % is it cosmological? (yes=1, no=0)
+BoxSize                 10000.  % in code units
+TurbBoxSize             10000.  % in code units
+Omega0                  0       % =0 for non-cosmological
+OmegaLambda             0       % =0 for non-cosmological
+OmegaBaryon             0       % =0 for non-cosmological
+HubbleParam             1       % little 'h'; =1 for non-cosmological runs
+
+%---- Accuracy of time integration 
+MinSizeTimestep         1.0e-12  % for this problem, time unit is Gyr
+MaxSizeTimestep         0.001	 % for this problem, time unit is Gyr
+
+%---- Tree algorithm, force accuracy, domain update frequency
+% Accuracy of time integration (adapted from Manodeep's recommended parameters)
+%ErrTolIntAccuracy       0.00125     % <0.02
+%CourantFac              0.1 	    % <0.30
+%MaxRMSDisplacementFac   0.125	    % <0.25 (only relevant for cosmological runs)
+% Tree algorithm, force accuracy, domain update frequency
+%ErrTolTheta             0.5         % 0.7=standard
+%ErrTolForceAcc          0.002       % 0.0025=standard
+
+TreeDomainUpdateFrequency   0.05	% 0.0005-0.05, dept on core+particle number  
+
+%---- System of units 
+UnitLength_in_cm            3.085678e21     % 1.0 kpc/h
+UnitMass_in_g               1.989e43  	    % 1.0e10 solar masses/h
+UnitVelocity_in_cm_per_s    1.0e5   	    % 1 km/sec
+UnitMagneticField_in_gauss  1.0   	        % 1 gauss
+GravityConstantInternal     0		        % calculated by code if =0
+
+%---- Initial temperature & temperature floor 
+InitGasTemp     0	    % set by IC file if =0
+MinGasTemp      10.	    % don't set <10 in explicit feedback runs, otherwise 0
+
+%---- Density/volume estimation (kernel) 
+DesNumNgb               32      % 32 for standard kernel, 60-114 for quintic 
+MaxHsml                 1.e2    % minimum gas kernel length (some very large value to prevent errors)
+MinGasHsmlFractional    0.      % DANGER: bad things may happen if this is nonzero!
+
+%---- Convergence error for evaluating particle volumes
+MaxNumNgbDeviation      0.05    % <<DesNumNgb (values<1 are fine)
+
+%---- Gravitational softening lengths 
+%----- Softening lengths per particle type. If ADAPTIVE_GRAVSOFT is set, these  
+%-------- are the minimum softening allowed for each type ------- 
+%-------- (units are co-moving for cosmological integrations)
+SofteningGas    0.001    % gas (type=0) (in units above, =1 pc softening)
+SofteningHalo   0.050    % dark matter/collisionless particles (type=1)
+SofteningDisk   0.020    % collisionless particles (type=2)
+SofteningBulge  0.020    % collisionless particles (type=3)
+SofteningStars  0.005    % stars spawned from gas (type=4)
+SofteningBndry  0.005    % black holes (if active), or collisionless (type=5)
+
+%----- parameters for adaptive gravitational softening 
+% (currently unused in runs)
+%AGS_DesNumNgb           32  % neighbor number for calculating adaptive gravsoft
+%AGS_MaxNumNgbDeviation  2   % same, for adaptive gravsoft: can be much larger
+
+
+
+
+%-------------------------------------------------------------------------
+%-------------------------------------------------------------------------
+%---------- Physics Modules ----------------------------------------------
+%-------------------------------------------------------------------------
+%-------------------------------------------------------------------------
+
+InitMetallicity 1.0     % in units of solar metallicity
+InitStellarAge  1000.0     % Gyr
+
+%------------------------------------------------------------
+%------------------ Additional Fluid Physics ----------------
+%------------------------------------------------------------
+
+%---- Magneto-Hydrodynamics Parameters (MAGNETIC on)
+
+%--- Dedner Divergence-cleaning Parameters (for MHD)
+%DivBcleaningParabolicSigma      0.2  % <1, ~0.2-0.5 needed for stability
+%DivBcleaningHyperbolicSigma     1.0  % ~1
+
+%---- Turbulent Diffusion Master Switch (TURB_DIFFUSION on)
+%TurbDiffusionCoefficient 1.0    % Normalizes diffusion rates relative to Smagorinsky-Lilly theory (~0.5-2)
+
+
+%-------------------------------------------------------------------------
+%------------------ Star, Black Hole, and Galaxy Formation ---------------
+%-------------------------------------------------------------------------
+
+
+%---- Star Formation parameters (GALSF on)
+CritPhysDensity     100.    %  critical physical density for star formation (cm^(-3))
+SfEffPerFreeFall    0.01     %  SFR/(Mgas/tfreefall) for gas which meets SF criteria
+%SlugStateInitial    false   % The stellar particles in this IC do not turn on SLUG module
+
+
+%-------------- Grackle UVB file (GRACKLE on)
+% (currently unused in runs)
+GrackleDataFile		     /g/data/jh2/zh6526/gizmo-fork/gizmo2/grackle/input/CloudyData_UVB=HM2012.h5
+
+
+%-------------------------------------------------------------------------
+%------------------ Driven Turbulence (Large-Eddy boxes) -----------------
+%-------------------------------------------------------------------------
+
+%-------------- Turbulent stirring parameters (TURB_DRIVING on)
+% (currently unused in runs)
+%ST_decay       1.	    % decay time for driving-mode phase correlations
+%ST_energy      0.0002   % energy of driving-scale modes: sets norm of turb
+%ST_DtFreq      0.005    % time interval for driving updates (set by hand)
+%ST_Kmin        6.27     % minimum driving-k: should be >=2.*M_PI/All.BoxSize
+%ST_Kmax        12.57    % maximum driving-k: set to couple times Kmin or more if cascade desired
+%ST_SolWeight   1.0      % fractional wt of solenoidal modes (wt*curl + (1-wt)*div)
+%ST_AmplFac     1.0      % multiplies turb amplitudes
+%ST_SpectForm   2        % driving pwr-spec: 0=Ek~const; 1=sharp-peak at kc; 2=Ek~k^(-5/3); 3=Ek~k^-2
+%ST_Seed        42       % random number seed for modes (so you can reproduce it)
+%TimeBetTurbSpectrum 0.5 % time (code units) between evaluations of turb pwrspec

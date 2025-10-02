@@ -123,7 +123,7 @@ void particle2in_addFB_fromstars(struct addFB_evaluate_data_in_ *in, int i, int 
 {
 #if defined(GALSF_FB_MECHANICAL) || defined(GALSF_FB_THERMAL)
 
-    if (P[i].SNe_ThisTimeStep <= 0) { in->Msne=0; return; } // no event
+    //if (P[i].SNe_ThisTimeStep <= 0) { in->Msne=0; return; } // no event
 
 #ifdef SLUG
     // - Assume 0.7e51 erg kinetic energy per SN (Sukhbold+ 2016)
@@ -169,7 +169,8 @@ void particle2in_addFB_fromstars(struct addFB_evaluate_data_in_ *in, int i, int 
 #endif // SINGLE_STAR_SINK_DYNAMICS
 
 #ifdef METALS
-    int k; for(k=0;k<NUM_METAL_SPECIES;k++) {in->yields[k]=0.178*All.SolarAbundances[k]/All.SolarAbundances[0];} // assume a universal solar-type yield with ~2.63 Msun of metals
+    in->yields[0]=0.178*All.SolarAbundances[0]/All.SolarAbundances[0];// assume a universal solar-type yield with ~2.63 Msun of metals
+    int k; for(k=1;k<NUM_METAL_SPECIES;k++) {in->yields[k]+=P[i].Yields_ThisTimestep[k];}///P[i].Yields_ThisTimestep[4];}
     if(NUM_LIVE_SPECIES_FOR_COOLTABLES>=10) {in->yields[1] = 0.4;} // (catch for Helium, which the above scaling would give bad values for)
 #endif
 #endif

@@ -233,6 +233,35 @@ endif
 
 #----------------------------------------------------------------------------------------------
 
+ifeq ($(SYSTYPE),"Gadi-Intel-Memory")
+CC       = mpicxx -x c++ -std=c++17 -fsanitize=address -static-libasan# use C++ compiler
+CXX      = mpicxx -std=c++17
+FC       = mpif90 -nofor_main -cxxlib -lmpi_cxx
+OPTIMIZE = -g -O2
+ifeq (OPENMP,$(findstring OPENMP,$(CONFIGVARS)))
+OPTIMIZE += -qopenmp
+endif
+MKL_INCL = -I$(MKL_HOME)/include
+MKL_LIBS = -L$(MKL_HOME)/lib -mkl=sequential
+GRACKLE_HOME = $(SRC_DIR)/../grackle_install
+GRACKLEINCL = -I$(GRACKLE_HOME)/include
+GRACKLELIBS = -L$(GRACKLE_HOME)/lib -Wl,-rpath=$(GRACKLE_HOME)/lib
+BOOST_HOME = $(HOME)/boost_install
+SLUG_HOME= $(SRC_DIR)/../slug2
+SLUG_INCLUDE = -I$(SLUG_HOME)/src -I$(SPDLOG_HOME)/include -I$(BOOST_HOME)/include
+SLUG_LIBS = -L$(SLUG_HOME)/src -Wl,-rpath=$(SLUG_HOME)/src
+GSL_INCL = -I$(GSL_HOME)/include
+GSL_LIBS = -L$(GSL_HOME)/lib
+HDF5INCL = -I$(HDF5_HOME)/include -DH5_USE_16_API
+HDF5LIB  = -L$(HDF5_HOME)/lib -lhdf5 -lz
+#HDF5INCL = -I/usr/include/hdf5/serial -DH5_USE_16_API
+#HDF5LIB  = -lhdf5_serial -lz
+MPICHLIB =
+OPT     += -DUSE_MPI_IN_PLACE -DNO_ISEND_IRECV_IN_DOMAIN
+endif
+
+#----------------------------------------------------------------------------------------------
+
 
 ifeq ($(SYSTYPE),"Frontera")
 CC       =  mpicc

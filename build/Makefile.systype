@@ -8,6 +8,7 @@
 
 #SYSTYPE="Gadi"
 SYSTYPE="Gadi-Intel"
+#SYSTYPE="Gadi-Intel-Memory"
 #SYSTYPE="Frontera"
 #SYSTYPE="Stampede2"
 #SYSTYPE="Bridges2"

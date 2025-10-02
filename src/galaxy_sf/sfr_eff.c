@@ -232,6 +232,10 @@ double get_starformation_rate(int i, int mode)
 
     rateOfSF = P[i].Mass / tsfr; /* 'normal' sfr from density law above */
     if(tsfr<=0 || rateOfSF<=0 || flag==0) {return 0;} /* nonsense here, return 0 */
+    // MEOW Chuhan debug: Force dense gas particles to be rapidly consumed.
+    if(SphP[i].Density*All.cf_a3inv > (100.0*All.PhysDensThresh)) {
+        return 1.e6 * rateOfSF;
+    }
 
 #ifdef GALSF_EFFECTIVE_EQS /* do the SFR calc for the Springel-Hernquist EOS, before any 'fancy' sf criteria, when above-threshold, or else risk incorrect entropies */
     double factorEVP = pow(SphP[i].Density * All.cf_a3inv / All.PhysDensThresh, -0.8) * All.FactorEVP; /* evaporation factor */

@@ -102,7 +102,7 @@ METALS                         # enable metallicities (with multiple species opt
 ## ----------------------------------------------------------------------------------------------------
 # -------------------------------------- Smagorinsky Turbulent Eddy Diffusion Model
 # --------------------------------------- Users of these modules should cite Hopkins et al. 2017 (arXiv:1702.06148) and Colbrook et al. (arXiv:1610.06590)
-#TURB_DIFF_METALS               # turbulent diffusion of metals (passive scalars); requires METALS
+TURB_DIFF_METALS               # turbulent diffusion of metals (passive scalars); requires METALS
 #TURB_DIFF_ENERGY               # turbulent diffusion of internal energy (conduction with effective turbulent coefficients)
 #TURB_DIFF_VELOCITY             # turbulent diffusion of momentum (viscosity with effective turbulent coefficients)
 #TURB_DIFF_DYNAMIC              # replace Smagorinsky-style eddy diffusion with the 'dynamic localized Smagorinsky' model from Rennehan et al. (arXiv:1807.11509): cite that paper for all methods. more accurate but more complex and expensive.
@@ -231,7 +231,7 @@ GALSF_FB_MECHANICAL            # explicit algorithm including thermal+kinetic/mo
 
 GALSF_PHOTOIONIZATION           # re-implementation of photoionization feedback by Armillotta et al.
 #GALSF_PHOTOIONIZATION_DEBUGGING
-
+READ_STELLAR_AGES               #Read the star ages from the IC file
 ## ----------------------------------------------------------------------------------------------------
 ############################################################################################################################
 
@@ -297,13 +297,13 @@ MULTIPLEDOMAINS=16             # Multi-Domain option for the top-tree level (alt
 # --------------------------------------- Input/Output options
 ####################################################################################################
 #OUTPUT_ADDITIONAL_RUNINFO      # enables extended simulation output data (can slow down machines significantly in massively-parallel runs)
-#OUTPUT_IN_DOUBLEPRECISION      # snapshot files will be written in double precision
-#INPUT_IN_DOUBLEPRECISION       # input files assumed to be in double precision (otherwise float is assumed)
+OUTPUT_IN_DOUBLEPRECISION      # snapshot files will be written in double precision
+INPUT_IN_DOUBLEPRECISION       # input files assumed to be in double precision (otherwise float is assumed)
 #OUTPUT_POSITIONS_IN_DOUBLE     # input/output files in single, but positions in double (used in hires, hi-dynamic range sims when positions differ by < float accuracy)
 #INPUT_POSITIONS_IN_DOUBLE      # as above, but specific to the ICs file
-#OUTPUT_POTENTIAL               # forces code to compute+output potentials in snapshots
+OUTPUT_POTENTIAL               # forces code to compute+output potentials in snapshots
 #OUTPUT_TIDAL_TENSOR            # writes tidal tensor (computed in gravity) to snapshots
-#OUTPUT_ACCELERATION            # output physical acceleration of each particle in snapshots
+OUTPUT_ACCELERATION            # output physical acceleration of each particle in snapshots
 #OUTPUT_CHANGEOFENERGY          # outputs rate-of-change of internal energy of gas particles in snapshots
 #OUTPUT_VORTICITY               # outputs the vorticity vector
 #OUTPUT_TIMESTEP                # outputs timesteps for each particle
@@ -334,6 +334,7 @@ OUTPUT_COOLRATE                # outputs cooling rate, and conduction rate if en
 # --------------------
 # ----- General De-Bugging and Special Behaviors
 #DEVELOPER_MODE                 # allows you to modify various numerical parameters (courant factor, etc) at run-time
+#CourantFac               0.1    # <0.20
 #LONG_INTEGER_TIME              # total number of integer time step = 1<<39
 #FORCE_EQUAL_TIMESTEPS          # force the code to use a single universal timestep (can change in time, but all particles advance together). chosen as minimum of any particle that step.
 STOP_WHEN_BELOW_MINTIMESTEP    # forces code to quit when stepsize wants to go below MinSizeTimestep specified in the parameterfile
@@ -398,9 +399,9 @@ ALLOW_IMBALANCED_GASPARTICLELOAD # increases All.MaxPartSph to All.MaxPart: can 
 # ----- extra options
 SLUG # use feedback computed from the SLUG2 library
 SLUG_DEBUG_PERFORMANCE # compute SLUG runtime overhead
-#SLUG_DEBUG_SN_RATE
+SLUG_DEBUG_SN_RATE
 SN_KIMM_CEN_MODIFIED_MODEL
 SN_MOMENTUM_LIMITER
 #DEBUG_RADIAL_MOMENTUM
 #SF_TRUNCATE_HIGH_DENSITIES
-
+SLUG_YIELDS # inject metals from slug

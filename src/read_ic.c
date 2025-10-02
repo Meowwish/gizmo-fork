@@ -177,12 +177,14 @@ void empty_read_buffer(enum iofields blocknr, int offset, int pc, int type)
 {
     long n, k; MyInputFloat *fp; MyInputPosFloat *fp_pos; MyIDType *ip; int *ip_int; float *fp_single;
     uint64_t *ip_int64;
+    /* uint8_t *bl; */
     fp = (MyInputFloat *) CommBuffer;
     fp_pos = (MyInputPosFloat *) CommBuffer;
     fp_single = (float *) CommBuffer;
     ip = (MyIDType *) CommBuffer;
     ip_int = (int *) CommBuffer;
     ip_int64 = (uint64_t *) CommBuffer;
+    /* bl = (uint8_t *) CommBuffer; */
 
     switch(blocknr)
     {
@@ -318,6 +320,7 @@ void empty_read_buffer(enum iofields blocknr, int offset, int pc, int type)
                 if(RestartFlag==2 && All.ICFormat==3 && header.flag_metals<NUM_METAL_SPECIES && header.flag_metals>0) {nmax=header.flag_metals;} // special clause to catch cases where read-in snapshot did not use all the metals fields we want to read now
                 for(k=0;k<nmax;k++) {P[offset + n].Metallicity[k] = *fp++;} // normal read-in
                 if(nmax<NUM_METAL_SPECIES) {for(k=nmax;k<NUM_METAL_SPECIES;k++) {P[offset + n].Metallicity[k]=0;}} // any extra fields zero'd
+                P[offset + n].Metallicity[0] = 0.02; // this is the solar metallicity, and is used for cooling
             }
 #endif
             break;
@@ -506,6 +509,12 @@ void empty_read_buffer(enum iofields blocknr, int offset, int pc, int type)
             break;
 
         /* SLUG objects*/
+        case IO_SLUG_STATE_INITIAL:  /* saving whether slug object is intialized */
+            for(n = 0; n < pc; n++) {
+                P[offset + n].slug_state_initialized = *ip_int++;
+                }
+            break;
+
         case IO_SLUG_STATE_RNG:  /* combining 2 64 bit int into one 128 int */
             for(n = 0; n < pc; n++) {
                 uint64_t part1 = *ip_int64++;
@@ -879,6 +888,13 @@ void read_file(char *fname, int readTask, int lastTask)
 #endif
 #ifdef PIC_MHD
                    && blocknr != IO_GRAINTYPE
+#endif
+#if defined(SLUG)
+                   && blocknr != IO_SLUG_STATE_INITIAL
+                   && blocknr != IO_SLUG_STATE_RNG
+                   && blocknr != IO_SLUG_STATE_INT
+                   && blocknr != IO_SLUG_STATE_DOUBLE
+                   && blocknr != IO_AGE
 #endif
                    )
 #if defined(GDE_DISTORTIONTENSOR) && defined(GDE_READIC)

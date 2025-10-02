@@ -18,6 +18,11 @@
 
 #if defined(GALSF_FB_MECHANICAL) || defined(GALSF_FB_THERMAL)
 
+// Track the number of SNIa that have occurred in the simulation
+static double last_SNIa_output_time = 0.0;
+static int total_SNIa_since_last_output = 0;
+static int total_SNIa_all_time = 0;
+
 void determine_where_SNe_occur(void)
 {
     if (All.Time <= 0) return;
@@ -26,7 +31,30 @@ void determine_where_SNe_occur(void)
     npossible = nhosttotal = ntotal = ptotal = dtmean = rmean = 0;
     double mpi_npossible, mpi_nhosttotal, mpi_ntotal, mpi_ptotal, mpi_dtmean, mpi_rmean;
     mpi_npossible = mpi_nhosttotal = mpi_ntotal = mpi_ptotal = mpi_dtmean = mpi_rmean = 0;
+    double total_old_stellar_mass = 0.0;
+    int SNIa_this_step = 0;
+    
+    // calculate the total mass of old stellar particles
+    double local_old_stellar_mass = 0.0;
+    for(int i = 0; i < NumPart; i++)
+    {
+        if((P[i].Type == 4 && P[i].StellarAge < 0 && P[i].Mass > 0) || (P[i].Type == 2))
+        {
+            local_old_stellar_mass += P[i].Mass * UNIT_MASS_IN_SOLAR;
+        }
+    }
+    
+    MPI_Reduce(&local_old_stellar_mass, &total_old_stellar_mass, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&total_old_stellar_mass, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    
+    // 添加保护，防止total_old_stellar_mass为0
+    if(total_old_stellar_mass <= 0.0)
+    {
+        total_old_stellar_mass = 1.0; // 使用默认值1.0以避免除以零错误
+    }
 
+    //printf("P2DEBUG Total mass of old stellar particles: %g Msun\n", total_old_stellar_mass);
+    
     // loop over particles //
     const double sn_loop_begin_walltime = MPI_Wtime();
     for (int i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i])
@@ -66,10 +94,78 @@ void determine_where_SNe_occur(void)
             continue;
         } // unphysical age, no events
 
+        // StellarAge<0，old stellar particles (not formed from SLUG) According to allvars.h, StellarAge equals to StellarFormationTime
+        if ((P[i].Type == 4 && P[i].StellarAge < 0) || (P[i].Type == 2))// Meow_OldStarCheck
+        {
+            // Calculate SNIa events for old stellar particles
+            double SNIa_rate = 5000.0; // SNIa events rate - 5000 Myr^-1
+            double NSM_rate= 500.0; // NSM events rate - 500 Myr^-1
+            double particle_mass_solar = P[i].Mass * UNIT_MASS_IN_SOLAR; // Stellar mass in solar mass
+            double dt_Myr = dt * UNIT_TIME_IN_MYR; // Time step in Myr
+            
+            // Expected SNIa number in this time step = event_rate * time_step * mass_fraction
+            double expected_SNIa = SNIa_rate * dt_Myr * (particle_mass_solar / total_old_stellar_mass);
+            double expected_NSM = NSM_rate * dt_Myr * (particle_mass_solar / total_old_stellar_mass);
+            
+            // Calculate the number of SNIa events for this particle
+            int num_SNIa = 0;
+            int num_NSM = 0;
+            if (expected_SNIa > 1.0) {
+                // Expected SNIa number is large, take the integer part
+                num_SNIa = (int)(expected_SNIa + get_random_number(i));
+            } else if (expected_SNIa > 0.0) {
+                // Expected SNIa number is small, use a random number to decide
+                if (get_random_number(i) < expected_SNIa) num_SNIa = 1;
+            }
+
+            if (expected_NSM > 1.0) {
+                // Expected NSM number is large, take the integer part
+                num_NSM = (int)(expected_NSM + get_random_number(i));
+            } else if (expected_NSM > 0.0) {
+                // Expected NSM number is small, use a random number to decide
+                if (get_random_number(i) < expected_NSM) num_NSM = 1;
+            }
+            
+            // Update the particle properties
+            if (num_SNIa > 0) {
+                // DEBUG: Print SNIa event information
+                //printf("SNIa_DEBUG: Particle ID=%d generating %d SNIa events. Mass=%g Msun, dt=%g Myr, expected=%g\n", 
+                //       P[i].ID, num_SNIa, particle_mass_solar, dt_Myr, expected_SNIa);
+                //fflush(stdout);
+                
+                P[i].SNe_ThisTimeStep = num_SNIa;
+                ntotal += num_SNIa;
+                nhosttotal++;
+                
+                // Count the SNIa events for this step
+                SNIa_this_step += num_SNIa;
+            }            
+            
+            // Update the particle properties
+            if (num_NSM > 0) {
+                // DEBUG: Print SNIa event information
+                //printf("SNIa_DEBUG: Particle ID=%d generating %d SNIa events. Mass=%g Msun, dt=%g Myr, expected=%g\n", 
+                //       P[i].ID, num_SNIa, particle_mass_solar, dt_Myr, expected_SNIa);
+                //fflush(stdout);
+                
+                P[i].SNe_ThisTimeStep = num_NSM * 10;
+            }
+            
+            npossible++;
+            continue;
+        }
         npossible++; // it is possible for a SN event to occur
 
+//if (P[i].SNe_ThisTimeStep > 0) {
+//    printf("SNe_ThisTimeStep_BeforeFB: %.1f, Cumulative: %.1f\n", P[i].SNe_ThisTimeStep, P[i].SNe_Cumulative);
+//}
 #ifdef SLUG
         slugComputeSNFeedback(i);
+// Meow: check if the SLUG feedback is working
+//if (P[i].SNe_ThisTimeStep > 0) {
+//    printf("SNe_ThisTimeStep_AfterFB: %.1f, Cumulative: %.1f\n", P[i].SNe_ThisTimeStep, P[i].SNe_Cumulative);
+//}
+
 #else  // *without* SLUG
         double RSNe = mechanical_fb_calculate_eventrates(i, dt);
         rmean += RSNe;
@@ -92,6 +188,41 @@ void determine_where_SNe_occur(void)
     } // for(i = FirstActiveParticle; i >= 0; i = NextActiveParticle[i]) //
 
 #ifdef SLUG_DEBUG_SN_RATE
+    // collect SNe data
+    int mpi_SNIa_this_step = 0;
+    MPI_Reduce(&SNIa_this_step, &mpi_SNIa_this_step, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    if (ThisTask == 0) {
+        total_SNIa_since_last_output += mpi_SNIa_this_step;
+        total_SNIa_all_time += mpi_SNIa_this_step;
+        
+        // check if we need to output the statistics
+        double current_time_Myr = All.Time * UNIT_TIME_IN_MYR;
+        double last_output_time_Myr = last_SNIa_output_time * UNIT_TIME_IN_MYR;
+        
+        // if the current time is greater than the last output time, or if this is the first output
+        if (floor(current_time_Myr * 10) > floor(last_output_time_Myr * 10) || last_SNIa_output_time == 0) {
+            // output the statistics
+            printf("SNIa_STATS: Time=%g Myr, SNIa events in last %.2f Myr: %d, Total events: %d, Rate: %.2f per Myr\n", 
+                   current_time_Myr, 
+                   current_time_Myr - last_output_time_Myr,
+                   total_SNIa_since_last_output,
+                   total_SNIa_all_time,
+                   (current_time_Myr > last_output_time_Myr) ? 
+                       total_SNIa_since_last_output / (current_time_Myr - last_output_time_Myr) : 0);
+            fflush(stdout);
+            
+            // reset the last output time and count
+            last_SNIa_output_time = All.Time;
+            total_SNIa_since_last_output = 0;
+        }
+    }
+    
+    // broadcast the last SNIa output time and total SNIa count to all tasks
+    MPI_Bcast(&last_SNIa_output_time, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&total_SNIa_all_time, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // end timing measurement
+    //const double sn_loop_end_walltime = MPI_Wtime();
     // compute total mass in star particles (P[i].Type == 4)
     double thisTaskStellarMass = 0.; // solar masses
     double thisTaskNumberSNe = 0.; // dimensionless
@@ -187,6 +318,48 @@ void determine_where_SNe_occur(void)
 int addFB_evaluate_active_check(int i, int fb_loop_iteration);
 int addFB_evaluate_active_check(int i, int fb_loop_iteration)
 {
+    if(P[i].Type <= 1) { return 0; }
+    if(PPP[i].Hsml <= 0) { return 0; }
+    if(PPP[i].NumNgb <= 0) { return 0; }
+#ifdef BH_INTERACT_ON_GAS_TIMESTEP
+    if(P[i].Type == 5 && !P[i].do_gas_search_this_timestep) { return 0; }
+#endif
+
+    // SNII, SNIa, NSM events always activate the particle
+    if(P[i].SNe_ThisTimeStep > 0) {
+        if(fb_loop_iteration < 0 || fb_loop_iteration == 0) { return 1; }
+    }
+    // SLUG AGB activate the particle
+    else if(P[i].Type == 4 && P[i].StellarAge > 30 / UNIT_TIME_IN_MYR && TimeBinActive[P[i].TimeBin]) { // not dynamically active in this time bin, don't activate for chemical feedback!!!
+        if(fb_loop_iteration < 0 || fb_loop_iteration == 0) { return 1; }
+    }
+    // old AGB activate the particle
+    else if(P[i].Type == 4 && P[i].StellarAge < 0) {
+        if(!TimeBinActive[P[i].TimeBin]) { return 0; } // not dynamically active in this time bin, don't activate for chemical feedback!!!
+        if(fb_loop_iteration <= 0) { 
+            // use the particle ID and current simulation time to create a pseudo-random selection
+            unsigned int hash = (P[i].ID + (unsigned int)(All.Time * 1000)) * 2654435761u;
+            if(hash % 20 == 0) {  // 5% of particles are selected
+                return 1;
+            }
+        }
+    }
+    // stellar disc activate the particle
+    else if(P[i].Type == 2) {
+        if(!TimeBinActive[P[i].TimeBin]) { return 0; } // not dynamically active in this time bin, don't activate for chemical feedback!!!
+        if(fb_loop_iteration <= 0) { 
+            // use the particle ID and current simulation time to create a pseudo-random selection
+            unsigned int hash = (P[i].ID + (unsigned int)(All.Time * 1000)) * 2654435761u;
+            if(hash % 20 == 0) {  // 5% of particles are selected
+                return 1;
+            }
+         }
+    }
+    return 0; // not active
+}
+/*
+int addFB_evaluate_active_check(int i, int fb_loop_iteration)
+{
     if(P[i].Type <= 1) {return 0;} // note quantities used here must -not- change in the loop [hence not using mass here], b/c can change offsets for return from different processors, giving a negative mass and undefined behaviors
     if(PPP[i].Hsml <= 0) {return 0;}
     if(PPP[i].NumNgb <= 0) {return 0;}
@@ -194,8 +367,9 @@ int addFB_evaluate_active_check(int i, int fb_loop_iteration)
     if(P[i].Type == 5 && !P[i].do_gas_search_this_timestep) {return 0;}
 #endif
     if(P[i].SNe_ThisTimeStep>0) {if(fb_loop_iteration<0 || fb_loop_iteration==0) {return 1;}}
+    
 }
-
+*/
 #define CORE_FUNCTION_NAME addFB_evaluate /* name of the 'core' function doing the actual inter-neighbor operations. this MUST be defined somewhere as "int CORE_FUNCTION_NAME(int target, int mode, int *exportflag, int *exportnodecount, int *exportindex, int *ngblist, int loop_iteration)" */
 #define INPUTFUNCTION_NAME particle2in_addFB    /* name of the function which loads the element data needed (for e.g. broadcast to other processors, neighbor search) */
 #define OUTPUTFUNCTION_NAME out2particle_addFB  /* name of the function which takes the data returned from other processors and combines it back to the original elements */
@@ -231,6 +405,88 @@ void particle2in_addFB(struct addFB_evaluate_data_in_ *in, int i, int loop_itera
     in->Msne = 0; in->unit_mom_SNe = 0; in->SNe_v_ejecta = 0;
     if((P[i].DensAroundStar <= 0)||(P[i].Mass <= 0)) {return;} // events not possible [catch for mass->0]
     if(loop_iteration < 0) {in->Msne=P[i].Mass; in->unit_mom_SNe=1.e-4; in->SNe_v_ejecta=1.0e-4; return;} // weighting loop
+
+    // Check the SN event is SNII or SNIa
+    if((P[i].Type == 4 && P[i].StellarAge < 0 && P[i].SNe_ThisTimeStep > 0 && P[i].SNe_ThisTimeStep < 10 && loop_iteration == 0)||(P[i].Type == 2 && P[i].SNe_ThisTimeStep > 0 && P[i].SNe_ThisTimeStep < 10 && loop_iteration == 0))
+    {
+        // MODIFIED: Don't call particle2in_addFB_fromstars for old stars to avoid SLUG errors
+        // Instead set SNIa parameters directly
+        in->Msne = 1.4 / UNIT_MASS_IN_SOLAR; // Typical SNIa ejecta mass (1 Msun)
+        in->SNe_v_ejecta = sqrt(2.*(1.e51/UNIT_ENERGY_IN_CGS)/in->Msne); // Typical SNIa ejecta velocity (10,000 km/s)
+#ifdef METALS
+        // SNIa yields in solar masses (Seitenzahl et al. 2012, Table 2, Z=0.02 column)
+        double snia_yields[31] = {
+            0.0,      // metallicity[0] for cooling
+            0.0,      // SNII   C12     1   SLUG
+            0.0,      // SNII   N14     2   SLUG
+            0.0,      // SNII   O16     3   SLUG
+            0.0,      // SNII   Mg24    4   SLUG
+            0.0,      // SNII   S32     5   SLUG
+            0.0,      // WR     C12     6   SLUG
+            0.0,      // WR     N14     7   SLUG
+            0.0,      // WR     O16     8   SLUG
+            0.0,      // WR     Mg24    9   SLUG
+            0.0,      // WR     S32     10  SLUG
+            0.0,      // AGB    C12     11  SLUG
+            0.0,      // AGB    N14     12  SLUG
+            0.0,      // AGB    O16     13  SLUG
+            0.0,      // AGB    Ba138   14  SLUG
+            0.0,      // AGB    Ce140   15  SLUG
+            6.22E-01, // SNIa   Fe56    16
+            6.90E-02, // SNIa   Ni58    17
+            3.21E-06, // SNIa   N14     18
+            2.84E-01, // SNIa   Si28    19
+            1.11E-01, // SNIa   S32     20
+            0.0,      // old_AGB        21
+            0.0,      // old_AGB        22
+            0.0,      // old_AGB        23
+            0.0,      // old_AGB        24
+            0.0,      // old_AGB        25
+            0.0,      // NSM            26
+            0.0,      // NSM            27
+            0.0,      // NSM            28
+            0.0,      // NSM            29
+            0.0       // NSM            30
+        };
+        // Set metal yields (multiply by number of SNIa events and scale by mass)
+        //for(k=16; k < 21; k++) {
+        //    in->yields[k] += snia_yields[k] * P[i].SNe_ThisTimeStep;
+        //}
+        in->yields[40] += 1.4 * P[i].SNe_ThisTimeStep;
+#endif
+        in->unit_mom_SNe = in->Msne * in->SNe_v_ejecta;
+        return;
+    }
+
+    if((P[i].Type == 4 && P[i].StellarAge < 0 && P[i].SNe_ThisTimeStep > 9 && loop_iteration == 0)||(P[i].Type == 2 && P[i].SNe_ThisTimeStep > 9 && loop_iteration == 0))
+    {
+        // MODIFIED: Don't call particle2in_addFB_fromstars for old stars to avoid SLUG errors
+        // Instead set SNIa parameters directly
+        in->Msne = 0.18 / UNIT_MASS_IN_SOLAR; // Typical NSM ejecta mass (1 Msun)
+        in->SNe_v_ejecta = sqrt(2.*(1.e51/UNIT_ENERGY_IN_CGS)/in->Msne); // Typical NSM ejecta velocity
+        in->yields[41] += 0.18 * P[i].SNe_ThisTimeStep/10;
+        in->unit_mom_SNe = in->Msne * in->SNe_v_ejecta;
+        return;
+    }
+    
+    // Add the old AGB feedback
+    if((P[i].Type == 4 && P[i].StellarAge < 0 && loop_iteration == 0 && P[i].SNe_ThisTimeStep == 0)||(P[i].Type == 2 && loop_iteration == 0 && P[i].SNe_ThisTimeStep == 0))
+    {
+#ifdef METALS
+        double particle_mass_solar = P[i].Mass * UNIT_MASS_IN_SOLAR;
+        double dt = GET_PARTICLE_TIMESTEP_IN_PHYSICAL(i);
+        double dt_Myr = dt * UNIT_TIME_IN_MYR; // Time step in Myr
+        //printf("AGB total mass loss: %g, particle mass: %g", particle_mass_solar * dt_Myr * 3E-06 / UNIT_MASS_IN_SOLAR, particle_mass_solar);
+        in->Msne += particle_mass_solar * dt_Myr * 1.93E-05 / UNIT_MASS_IN_SOLAR * 20;
+        //for(k=21; k < 26; k++) {
+        //    in->yields[k] += agb_yields[k] * dt_Myr * particle_mass_solar;
+            //if (k == 21) {printf("\nAGB yields: C12 = %g\n", in->yields[k]);}
+        //}
+        in->yields[42] += particle_mass_solar * dt_Myr * 1.93E-05 * 20;
+        return;
+#endif
+    }
+
     particle2in_addFB_fromstars(in,i,loop_iteration); // subroutine that actually deals with the assignment of feedback properties
     in->unit_mom_SNe = in->Msne * in->SNe_v_ejecta;
 }
@@ -454,7 +710,18 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 Mass_j += dM_ejecta_in;
                 out.M_coupled += dM_ejecta_in;
 #if defined(METALS) /* inject metals */
-                for(k=0;k<NUM_METAL_SPECIES-NUM_AGE_TRACERS;k++) {Metallicity_j[k]=(1-massratio_ejecta)*Metallicity_j[k] + massratio_ejecta*local.yields[k];}
+                for(k=0;k<NUM_METAL_SPECIES-NUM_AGE_TRACERS;k++) {
+                    double old_metal = Metallicity_j[k];
+                    Metallicity_j[k] = (1 - massratio_ejecta) * Metallicity_j[k] + local.yields[k]/(local.Msne*1e10) * massratio_ejecta; // !!!!!!
+
+                    // DEBUG: Track O16 injection
+                    //if(k == 3 && local.yields[k] > 0) {
+                    //    printf("SNIa_DEBUG: Metal injection to gas ID=%d: O16 from=%g to=%g, yield=%g, massratio=%g\n", 
+                    //           P[j].ID, old_metal, Metallicity_j[k], local.yields[k]/(local.Msne*1e10), massratio_ejecta);
+                    //    fflush(stdout);
+                    //}
+
+                }
 #ifdef GALSF_FB_FIRE_AGE_TRACERS
                 if(loop_iteration == 3) {for(k=NUM_METAL_SPECIES-NUM_AGE_TRACERS;k<NUM_METAL_SPECIES;k++) {Metallicity_j[k] += pnorm*local.yields[k]/Mass_j;}} // add age tracers in taking yields to mean MASS, so we can make it large without actually exchanging large masses
 #ifndef GALSF_FB_FIRE_AGE_TRACERS_DISABLE_SURFACE_YIELDS
@@ -680,6 +947,8 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                     const double e_dep = pow(Esne51, 16./17.);
                     
                     // (Thornton+ 1998: p_terminal = 3.0e5 km/s per Msun [equiv. to Mcool = 895.5 Msun].)
+                    // Injected radial momentum = \sqrt(2 * M_cool * E_SN), 
+                    //Since the resoluton is increased, here I increase p_terminal = 5.0e5 km/s per Msun [equiv. to Mcool = 2487.5 Msun].
                     m_cooling = (895.5 / UNIT_MASS_IN_SOLAR) * (e_dep * n_dep * z_dep);
 #else // NOT using SN_KIMM_CEN_MODIFIED_MODEL
                     double e0 = Esne51;
@@ -795,7 +1064,18 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 out.M_coupled += dM_ejecta_in;
                 
 #ifdef METALS   /* inject metals */
-                for(k=0;k<NUM_METAL_SPECIES-NUM_AGE_TRACERS;k++) {Metallicity_j[k]=(1-massratio_ejecta)*Metallicity_j[k] + massratio_ejecta*local.yields[k];}
+                //for(k=0;k<NUM_METAL_SPECIES-NUM_AGE_TRACERS;k++) {Metallicity_j[k]=(1-massratio_ejecta)*Metallicity_j[k] + massratio_ejecta*local.yields[k];}
+                for(k=0; k<NUM_METAL_SPECIES-NUM_AGE_TRACERS; k++) {
+                    double old_metal = Metallicity_j[k];
+                    Metallicity_j[k] = (1 - massratio_ejecta) * Metallicity_j[k] + massratio_ejecta * local.yields[k]/(local.Msne*1e10); // !!!!!!
+
+                    // DEBUG: Track O16 injection
+                    //if(k == 3 && local.yields[k] > 0) {
+                    //    printf("SLUG_DEBUG: Metal injection to gas ID=%d: O16 from=%g to=%g, yield=%g, massratio=%g\n", 
+                    //           P[j].ID, old_metal, Metallicity_j[k], local.yields[k]/(local.Msne*1e10), massratio_ejecta);
+                    //    fflush(stdout);
+                    //}
+                }
 #ifdef GALSF_FB_FIRE_AGE_TRACERS
                 if(loop_iteration == 3) {for(k=NUM_METAL_SPECIES-NUM_AGE_TRACERS;k<NUM_METAL_SPECIES;k++) {Metallicity_j[k] += pnorm*local.yields[k]/Mass_j;}} // add age tracers in taking yields to mean MASS, so we can make it large without actually exchanging large masses
 #ifndef GALSF_FB_FIRE_AGE_TRACERS_DISABLE_SURFACE_YIELDS
@@ -878,6 +1158,8 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 //   possible (and happens frequently) to have multiple SN/particle/timestep.
 
                 // Limit the maximum injected radial momentum to 6.0e5 Msun km/s
+                //Since the injected momentum is increased by 5/3 times, we also increase the maximum here
+                double prev_vel_prefactor = vel_prefactor * 1.0;
                 const double max_radial_mom = 6.0e5 / (UNIT_VEL_IN_KMS * UNIT_MASS_IN_SOLAR);
                 const double max_vel_prefactor = max_radial_mom / P[j].Mass;
                 vel_prefactor = DMIN(vel_prefactor, max_vel_prefactor);
@@ -886,6 +1168,7 @@ int addFB_evaluate(int target, int mode, int *exportflag, int *exportnodecount, 
                 // (in case something has gone badly wrong, such as injecting momentum into a particle with tiny mass)
                 const double max_delta_v = 0.05 * C_LIGHT_CODE; // ~15,000 km/s
                 vel_prefactor = DMIN(vel_prefactor, max_delta_v);
+                
 #endif // SN_MOMENTUM_LIMITER
 		
                 double KE_initial = 0, KE_final = 0;
