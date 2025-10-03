@@ -808,15 +808,18 @@ void fill_write_buffer(enum iofields blocknr, int *startindex, int pc, int type)
             break;
         
         case IO_SLUG_STATE_INITIAL: /* It is a true/false entry, recording whether the slug cluster is turned on*/
+#ifdef SLUG
             for(n = 0; n < pc; pindex++)
                 if(P[pindex].Type == type)
                 {
                     *ip_int++ = (int) P[pindex].slug_state_initialized;
                     n++;
                 }
+#endif
             break;
         
         case IO_SLUG_STATE_RNG:  /* It is an 128 bit integer. I split it into 2 64 bit integers for easier output */
+#ifdef SLUG
             for(n = 0; n < pc; pindex++)
                 if(P[pindex].Type == type)
                 {   rng_state_t x;
@@ -827,9 +830,11 @@ void fill_write_buffer(enum iofields blocknr, int *startindex, int pc, int type)
                     *ip_int64++ = part2;
                     n++;
                 }
+#endif
             break;
 
         case IO_SLUG_STATE_INT:
+#ifdef SLUG
             for(n = 0; n < pc; pindex++)
                 if(P[pindex].Type == type)
                 {
@@ -837,9 +842,11 @@ void fill_write_buffer(enum iofields blocknr, int *startindex, int pc, int type)
                     *ip_int64++ = (uint64_t) P[pindex].slug_state.stoch_sn;
                     n++;
                 }
+#endif
             break;
 
         case IO_SLUG_STATE_DOUBLE: /*I did not include the last three quantities since I dont know how to deal with N */
+#ifdef SLUG
             for(n = 0; n < pc; pindex++)
                 if(P[pindex].Type == type)
                 {
@@ -868,6 +875,7 @@ void fill_write_buffer(enum iofields blocknr, int *startindex, int pc, int type)
                     *fp++ = (MyOutputFloat) P[pindex].slug_state.last_yield_time;
                     n++;
                 }
+#endif
             break;
 
         case IO_VGRADNORM: /* Velocity gradient */
@@ -1701,23 +1709,31 @@ int get_bytes_per_blockelement(enum iofields blocknr, int mode)
             break;
         
         case IO_SLUG_STATE_INITIAL:
+#ifdef SLUG
             bytes_per_blockelement = sizeof(int);
             //Total size of the struct
+#endif
             break;
 
         case IO_SLUG_STATE_RNG:
+#ifdef SLUG
             bytes_per_blockelement = sizeof(uint64_t) * 2;
             //Total size of the struct
+#endif
             break;
 
         case IO_SLUG_STATE_INT:
+#ifdef SLUG
             bytes_per_blockelement = sizeof(uint64_t) * 2;
             //Total size of the struct
+#endif
             break;
 
         case IO_SLUG_STATE_DOUBLE:
+#ifdef SLUG
             bytes_per_blockelement = sizeof(double) * 23;
             //Total size of the struct
+#endif
             break;
 
         case IO_AGE_PROTOSTAR:
@@ -1950,19 +1966,27 @@ int get_datatype_in_block(enum iofields blocknr)
             break;
         
         case IO_SLUG_STATE_INITIAL:
+#ifdef SLUG
             typekey = 0;		/* native int */
+#endif
             break;
 
         case IO_SLUG_STATE_RNG:
+#ifdef SLUG
             typekey = 2;		/* 64 bit int */
+#endif
             break;
 
         case IO_SLUG_STATE_INT:
+#ifdef SLUG
             typekey = 2;		/* 64 bit int */
+#endif
             break;
 
         case IO_SLUG_STATE_DOUBLE:
+#ifdef SLUG
             typekey = 1;		/* Double */
+#endif
             break;
 
         default:
@@ -1981,19 +2005,27 @@ int get_values_per_blockelement(enum iofields blocknr)
     switch (blocknr)
     {   
         case IO_SLUG_STATE_INITIAL:
+#ifdef SLUG
             values = 1;
+#endif
             break;
 
         case IO_SLUG_STATE_RNG:
+#ifdef SLUG
             values = 2;
+#endif
             break;
 
         case IO_SLUG_STATE_INT:
+#ifdef SLUG
             values = 2;
+#endif
             break;
         
         case IO_SLUG_STATE_DOUBLE:
+#ifdef SLUG
             values = 23;
+#endif
             break;
 
         case IO_POS:
@@ -2315,23 +2347,31 @@ long get_particles_in_block(enum iofields blocknr, int *typelist)
             break;
 
         case IO_SLUG_STATE_INITIAL:
+#ifdef SLUG
             for(i=0; i<6; i++) {if(i != 4) {typelist[i] = 0;}}
             return nstars_tot; /* only type 4 star particles will have SLUG properties */
+#endif
             break;
 
         case IO_SLUG_STATE_RNG:
+#ifdef SLUG
             for(i=0; i<6; i++) {if(i != 4) {typelist[i] = 0;}}
             return nstars_tot; /* only type 4 star particles will have SLUG properties */
+#endif
             break;
 
         case IO_SLUG_STATE_INT:
+#ifdef SLUG
             for(i=0; i<6; i++) {if(i != 4) {typelist[i] = 0;}} 
             return nstars_tot; /* only type 4 star particles will have SLUG properties */
+#endif
             break;
 
         case IO_SLUG_STATE_DOUBLE:
+#ifdef SLUG
             for(i=0; i<6; i++) {if(i != 4) {typelist[i] = 0;}}
             return nstars_tot; /* only type 4 star particles will have SLUG properties */
+#endif
             break;
 
         case IO_OSTAR:
@@ -2641,19 +2681,27 @@ int blockpresent(enum iofields blocknr)
             break;
         
         case IO_SLUG_STATE_INITIAL:
+#ifdef SLUG
             return 1;
+#endif
             break;
 
         case IO_SLUG_STATE_RNG:
+#ifdef SLUG
             return 1;
+#endif
             break;
         
         case IO_SLUG_STATE_INT:
+#ifdef SLUG
             return 1;
+#endif
             break;
 
         case IO_SLUG_STATE_DOUBLE:
+#ifdef SLUG
             return 1;
+#endif
             break;
 
         case IO_IMF:
@@ -3091,16 +3139,24 @@ void get_Tab_IO_Label(enum iofields blocknr, char *label)
             strncpy(label, "VGRA", 4);
             break;
         case IO_SLUG_STATE_INITIAL:
+#ifdef SLUG
             strncpy(label, "SITL", 4);
+#endif
             break;
         case IO_SLUG_STATE_RNG:
+#ifdef SLUG
             strncpy(label, "SRNG", 4);
+#endif
             break;
         case IO_SLUG_STATE_INT:
+#ifdef SLUG
             strncpy(label, "SINT", 4);
+#endif
             break; 
         case IO_SLUG_STATE_DOUBLE:
+#ifdef SLUG
             strncpy(label, "SDOU", 4);
+#endif
             break;        
         case IO_VORT:
             strncpy(label, "VORT", 4);
@@ -3480,16 +3536,24 @@ void get_dataset_name(enum iofields blocknr, char *buf)
             strcpy(buf, "NormVelocityGradient");
             break;
         case IO_SLUG_STATE_INITIAL:
+#ifdef SLUG
             strcpy(buf, "SlugStateInitial");
+#endif
             break;
         case IO_SLUG_STATE_RNG:
+#ifdef SLUG
             strcpy(buf, "SlugStateRng");
+#endif
             break; 
         case IO_SLUG_STATE_INT:
+#ifdef SLUG
             strcpy(buf, "SlugStateInt");
+#endif
             break; 
         case IO_SLUG_STATE_DOUBLE:
+#ifdef SLUG
             strcpy(buf, "SlugStateDouble");
+#endif
             break;      
         case IO_VORT:
             strcpy(buf, "Vorticity");
