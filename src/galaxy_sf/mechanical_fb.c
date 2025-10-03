@@ -414,7 +414,7 @@ void particle2in_addFB(struct addFB_evaluate_data_in_ *in, int i, int loop_itera
         in->Msne = 1.4 / UNIT_MASS_IN_SOLAR; // Typical SNIa ejecta mass (1 Msun)
         in->SNe_v_ejecta = sqrt(2.*(1.e51/UNIT_ENERGY_IN_CGS)/in->Msne); // Typical SNIa ejecta velocity (10,000 km/s)
 #ifdef METALS
-        // SNIa yields in solar masses (Seitenzahl et al. 2012, Table 2, Z=0.02 column)
+        // SNIa yields in solar masses (Seitenzahl et al. 2012, Table 2, Z=0.02 column) TEST FINISHED, NO NEEDED ANYMORE
         double snia_yields[31] = {
             0.0,      // metallicity[0] for cooling
             0.0,      // SNII   C12     1   SLUG
